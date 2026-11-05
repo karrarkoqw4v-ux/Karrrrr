@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مشروع لعبة عراقية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Reem+Kufi:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold1:#fff6c8; --gold2:#f2c14e; --gold3:#a8741a; --gold4:#5a3a08;
+    --red:#ce1126; --green:#007a3d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#000;overflow:hidden;color:#fff;
+    font-family:"Cairo",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+  #stage{position:fixed;inset:0;overflow:hidden}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .layer{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .9s}
+  .layer.show{opacity:1}
+  /* سينمائي: أشرطة سوداء + تظليل الحواف */
+  .bars::before,.bars::after{content:"";position:absolute;left:0;right:0;height:7vh;background:#000;z-index:20}
+  .bars::before{top:0}.bars::after{bottom:0}
+  .vignette{position:absolute;inset:0;z-index:15;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.85) 100%)}
+  .grain{position:absolute;inset:-50%;z-index:16;pointer-events:none;opacity:.07;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain .5s steps(4) infinite}
+  @keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}}
+
+  /* المرحلة 1: العلم */
+  #flagCaption{position:absolute;bottom:16vh;text-align:center;letter-spacing:.5em;
+    font-weight:700;font-size:clamp(12px,1.6vw,18px);color:#d9d2bf;opacity:0;
+    transition:opacity 1.2s,letter-spacing 3s}
+  #flagCaption.show{opacity:1;letter-spacing:.9em}
+
+  /* المرحلة 2: الشعار */
+  #logo{position:relative;text-align:center;transform:scale(2.4);filter:blur(14px);opacity:0}
+  #logo.slam{animation:slam .55s cubic-bezier(.2,.9,.25,1.2) forwards}
+  @keyframes slam{0%{transform:scale(2.4);filter:blur(14px);opacity:0}
+    70%{transform:scale(.96);filter:blur(0);opacity:1}100%{transform:scale(1);filter:blur(0);opacity:1}}
+  .title{font-family:"Reem Kufi","Cairo",sans-serif;font-weight:700;line-height:1.5;padding:0 .1em;
+    font-size:clamp(54px,12vw,170px);position:relative;
+    background:linear-gradient(180deg,var(--gold1) 0%,var(--gold2) 38%,var(--gold3) 55%,#ffe39a 70%,var(--gold4) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 3px 0 #2a1a02) drop-shadow(0 0 24px rgba(242,193,78,.35))}
+  .title .shine{position:absolute;inset:0;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%);
+    background-size:250% 100%;background-position:150% 0;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:shine 3.2s 1s infinite}
+  @keyframes shine{0%{background-position:150% 0}45%,100%{background-position:-60% 0}}
+  .tagline{display:flex;align-items:center;gap:14px;justify-content:center;margin-top:10px;
+    font-weight:700;font-size:clamp(13px,2vw,22px);letter-spacing:.35em;color:#e9e1c9;opacity:0;transition:opacity 1s .5s}
+  #logo.slam .tagline{opacity:1}
+  .tagline i{display:block;height:2px;width:clamp(30px,8vw,110px)}
+  .tagline i:first-child{background:linear-gradient(90deg,transparent,var(--red))}
+  .tagline i:last-child{background:linear-gradient(-90deg,transparent,var(--green))}
+  .flagstripe{display:flex;width:clamp(120px,22vw,260px);height:5px;margin:14px auto 0;border-radius:3px;overflow:hidden;
+    box-shadow:0 0 12px rgba(255,255,255,.25)}
+  .flagstripe b{flex:1}.flagstripe b:nth-child(1){background:var(--red)}.flagstripe b:nth-child(2){background:#fff}.flagstripe b:nth-child(3){background:#111}
+  #flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:12;pointer-events:none}
+  #flash.go{animation:flash .6s ease-out}
+  @keyframes flash{0%{opacity:.85}100%{opacity:0}}
+  .shake{animation:shake .45s}
+  @keyframes shake{0%,100%{transform:translate(0,0)}20%{transform:translate(-9px,5px)}40%{transform:translate(8px,-6px)}60%{transform:translate(-5px,3px)}80%{transform:translate(3px,-2px)}}
+
+  /* المرحلة 3: التحميل */
+  #loader{position:absolute;bottom:11vh;left:50%;transform:translateX(-50%);width:min(560px,86vw);
+    opacity:0;transition:opacity .8s;z-index:18}
+  #loader.show{opacity:1}
+  .tip{font-size:clamp(12px,1.5vw,15px);color:#cfc7b0;text-align:center;margin-bottom:12px;min-height:1.6em;transition:opacity .4s}
+  .tip b{color:var(--gold2)}
+  .bar{position:relative;height:8px;background:rgba(255,255,255,.08);border:1px solid rgba(242,193,78,.35);
+    clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+  .fill{position:absolute;inset:0;right:auto;left:auto;width:0;right:0;
+    background:linear-gradient(-90deg,var(--gold3),var(--gold2),#fff3c4);box-shadow:0 0 16px var(--gold2)}
+  .fill::after{content:"";position:absolute;left:-2px;top:-6px;width:4px;height:20px;background:#fff;box-shadow:0 0 14px 4px #ffd36e}
+  .meta{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:#8f8875;letter-spacing:.1em}
+  #pct{color:var(--gold2);font-weight:900}
+
+  #start{position:absolute;bottom:12vh;left:50%;transform:translateX(-50%);z-index:19;pointer-events:auto;
+    font:900 clamp(16px,2.4vw,24px) "Cairo",sans-serif;color:#1d1203;letter-spacing:.2em;
+    padding:14px 56px;border:0;cursor:pointer;opacity:0;visibility:hidden;
+    background:linear-gradient(180deg,#fff1b8,var(--gold2) 55%,var(--gold3));
+    clip-path:polygon(14px 0,100% 0,calc(100% - 14px) 100%,0 100%);transition:opacity .6s}
+  #start.show{opacity:1;visibility:visible;animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{filter:drop-shadow(0 0 0 rgba(242,193,78,0))}50%{filter:drop-shadow(0 0 18px rgba(242,193,78,.9))}}
+  #ver{position:absolute;bottom:8.5vh;left:16px;font-size:11px;color:#5d5747;z-index:21;letter-spacing:.1em}
+  #skip{position:absolute;top:9vh;left:16px;z-index:21;pointer-events:auto;background:rgba(0,0,0,.4);
+    border:1px solid rgba(255,255,255,.2);color:#bbb;font:700 12px "Cairo";padding:6px 14px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="stage" class="bars">
+  <canvas id="bg"></canvas>
+  <canvas id="flag"></canvas>
+  <canvas id="fx"></canvas>
+
+  <div class="layer" id="phaseFlag">
+    <div id="flagCaption">بلاد الرافدين</div>
+  </div>
+
+  <div class="layer" id="phaseLogo">
+    <div id="logo">
+      <div class="title">لعبة عراقية<span class="shine" aria-hidden="true">لعبة عراقية</span></div>
+      <div class="tagline"><i></i><span>مشروع لعبة عراقية</span><i></i></div>
+      <div class="flagstripe"><b></b><b></b><b></b></div>
+    </div>
+  </div>
+
+  <div id="loader">
+    <div class="tip" id="tip"></div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="meta"><span id="status">جارِ تحميل الموارد…</span><span id="pct">0%</span></div>
+  </div>
+  <button id="start">اضغط للدخول</button>
+  <button id="skip">تخطي ⟵</button>
+  <div id="ver">v0.1.0</div>
+
+  <div id="flash"></div>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const stage = $('stage');
+  const bg = $('bg'), flagC = $('flag'), fx = $('fx');
+  const bctx = bg.getContext('2d'), fctx = flagC.getContext('2d'), xctx = fx.getContext('2d');
+  let W, H, DPR;
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    for (const c of [bg, flagC, fx]) { c.width = W*DPR; c.height = H*DPR; }
+    for (const x of [bctx, fctx, xctx]) x.setTransform(DPR,0,0,DPR,0,0);
+  }
+  addEventListener('resize', resize); resize();
+
+  /* ---------- العلم العراقي (يُرسم مرة واحدة ثم يُموَّج) ---------- */
+  const FW = 900, FH = 600;
+  const flagTex = document.createElement('canvas');
+  flagTex.width = FW; flagTex.height = FH;
+  function paintFlag(){
+    const g = flagTex.getContext('2d');
+    g.fillStyle = '#ce1126'; g.fillRect(0,0,FW,FH/3);
+    g.fillStyle = '#ffffff'; g.fillRect(0,FH/3,FW,FH/3);
+    g.fillStyle = '#000000'; g.fillRect(0,FH*2/3,FW,FH/3);
+    g.fillStyle = '#007a3d';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '700 150px "Reem Kufi", "Cairo", sans-serif';
+    g.fillText('الله أكبر', FW/2, FH/2 + 10);
+    // نسيج القماش
+    g.globalAlpha = .025;
+    for (let y=0; y<FH; y+=3){ g.fillStyle = y%6 ? '#000' : '#fff'; g.fillRect(0,y,FW,1); }
+    g.globalAlpha = 1;
+  }
+
+  // يُرسم العلم بشرائح عمودية مع موجة وظلال
+  function drawFlag(t, alpha, scale){
+    fctx.clearRect(0,0,W,H);
+    if (alpha <= 0) return;
+    const fw = Math.min(W*0.62, H*0.78*1.5) * scale;
+    const fh = fw/1.5;
+    const ox = (W - fw)/2, oy = (H - fh)/2 - H*0.03;
+    const slices = 180, sw = fw/slices, tw = FW/slices;
+    fctx.save(); fctx.globalAlpha = alpha;
+    // السارية
+    const poleX = ox - 10;
+    const pg = fctx.createLinearGradient(poleX-6,0,poleX+6,0);
+    pg.addColorStop(0,'#3a3a3a'); pg.addColorStop(.5,'#d8d8d8'); pg.addColorStop(1,'#2a2a2a');
+    fctx.fillStyle = pg; fctx.fillRect(poleX-5, oy-30, 10, fh*1.9);
+    fctx.fillStyle = '#e6c46a'; fctx.beginPath(); fctx.arc(poleX, oy-34, 9, 0, Math.PI*2); fctx.fill();
+
+    for (let i=0;i<slices;i++){
+      const u = i/slices;                       // 0 عند السارية
+      const amp = fh*0.07*u;                     // التموج يزداد بعيداً عن السارية
+      const ph = u*9 - t*3.2;
+      const dy = Math.sin(ph)*amp + Math.sin(ph*0.5+1.3)*amp*0.4;
+      const slope = Math.cos(ph);                // للإضاءة
+      const sx = ox + i*sw - Math.abs(Math.sin(ph))*u*fw*0.012;
+      fctx.drawImage(flagTex, i*tw, 0, tw+1, FH, sx, oy+dy, sw+1, fh);
+      const shade = slope*0.32*Math.min(1,u*3);
+      fctx.fillStyle = shade>0 ? `rgba(255,255,255,${shade*0.55})` : `rgba(0,0,0,${-shade})`;
+      fctx.fillRect(sx, oy+dy, sw+1, fh);
+    }
+    fctx.restore();
+  }
+
+  /* ---------- الخلفية: دخان + جمر ---------- */
+  const embers = Array.from({length:140}, () => newEmber(true));
+  function newEmber(init){
+    return { x: Math.random()*innerWidth, y: init ? Math.random()*innerHeight : innerHeight + 10,
+      r: Math.random()*2.2+.4, vy: -(Math.random()*0.9+0.3), vx: (Math.random()-.5)*0.4,
+      life: Math.random(), hue: 20 + Math.random()*25 };
+  }
+  const smoke = Array.from({length:14}, (_,i) => ({ x: Math.random(), y: 0.55+Math.random()*0.5,
+    r: 0.25+Math.random()*0.35, s: (Math.random()*.5+.2)*(i%2?1:-1) }));
+
+  function drawBg(t, warm){
+    const g = bctx.createRadialGradient(W/2,H*0.55,0,W/2,H*0.55,Math.max(W,H)*0.8);
+    g.addColorStop(0, `rgba(${60+warm*40},${30+warm*15},10,1)`);
+    g.addColorStop(.5,'#0b0806'); g.addColorStop(1,'#000');
+    bctx.fillStyle = g; bctx.fillRect(0,0,W,H);
+    // دخان
+    for (const s of smoke){
+      const x = ((s.x + t*0.008*s.s) % 1.4 + 1.4) % 1.4 - 0.2;
+      const R = s.r*Math.max(W,H);
+      const sg = bctx.createRadialGradient(x*W, s.y*H, 0, x*W, s.y*H, R);
+      sg.addColorStop(0,'rgba(90,80,70,.10)'); sg.addColorStop(1,'rgba(90,80,70,0)');
+      bctx.fillStyle = sg; bctx.fillRect(0,0,W,H);
+    }
+  }
+  function drawEmbers(dt, intensity){
+    xctx.clearRect(0,0,W,H);
+    xctx.globalCompositeOperation = 'lighter';
+    for (const e of embers){
+      e.x += e.vx + Math.sin(e.y*0.01)*0.3; e.y += e.vy*dt*60*(0.6+intensity);
+      e.life += 0.003;
+      if (e.y < -10) Object.assign(e, newEmber(false));
+      const a = (0.35 + 0.65*Math.abs(Math.sin(e.life*8))) * intensity;
+      xctx.fillStyle = `hsla(${e.hue},100%,60%,${a})`;
+      xctx.shadowColor = `hsla(${e.hue},100%,55%,1)`; xctx.shadowBlur = 8;
+      xctx.beginPath(); xctx.arc(e.x, e.y, e.r, 0, Math.PI*2); xctx.fill();
+    }
+    xctx.shadowBlur = 0; xctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* ---------- صوت مُولَّد (بدون ملفات) ---------- */
+  let ac;
+  function boom(){
+    try{
+      ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+      const t = ac.currentTime;
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(30,t+1.2);
+      g.gain.setValueAtTime(.9,t); g.gain.exponentialRampToValueAtTime(.001,t+1.6);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t+1.7);
+      const buf = ac.createBuffer(1, ac.sampleRate*1.2, ac.sampleRate), d = buf.getChannelData(0);
+      for (let i=0;i<d.length;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/d.length,3);
+      const n = ac.createBufferSource(), ng = ac.createGain(), f = ac.createBiquadFilter();
+      f.type='lowpass'; f.frequency.value=900; n.buffer=buf; ng.gain.value=.5;
+      n.connect(f).connect(ng).connect(ac.destination); n.start(t);
+    }catch(e){}
+  }
+
+  /* ---------- التسلسل الزمني ---------- */
+  const tips = [
+    '<b>نصيحة:</b> ابقَ قريباً من فريقك، فالقوة بالجماعة.',
+    '<b>نصيحة:</b> استخدم الأزقة والبيوت القديمة للاحتماء.',
+    '<b>نصيحة:</b> الماء والذخيرة أهم من السلاح الثقيل.',
+    '<b>من تراثنا:</b> بغداد، بابل، أور… كل خريطة تحكي حضارة.'
+  ];
+  const T = { flagIn:0.4, caption:1.6, flagOut:4.6, logo:5.2, loader:7.0 };
+  const params = new URLSearchParams(location.search);
+  let start = performance.now() - (parseFloat(params.get('t'))||0)*1000;
+  let last = performance.now(), slammed = false, loaderShown = false, done = false, tipI = 0;
+  paintFlag();
+  document.fonts && document.fonts.ready.then(paintFlag);
+
+  function slam(){
+    slammed = true;
+    $('phaseLogo').classList.add('show'); $('logo').classList.add('slam');
+    $('flash').classList.add('go');
+    setTimeout(()=>{ stage.classList.add('shake'); boom(); }, 380);
+    setTimeout(()=>stage.classList.remove('shake'), 900);
+  }
+
+  function frame(now){
+    const t = (now - start)/1000, dt = Math.min(.05,(now-last)/1000); last = now;
+    const warm = slammed ? 1 : Math.min(1, t/4)*0.5;
+    drawBg(t, warm);
+
+    // العلم: يظهر، ثم يقترب ويتلاشى
+    let fa = 0, sc = 1;
+    if (t > T.flagIn && t < T.flagOut+0.8){
+      fa = Math.min(1,(t-T.flagIn)/1.2);
+      if (t > T.flagOut) fa *= 1 - (t-T.flagOut)/0.8;
+      sc = 0.92 + (t-T.flagIn)*0.025;
+    }
+    drawFlag(t, fa, sc);
+    $('phaseFlag').classList.toggle('show', t > T.flagIn && t < T.flagOut);
+    $('flagCaption').classList.toggle('show', t > T.caption && t < T.flagOut);
+
+    if (!slammed && t > T.logo) slam();
+    drawEmbers(dt, slammed ? 1 : 0.45);
+
+    if (!loaderShown && t > T.loader){ loaderShown = true; $('loader').classList.add('show'); nextTip(); }
+    if (loaderShown && !done){
+      const p = Math.min(100, Math.pow((t-T.loader)/5, 0.8)*100);
+      $('fill').style.width = p + '%';
+      $('pct').textContent = Math.floor(p) + '%';
+      $('status').textContent = p < 40 ? 'جارِ تحميل الموارد…' : p < 80 ? 'جارِ تجهيز الخريطة…' : 'جارِ الاتصال بالخادم…';
+      if (p >= 100){ done = true; $('loader').classList.remove('show'); $('start').classList.add('show'); }
+    }
+    requestAnimationFrame(frame);
+  }
+  function nextTip(){
+    const el = $('tip'); el.style.opacity = 0;
+    setTimeout(()=>{ el.innerHTML = tips[tipI++ % tips.length]; el.style.opacity = 1; }, 400);
+    if (!done) setTimeout(nextTip, 2600);
+  }
+  $('skip').onclick = () => { start = performance.now() - (T.loader + 5.2)*1000; };
+  $('start').onclick = () => { boom(); $('start').textContent = 'جارِ الدخول…'; };
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

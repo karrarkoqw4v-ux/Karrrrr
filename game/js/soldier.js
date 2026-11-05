@@ -200,16 +200,17 @@
   }
 
   /* ---------------- منظور الشخص الأول ---------------- */
-  function buildViewmodel() {
+  function buildViewmodel(builder, pistol) {
     const M = mats(), g = new THREE.Group();
-    const rifle = buildRifle(); rifle.rotation.y = Math.PI; g.add(rifle);   // الفوهة باتجاه -Z
+    const rifle = (builder || buildRifle)(); rifle.rotation.y = Math.PI; g.add(rifle);   // الفوهة باتجاه -Z
     const sleeve = M.uniform, glove = M.glove;
     // اليد اليمنى على المقبض + الساعد
     g.add(box(.075, .07, .1, glove, 0, -.095, .06));
     g.add(limb(V3(.05, -.2, .35), V3(0, -.09, .07), .055, .045, sleeve, 10));
     // اليد اليسرى على غطاء اليد
-    g.add(box(.08, .07, .11, glove, 0, -.04, -.36));
-    g.add(limb(V3(-.14, -.24, .15), V3(0, -.04, -.35), .058, .046, sleeve, 10));
+    const lz = pistol ? .02 : -.36;
+    g.add(box(.08, .07, .11, glove, pistol ? -.03 : 0, -.06, lz));
+    g.add(limb(V3(-.14, -.24, .2), V3(pistol ? -.03 : 0, -.05, lz + .01), .058, .046, sleeve, 10));
     g.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; o.frustumCulled = false; } });
     g.userData.muzzle = rifle.userData.muzzle;
     return g;

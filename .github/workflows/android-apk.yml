@@ -1,0 +1,48 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ccr-7ac49762-qgcd0v, main]
+    paths: ['game/**', 'android/**', '.github/workflows/android-apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Copy game into APK assets
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp -r game android/app/src/main/assets/game
+          rm -rf android/app/src/main/assets/game/preview
+      - name: Build APK
+        working-directory: android
+        run: gradle assembleRelease --no-daemon --stacktrace
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk IraqiGame.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IraqiGame-apk
+          path: IraqiGame.apk
+      - name: Publish APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: لعبة عراقية — APK (أحدث نسخة)
+          prerelease: true
+          files: IraqiGame.apk
+          body: |
+            نسخة APK للأندرويد (7.0 فما فوق). نزّل IraqiGame.apk وثبّته (فعّل "التثبيت من مصادر غير معروفة").
+            Commit: ${{ github.sha }}

@@ -3,20 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
 <title>لعبة عراقية</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Reem+Kufi:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <canvas id="gl"></canvas>
 
+<!-- ============ شاشة البداية ============ -->
+<div id="startScreen" class="screen">
+  <div class="ss-top"><div class="country" id="countryChip"><span class="flag"></span><b>العراق</b><small>تغيير</small></div><div class="ss-ver">v0.3.0</div></div>
+  <div class="ss-logo"><div class="emb"></div><h1>لعبة عراقية</h1><p>باتل رويال · بغداد</p></div>
+  <button class="ss-tap" id="ssTap">اضغط للدخول</button>
+  <div class="ss-load"><div class="lbar"><i id="ssFill"></i></div><small id="ssMsg">جارِ تحميل الشخصيات…</small></div>
+  <div class="statusbar" id="ssStatus"></div>
+</div>
+
 <!-- ============ اللوبي ============ -->
-<div id="lobby" class="screen">
+<div id="lobby" class="screen hidden">
   <div class="top">
-    <div class="profile">
+    <div class="profile" id="profileBtn">
       <div class="ava"><svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm-8 9c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5z"/></svg><span class="lvl" id="pLvl">1</span></div>
-      <div class="pinfo"><div class="pname" id="pName">لاعب_عراقي</div><div class="xp"><i id="pXp"></i></div><div class="pid">ID 5120847 · <span id="pRank">المستوى: مجنّد</span></div></div>
+      <div class="pinfo"><div class="pname" id="pName">لاعب_عراقي</div><div class="xp"><i id="pXp"></i></div><div class="pid">🇮🇶 ID 5120847 · <span id="pRank">مجنّد</span></div></div>
     </div>
     <nav class="tabs" id="tabs">
       <button data-t="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/></svg><span>الرئيسية</span></button>
@@ -32,20 +40,15 @@
       <button class="ibtn" id="btnSet"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 5v-2l-2.1-.6a7 7 0 00-.7-1.7l1.1-1.9-1.4-1.4-1.9 1.1a7 7 0 00-1.7-.7L13 3h-2l-.6 2.1a7 7 0 00-1.7.7L6.8 4.7 5.4 6.1l1.1 1.9a7 7 0 00-.7 1.7L3.7 11v2l2.1.6c.2.6.4 1.2.7 1.7l-1.1 1.9 1.4 1.4 1.9-1.1c.5.3 1.1.6 1.7.7L11 21h2l.6-2.1c.6-.2 1.2-.4 1.7-.7l1.9 1.1 1.4-1.4-1.1-1.9c.3-.5.6-1.1.7-1.7z"/></svg></button>
     </div>
   </div>
-
   <aside class="left">
-    <div class="glass ev"><div class="evh"><b>مهمة اليوم</b><span class="tag">يومي</span></div><p>أطِح بـ 5 أعداء في بغداد</p><div class="bar"><i id="mProg" style="width:0%"></i></div><small><span id="mCnt">0</span> / 5 · المكافأة 🪙 200</small></div>
-    <div class="glass ev"><div class="evh"><b>فعالية: درع الرافدين</b><span class="tag hot">جديد</span></div><p>اربح مباراة واحدة لتفتح زيّ «الأسد الذهبي»</p><div class="bar"><i id="mProg2" style="width:0%"></i></div><small><span id="mCnt2">0</span> / 1</small></div>
-    <div class="weapon glass">
-      <div class="wh"><b>M4A1</b><span>بندقية هجومية · 5.56</span></div>
-      <div class="stat"><span>الضرر</span><div><i style="width:62%"></i></div></div>
-      <div class="stat"><span>المدى</span><div><i style="width:70%"></i></div></div>
-      <div class="stat"><span>الثبات</span><div><i style="width:66%"></i></div></div>
-      <div class="stat"><span>معدل الإطلاق</span><div><i style="width:80%"></i></div></div>
-      <div class="att"><em>كاتم</em><em>منظار هولوغرافي</em><em>قبضة</em><em>ليزر</em></div>
+    <div class="glass ev"><div class="evh"><b>مهمة اليوم</b><span class="tag">يومي</span></div><p>أطِح بـ 5 أعداء في بغداد</p><div class="bar"><i id="mProg"></i></div><small><span id="mCnt">0</span> / 5 · المكافأة 🪙 200</small></div>
+    <div class="glass ev"><div class="evh"><b>فعالية: درع الرافدين</b><span class="tag hot">جديد</span></div><p>اربح مباراة لتفتح زيّ «الأسد الذهبي»</p><div class="bar"><i id="mProg2"></i></div><small><span id="mCnt2">0</span> / 1</small></div>
+    <div class="weapon glass" id="wCard">
+      <div class="wh"><b id="wcName">M4A1</b><span id="wcType">بندقية هجومية · 5.56</span></div>
+      <div id="wcStats"></div>
+      <div class="wsel" id="wSel"></div>
     </div>
   </aside>
-
   <aside class="right">
     <div class="glass mode" id="modeCard">
       <div class="mapthumb"><svg id="thumbSvg" viewBox="0 0 100 100"></svg><span class="pin"></span></div>
@@ -54,20 +57,20 @@
     </div>
     <div class="glass modes">
       <div class="mrow" id="modeRow"><button class="on" data-m="solo">فردي</button><button data-m="duo">ثنائي</button><button data-m="squad">فريق</button></div>
-      <div class="mrow small"><span>المنظور</span><b>شخص أول</b></div>
+      <div class="mrow" id="viewRow"><button data-v="fpp">منظور أول</button><button data-v="tpp">منظور ثالث</button></div>
+      <div class="mrow small"><span>السيرفر</span><b id="srvName">بغداد · ذكاء اصطناعي</b></div>
       <div class="mrow small"><span>اللاعبون</span><b>16</b></div>
     </div>
   </aside>
-
   <div class="squad" id="squad">
-    <div class="slot me"><div class="sa"><svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm-8 9c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5z"/></svg></div><small>أنت</small></div>
-    <div class="slot"><div class="sa plus">+</div><small>دعوة</small></div>
-    <div class="slot"><div class="sa plus">+</div><small>دعوة</small></div>
+    <div class="slotp me"><div class="sa"><svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm-8 9c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5z"/></svg></div><small>أنت</small></div>
+    <div class="slotp"><div class="sa plus">+</div><small>دعوة</small></div>
+    <div class="slotp"><div class="sa plus">+</div><small>دعوة</small></div>
   </div>
   <div class="nametag"><b>الرقيب · قوات مكافحة الإرهاب</b><small>اسحب لتدوير الشخصية</small></div>
-
-  <button class="start" id="btnStart"><span class="stt">ابدأ</span><small id="startSub">بغداد · فردي</small></button>
-  <div class="ver">v0.2.0 · نسخة تجريبية</div>
+  <div class="mm" id="mm"><b id="mmT">جارِ البحث عن مباراة</b><span id="mmClock">00:00</span></div>
+  <button class="start" id="btnStart"><span class="stt" id="stt">ابدأ</span><small id="startSub">بغداد · فردي</small></button>
+  <div class="statusbar lob" id="lobStatus"></div>
 </div>
 
 <!-- ============ خريطة المحافظات ============ -->
@@ -76,59 +79,90 @@
   <div class="mapwrap">
     <svg id="iraqSvg" preserveAspectRatio="xMidYMid meet"></svg>
     <aside class="plist glass" id="plist"></aside>
-    <div class="pinfo2 glass" id="pinfo">
-      <h3 id="piName">بغداد</h3><div class="row"><span>المركز</span><b id="piCap">بغداد</b></div>
-      <div class="row"><span>الحالة</span><b id="piState" class="ok">متاح للعب</b></div>
-      <p id="piDesc"></p>
-      <button class="confirm" id="piBtn">اعتماد الخريطة</button>
-    </div>
+    <div class="pinfo2 glass" id="pinfo"><h3 id="piName">بغداد</h3><div class="row"><span>المركز</span><b id="piCap">بغداد</b></div><div class="row"><span>الحالة</span><b id="piState" class="ok">متاح للعب</b></div><p id="piDesc"></p><button class="confirm" id="piBtn">اعتماد الخريطة</button></div>
   </div>
 </div>
 
-<!-- ============ شاشة التحميل ============ -->
+<!-- ============ الإعدادات ============ -->
+<div id="settings" class="screen hidden">
+  <header><button class="back" id="setBack">‹ رجوع</button><h2>الإعدادات</h2></header>
+  <nav class="stabs" id="stabs"></nav>
+  <div class="spanel" id="spanel"></div>
+</div>
+
+<!-- ============ محرر عناصر التحكم ============ -->
+<div id="editorBar" class="hidden"><b>تخصيص عناصر التحكم</b><span id="edSel">اختر عنصراً لتعديله</span>
+  <label>الحجم <input type="range" id="edSize" min="50" max="180" value="100"></label>
+  <label>الشفافية <input type="range" id="edOp" min="20" max="100" value="100"></label>
+  <button id="edReset" class="ghost">إعادة ضبط</button><button id="edSave" class="confirm">حفظ</button><button id="edExit" class="ghost">خروج</button></div>
+
+<!-- ============ التحميل ============ -->
 <div id="loading" class="screen hidden">
+  <div class="lchar"></div>
   <div class="ltitle">لعبة عراقية</div>
-  <div class="lsub" id="lMsg">جارِ إنزال القوات في بغداد…</div>
-  <div class="lbar"><i id="lFill"></i></div>
+  <div class="lsrv" id="lSrv">سيرفر بغداد · ذكاء اصطناعي</div>
+  <div class="lsub" id="lMsg">جارِ الاتصال…</div>
+  <div class="lbar big"><i id="lFill"></i></div><div class="lpct" id="lPct">0%</div>
   <div class="ltip" id="lTip"></div>
+  <div class="statusbar" id="ldStatus"></div>
 </div>
 
 <!-- ============ واجهة اللعب ============ -->
 <div id="hud">
-  <div id="vignette"></div><div id="dmgDir"></div>
+  <div id="bloodScr"></div><div id="vignette"></div><div id="dmgDir"></div><div id="scope"></div>
   <div class="hud-top">
     <div class="counts"><div><b id="alive">16</b><small>أحياء</small></div><div><b id="kills">0</b><small>إطاحات</small></div></div>
     <canvas id="compass" width="400" height="40"></canvas>
     <div id="zoneBox"><i></i><span id="zoneT">—</span></div>
   </div>
   <canvas id="minimap" width="170" height="170"></canvas>
+  <div class="statusbar hudst" id="hudStatus"></div>
   <div id="killfeed"></div>
+  <div id="killBanner"></div>
   <div id="zoneWarn">⚠ أنت خارج المنطقة الآمنة</div>
   <div id="toast"></div>
+  <div id="alt">المظلة · الارتفاع <b id="altm">0 م</b><small>اتجه بالعصا · انظر للأسفل للنزول أسرع</small></div>
   <div id="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
   <div id="hitmark"><i></i><i></i><i></i><i></i></div>
-  <div class="hp"><div class="hpb"><i id="hpFill"></i></div><span id="hpNum">100</span><small>الصحة</small></div>
-  <div class="ammo" id="ammoBox"><b id="mag">30</b><u>/</u><span id="reserve">120</span><small>M4A1 · 5.56</small></div>
-  <div id="hint">WASD حركة · الفأرة نظر · زر أيسر إطلاق · زر أيمن تصويب · R تعبئة · Shift ركض · Space قفز</div>
+  <div id="healBar"><span></span><div><i></i></div></div>
+  <div class="hp"><div class="gear" id="gear"></div><div class="hpb"><i id="hpFill"></i></div><div class="boost"><i id="boostFill"></i></div><span id="hpNum">100</span></div>
+  <div class="slots" id="slots"><div class="slot" id="slot0"><b>فارغ</b><small>—</small></div><div class="slot" id="slot1"><b>مسدس</b><small>—</small></div></div>
+  <div class="ammo" id="ammoBox"><b id="mag">30</b><u>/</u><span id="reserve">120</span><small id="wname">M4A1</small></div>
+  <button id="bPick"><span>التقاط</span></button>
+  <div id="hint">WASD حركة · الفأرة نظر · أيسر إطلاق · أيمن تصويب · R تعبئة · H علاج · C جلوس · V تبديل المنظور · 1/2 السلاح · F التقاط · Shift ركض</div>
   <div id="lockPrompt">انقر لبدء التحكم</div>
-  <div id="joyBase"><div id="joyKnob"></div></div>
-  <button class="tbtn" id="bFire">🔥</button><button class="tbtn" id="bAds">◎</button><button class="tbtn" id="bJump">⤒</button><button class="tbtn" id="bReload">↻</button>
+  <div id="joyBase" class="ctl"><div id="joyKnob"></div></div>
+  <button class="tbtn ctl" id="bFire"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5" stroke="currentColor" stroke-width="2"/></svg></button>
+  <button class="tbtn ctl" id="bFire2"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></svg></button>
+  <button class="tbtn ctl" id="bAds"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2"/></svg></button>
+  <button class="tbtn ctl" id="bJump"><svg viewBox="0 0 24 24"><path d="M12 3l7 8h-4v9H9v-9H5z"/></svg></button>
+  <button class="tbtn ctl" id="bCrouch"><svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><path d="M8 11h8l-1 5h3v5H6v-5h3z"/></svg></button>
+  <button class="tbtn ctl" id="bReload"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 107.7 10h-2.1A6 6 0 1112 6v3l4-4-4-4z"/></svg></button>
+  <button class="tbtn ctl" id="bHeal"><svg viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg><em id="medCnt">0</em></button>
+  <button class="tbtn ctl" id="bView"><svg viewBox="0 0 24 24"><path d="M12 5c5 0 9 4 10 7-1 3-5 7-10 7S3 15 2 12c1-3 5-7 10-7zm0 3a4 4 0 100 8 4 4 0 000-8z"/></svg></button>
   <button class="tbtn menu" id="bExit">✕</button>
 </div>
 
 <div id="endScreen"><div class="endc">
   <h1 id="endTitle">—</h1><p id="endSub"></p>
-  <div class="stats"><div><b id="sRank">#1</b><small>المركز</small></div><div><b id="sKills">0</b><small>إطاحات</small></div><div><b id="sTime">0:00</b><small>مدة البقاء</small></div><div><b id="sXp">+0</b><small>خبرة</small></div></div>
+  <div class="stats"><div><b id="sRank">#1</b><small>المركز</small></div><div><b id="sKills">0</b><small>إطاحات</small></div><div><b id="sDmg">0</b><small>الضرر</small></div><div><b id="sTime">0:00</b><small>مدة البقاء</small></div><div><b id="sXp">+0</b><small>خبرة</small></div></div>
   <div class="eb"><button class="start sm" id="btnAgain">العب مجدداً</button><button class="ghost" id="btnLobby">العودة للوبي</button></div>
 </div></div>
 
-<div id="modal" class="hidden"><div class="mc glass"><h3 id="mTitle"></h3><p id="mBody"></p><button class="ghost" id="mClose">حسناً</button></div></div>
+<div id="modal" class="hidden"><div class="mc glass"><h3 id="mTitle"></h3><div id="mBody"></div><button class="ghost" id="mClose">حسناً</button></div></div>
+<div id="gtoast"></div>
+<div id="fps"></div>
 
 <script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="lib/SkeletonUtils.js"></script>
 <script src="data/provinces.js"></script>
 <script src="js/soldier.js"></script>
+<script src="js/weapons.js"></script>
+<script src="js/characters.js"></script>
 <script src="js/world.js"></script>
 <script src="js/game.js"></script>
+<script src="js/settings.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

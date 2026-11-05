@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw, ImageFilter
 sys.path.insert(0, os.path.dirname(__file__))
 from lib import font
 from screens import SCREENS
+from screens2 import SCREENS2
 
 OUT = os.path.join(os.path.dirname(__file__), "screens")
 os.makedirs(OUT, exist_ok=True)
@@ -62,9 +63,20 @@ def main():
               ("لوحة 5: البطاقات والتقدم", rendered[12:14])]
     for i, (title, items) in enumerate(groups, 1):
         sheet(items, f"sheet_{i}.png", title)
+    rendered2 = []
+    for fname, title, fn in SCREENS2:
+        img = fn().save(os.path.join(OUT, fname + ".png"))
+        rendered2.append((title, img))
+        print("ok", fname)
+    titles = ["الحساب والصفوف", "المواد وأقسام الإنكليزي", "الماسح وتحديد النص والترجمة", "النطق وكتابة السؤال والرياضيات",
+              "الرياضيات والعلوم", "الكيمياء والأحياء والوزاريات", "الملازم وقارئ PDF والمكتبة", "الإضافة والقفل والإعدادات", "المواصفات"]
+    for i in range(0, len(rendered2), 3):
+        n = i // 3
+        sheet(rendered2[i:i + 3], f"sheet_{6 + n}.png", f"لوحة {6 + n}: {titles[n]}")
+    rendered = rendered + rendered2
     # لوحة شاملة
     phones = [phone(im, 0.3) for _, im in rendered]
-    cols, gap = 7, 24
+    cols, gap = 10, 24
     pw, ph = phones[0].size
     rows = (len(phones) + cols - 1) // cols
     W = cols * pw + (cols + 1) * gap

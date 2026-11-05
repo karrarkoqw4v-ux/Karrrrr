@@ -90,6 +90,23 @@ class Canvas:
         kw = dict(direction="rtl", language="ar") if rtl else dict(direction="ltr", language="en")
         return f.getlength(s, **kw) / S
 
+    def para(self, xr, y, text, size=13, w="r", color=MUTED, maxw=200, lh=None):
+        """فقرة عربية تلتف على الكلمات (من اليمين). تُرجع y بعد آخر سطر."""
+        lh = lh or size * 1.7
+        line = ""
+        for word in text.split(" "):
+            test = (line + " " + word).strip()
+            if line and self.width(test, size, w) > maxw:
+                self.text(xr, y, line, size, w, color, "r")
+                y += lh
+                line = word
+            else:
+                line = test
+        if line:
+            self.text(xr, y, line, size, w, color, "r")
+            y += lh
+        return y
+
     def runs(self, xr, y, parts, size=14):
         """نصوص متعددة الألوان تُرسم من اليمين لليسار."""
         for s, color, w in parts:
@@ -246,6 +263,23 @@ class Canvas:
             ln((12.5, 20.5), (16.5, 10.5), (20.5, 20.5)); ln((14, 17), (19, 17))
         else:
             raise ValueError(n)
+
+    def star(self, cx, cy, size, color, filled=True, line=None):
+        import math
+        pts = []
+        for i in range(10):
+            r = size / 2 if i % 2 == 0 else size / 4.2
+            a = -math.pi / 2 + i * math.pi / 5
+            pts.append(((cx + r * math.cos(a)) * S, (cy + r * math.sin(a)) * S))
+        self.d.polygon(pts, fill=color if filled else None, outline=line or color)
+        if not filled:
+            self.d.line(pts + [pts[0]], fill=line or color, width=int(1.2 * S), joint="curve")
+
+    def stars(self, xr, cy, rating, size=13, color="#F59E0B"):
+        """نجوم التقييم من اليمين"""
+        for i in range(5):
+            cx = xr - size / 2 - i * (size + 2)
+            self.star(cx, cy, size, color if i < round(rating) else "#E4E7EC")
 
     def icon_tile(self, name, cx, cy, size, tone, r=None, icon_size=None):
         dark, soft = TOOL[tone]

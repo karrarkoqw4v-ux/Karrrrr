@@ -55,8 +55,8 @@ def field(c, y, label, placeholder, icon, left_icon=None, value=None, focus=Fals
     return y0 + FIELD_H
 
 
-def chip(c, xr, y, label, active=False, h=34, size=13):
-    wd = c.width(label, size, "m") + 28
+def chip(c, xr, y, label, active=False, h=34, size=13, pad=28):
+    wd = c.width(label, size, "m") + pad
     c.rr(xr - wd, y, xr, y + h, h / 2, fill=PRIMARY if active else SURFACE, line=None if active else LINE)
     c.text(xr - wd / 2, y + h / 2, label, size, "m", "#FFFFFF" if active else MUTED, "c")
     return xr - wd - 8

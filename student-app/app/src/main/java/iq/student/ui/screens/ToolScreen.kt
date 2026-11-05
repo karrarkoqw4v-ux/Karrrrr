@@ -9,30 +9,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import iq.student.ui.components.IconTile
 import iq.student.ui.components.ScreenHeader
 import iq.student.ui.theme.AppColors
-import iq.student.ui.theme.Tone
 import iq.student.ui.theme.dimens
 
-/** شاشة مؤقتة لكل أداة؛ تُستبدل بتنفيذ الأداة الفعلي حسب التصاميم في design/screens */
+/** شاشة مؤقتة للأقسام الي لسه قيد التطوير (مثل تقدّمي) */
 @Composable
-fun ToolScreen(toolId: String, onBack: () -> Unit) {
-    val tool = Tools.firstOrNull { it.id == toolId }
-    val title = tool?.title ?: if (toolId == "solver") "حلّال المسائل" else "قريباً"
+fun ToolScreen(name: String, onBack: () -> Unit) {
+    val title = if (name == "progress") "تقدمي" else "قريباً"
     Column(Modifier.fillMaxSize().background(AppColors.Bg)) {
         ScreenHeader(title, onBack)
         Column(
             Modifier.fillMaxSize().padding(dimens.pad),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
         ) {
-            tool?.let { IconTile(it.icon, it.tone, size = 72.dp) }
-            Spacer(Modifier.height(16.dp))
-            Text("هذي الأداة قيد البناء", style = MaterialTheme.typography.titleMedium, color = AppColors.Ink)
+            Text("قيد التطوير", style = MaterialTheme.typography.titleLarge, color = AppColors.Ink)
             Spacer(Modifier.height(6.dp))
-            Text("تصميمها جاهز بمجلد design/screens", style = MaterialTheme.typography.bodyMedium,
-                color = AppColors.Muted, textAlign = TextAlign.Center)
+            Text("هذا القسم راح ينفتح بالتحديثات الجاية", style = MaterialTheme.typography.bodyMedium, color = AppColors.Muted, textAlign = TextAlign.Center)
         }
     }
 }

@@ -66,7 +66,7 @@ def bottom_nav(c, active=0):
     y0 = H - NAV_H
     c.shadow(0, y0, W, H + 20, r=0, blur=8, dy=-2, alpha=22)
     c.rr(0, y0, W, H + 20, 22, fill=SURFACE, corners=(True, True, False, False))
-    items = [("home", "الرئيسية"), ("grid", "الأدوات"), ("chat", "المساعد"), ("bars", "تقدمي"), ("user", "حسابي")]
+    items = [("home", "الرئيسية"), ("book", "الكتب"), ("doc", "الملازم"), ("bars", "تقدمي"), ("user", "حسابي")]
     slot = W / 5
     for i, (ic, lb) in enumerate(items):          # RTL: الأول من اليمين
         cx = W - slot * (i + 0.5)

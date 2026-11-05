@@ -48,7 +48,7 @@ dependencies {
     // الترجمة وقراءة الصور على الجهاز (بدون ذكاء اصطناعي سحابي)
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("com.google.mlkit:text-recognition:16.0.1")
-    implementation("cz.adaptech.tesseract4android:tesseract4android:4.7.0")
+    implementation("com.github.adaptech-cz:Tesseract4Android:4.7.0")
     // الكاميرا (CameraX)
     val camerax = "1.3.4"
     implementation("androidx.camera:camera-core:$camerax")

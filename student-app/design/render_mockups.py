@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from lib import font
 from screens import SCREENS
 from screens2 import SCREENS2
+from screens3 import SCREENS3
 
 OUT = os.path.join(os.path.dirname(__file__), "screens")
 os.makedirs(OUT, exist_ok=True)
@@ -73,7 +74,17 @@ def main():
     for i in range(0, len(rendered2), 3):
         n = i // 3
         sheet(rendered2[i:i + 3], f"sheet_{6 + n}.png", f"لوحة {6 + n}: {titles[n]}")
-    rendered = rendered + rendered2
+    rendered3 = []
+    for fname, title, fn in SCREENS3:
+        img = fn().save(os.path.join(OUT, fname + ".png"))
+        rendered3.append((title, img))
+        print("ok", fname)
+    titles3 = ["الوزاريات", "الملازم والتكبير", "قصة حركة تسجيل الدخول"]
+    sheet(rendered3[0:3], "sheet_15.png", "لوحة 15: الوزاريات (السنة والدور والجواب)")
+    sheet(rendered3[3:5] + rendered3[8:9], "sheet_16.png", "لوحة 16: الملازم والتكبير والحركات")
+    sheet(rendered3[5:8], "sheet_17.png", "لوحة 17: قصة حركة تسجيل الدخول (ثلاث لقطات)")
+    sheet(rendered2[2:3] + rendered2[1:2] + rendered2[0:1], "sheet_18.png", "لوحة 18: المواد الجديدة والصفوف وإنشاء الحساب")
+    rendered = rendered + rendered2 + rendered3
     # لوحة شاملة
     phones = [phone(im, 0.3) for _, im in rendered]
     cols, gap = 10, 24

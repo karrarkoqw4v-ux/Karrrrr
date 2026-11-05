@@ -258,6 +258,10 @@ class Canvas:
             ln((4, 7), (20, 7)); ln((6.5, 7), (7.5, 20.5), (16.5, 20.5), (17.5, 7)); ln((9.5, 7), (9.5, 4), (14.5, 4), (14.5, 7))
         elif n == "info":
             circ(12, 12, 9); ln((12, 11), (12, 16.5)); dot(12, 7.6, 1.0)
+        elif n == "leaf":
+            ln((6, 19), (5, 13), (8.5, 8), (14, 5.5), (19.5, 5), (19, 10.5), (16.5, 15.5), (11.5, 18.5), close=True); ln((4.5, 20.5), (13, 11))
+        elif n == "mosque":
+            arc(6, 6, 18, 18, 180, 360); ln((6, 12), (6, 20), (18, 20), (18, 12)); ln((12, 3), (12, 6)); ln((3, 20), (3, 10)); ln((21, 20), (21, 10)); ln((10, 20), (10, 16), (14, 16), (14, 20))
         elif n == "lang":
             ln((4, 6), (14, 6)); ln((9, 3.5), (9, 6)); ln((6, 6), (7.5, 11), (12, 14.5)); ln((12.5, 6), (10, 11), (5, 14.5))
             ln((12.5, 20.5), (16.5, 10.5), (20.5, 20.5)); ln((14, 17), (19, 17))
@@ -282,10 +286,11 @@ class Canvas:
             self.star(cx, cy, size, color if i < round(rating) else "#E4E7EC")
 
     def icon_tile(self, name, cx, cy, size, tone, r=None, icon_size=None):
+        """أيقونة واضحة: مربع ملوّن مليان + أيقونة بيضاء كبيرة (مثل التطبيق)"""
         dark, soft = TOOL[tone]
         r = size * 0.3 if r is None else r
-        self.rr(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2, r, fill=soft)
-        self.icon(name, cx, cy, icon_size or size * 0.5, dark, bg=soft)
+        self.rr(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2, r, fill=dark)
+        self.icon(name, cx, cy, icon_size or size * 0.56, "#FFFFFF", sw=1.9, bg=dark)
 
     def save(self, path):
         out = self.img.resize((W * 3, H * 3), Image.LANCZOS)

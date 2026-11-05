@@ -37,12 +37,12 @@
   #flagCaption.show{opacity:1;letter-spacing:.9em}
 
   /* المرحلة 2: الشعار */
-  #logo{position:relative;text-align:center;transform:scale(2.4);filter:blur(14px);opacity:0}
+  #logo{position:relative;text-align:center;margin-top:-9vh;transform:scale(2.4);filter:blur(14px);opacity:0}
   #logo.slam{animation:slam .55s cubic-bezier(.2,.9,.25,1.2) forwards}
   @keyframes slam{0%{transform:scale(2.4);filter:blur(14px);opacity:0}
     70%{transform:scale(.96);filter:blur(0);opacity:1}100%{transform:scale(1);filter:blur(0);opacity:1}}
   .title{font-family:"Reem Kufi","Cairo",sans-serif;font-weight:700;line-height:1.5;padding:0 .1em;
-    font-size:clamp(54px,12vw,170px);position:relative;
+    font-size:min(clamp(54px,12vw,170px),19vh);position:relative;
     background:linear-gradient(180deg,var(--gold1) 0%,var(--gold2) 38%,var(--gold3) 55%,#ffe39a 70%,var(--gold4) 100%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 3px 0 #2a1a02) drop-shadow(0 0 24px rgba(242,193,78,.35))}
@@ -66,7 +66,7 @@
   @keyframes shake{0%,100%{transform:translate(0,0)}20%{transform:translate(-9px,5px)}40%{transform:translate(8px,-6px)}60%{transform:translate(-5px,3px)}80%{transform:translate(3px,-2px)}}
 
   /* المرحلة 3: التحميل */
-  #loader{position:absolute;bottom:11vh;left:50%;transform:translateX(-50%);width:min(560px,86vw);
+  #loader{position:absolute;bottom:9.5vh;left:50%;transform:translateX(-50%);width:min(560px,86vw);
     opacity:0;transition:opacity .8s;z-index:18}
   #loader.show{opacity:1}
   .tip{font-size:clamp(12px,1.5vw,15px);color:#cfc7b0;text-align:center;margin-bottom:12px;min-height:1.6em;transition:opacity .4s}
@@ -89,20 +89,69 @@
   #ver{position:absolute;bottom:8.5vh;left:16px;font-size:11px;color:#5d5747;z-index:21;letter-spacing:.1em}
   #skip{position:absolute;top:9vh;left:16px;z-index:21;pointer-events:auto;background:rgba(0,0,0,.4);
     border:1px solid rgba(255,255,255,.2);color:#bbb;font:700 12px "Cairo";padding:6px 14px;cursor:pointer}
+
+  /* شرائح بألوان العلم تقطع الشاشة (بدل العلم المرفرف) */
+  .slashes{position:absolute;inset:0;overflow:hidden}
+  .slashes b{position:absolute;top:-20%;height:140%;width:38vw;transform:skewX(-18deg) translateY(-130%);opacity:.0}
+  .slashes b:nth-child(1){background:linear-gradient(180deg,#ce1126,#7a0a17);left:6%}
+  .slashes b:nth-child(2){background:linear-gradient(180deg,#fff,#bdbdbd);left:33%}
+  .slashes b:nth-child(3){background:linear-gradient(180deg,#151515,#000);left:60%;box-shadow:0 0 0 2px #333 inset}
+  #phaseFlag.show .slashes b{animation:cut 1s cubic-bezier(.2,.8,.2,1) forwards}
+  #phaseFlag.show .slashes b:nth-child(2){animation-delay:.18s}
+  #phaseFlag.show .slashes b:nth-child(3){animation-delay:.36s}
+  @keyframes cut{0%{opacity:.9;transform:skewX(-18deg) translateY(-130%)}60%{opacity:.9;transform:skewX(-18deg) translateY(0)}100%{opacity:.55;transform:skewX(-18deg) translateY(0)}}
+  #phaseFlag.out .slashes b{animation:cutout .7s ease-in forwards}
+  @keyframes cutout{to{opacity:0;transform:skewX(-18deg) translateY(130%)}}
+  #flagCaption{z-index:3;font-size:clamp(14px,2.2vw,26px);bottom:50%;transform:translateY(50%);
+    text-shadow:0 0 20px #000,0 2px 0 #000;color:#fff}
+  .emblem{width:min(clamp(60px,8vw,100px),11vh);height:min(clamp(70px,9.5vw,118px),13vh);margin:0 auto 0;
+    clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);
+    background:linear-gradient(180deg,#ce1126 0 33%,#fff 33% 66%,#000 66%);position:relative;
+    filter:drop-shadow(0 0 14px rgba(242,193,78,.6))}
+  .emblem::before{content:"";position:absolute;inset:4px;clip-path:inherit;
+    background:linear-gradient(180deg,#ce1126 0 33%,#fff 33% 66%,#000 66%)}
+  .emblem{background:linear-gradient(135deg,#fff6c8,#f2c14e,#a8741a)}
+  .emblem::after{content:"الله أكبر";position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;color:#007a3d;font:700 clamp(11px,1.6vw,18px) "Reem Kufi",sans-serif;line-height:1;white-space:nowrap}
+
+  /* الاتصال + اللوبي */
+  #connect{position:absolute;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.88);gap:16px}
+  #connect.show{display:flex}
+  .spin{width:46px;height:46px;border:3px solid rgba(242,193,78,.25);border-top-color:var(--gold2);border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #lobby{position:absolute;inset:0;z-index:25;display:none;background:radial-gradient(ellipse at 50% 60%,#2b1d0e,#0a0705 70%)}
+  #lobby.show{display:block;animation:lobIn .8s}
+  @keyframes lobIn{from{opacity:0;filter:brightness(3)}to{opacity:1;filter:none}}
+  .top{position:absolute;top:8vh;left:2vw;right:2vw;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .pcard{display:flex;gap:10px;align-items:center;background:rgba(0,0,0,.45);border:1px solid rgba(242,193,78,.35);padding:8px 16px;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+  .ava{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#f2c14e,#a8741a);display:grid;place-items:center;font-size:22px;color:#2a1a02}
+  .pn{font-weight:900}.pl{font-size:12px;color:var(--gold2)}
+  .cur{display:flex;gap:12px}.cur span{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15);padding:6px 14px;font-weight:700;font-size:14px}
+  .hero{position:absolute;left:50%;bottom:20vh;transform:translateX(-50%);text-align:center;opacity:.9}
+  .soldier{width:min(240px,40vw);height:min(330px,46vh);margin:0 auto;border-radius:50% 50% 8px 8px/38% 38% 8px 8px;
+    background:linear-gradient(180deg,rgba(242,193,78,.25),rgba(242,193,78,.04));border:1px dashed rgba(242,193,78,.4);
+    display:grid;place-items:center;color:rgba(242,193,78,.7);font-size:14px}
+  .side{position:absolute;right:2vw;top:22vh;display:flex;flex-direction:column;gap:10px}
+  .side button,.nav button{font:700 14px "Cairo";color:#e9e1c9;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.18);padding:10px 22px;cursor:pointer}
+  .side button.on{border-color:var(--gold2);color:var(--gold2);background:rgba(242,193,78,.12)}
+  .nav{position:absolute;bottom:8vh;left:0;right:0;display:flex;justify-content:center;gap:10px;padding:0 2vw;flex-wrap:wrap}
+  .play{position:absolute;left:2vw;bottom:15vh;font:900 clamp(18px,3vw,30px) "Cairo";color:#1d1203;padding:16px 70px;border:0;cursor:pointer;
+    background:linear-gradient(180deg,#fff1b8,var(--gold2) 55%,var(--gold3));clip-path:polygon(16px 0,100% 0,calc(100% - 16px) 100%,0 100%);animation:pulse 1.6s infinite}
+  .gtitle{position:absolute;left:50%;top:15vh;transform:translateX(-50%);font:700 clamp(22px,3vw,34px) "Reem Kufi";color:var(--gold2);letter-spacing:.1em;text-shadow:0 0 14px rgba(242,193,78,.5)}
 </style>
 </head>
 <body>
 <div id="stage" class="bars">
   <canvas id="bg"></canvas>
-  <canvas id="flag"></canvas>
   <canvas id="fx"></canvas>
 
   <div class="layer" id="phaseFlag">
+    <div class="slashes"><b></b><b></b><b></b></div>
     <div id="flagCaption">بلاد الرافدين</div>
   </div>
 
   <div class="layer" id="phaseLogo">
     <div id="logo">
+      <div class="emblem"></div>
       <div class="title">لعبة عراقية<span class="shine" aria-hidden="true">لعبة عراقية</span></div>
       <div class="tagline"><i></i><span>مشروع لعبة عراقية</span><i></i></div>
       <div class="flagstripe"><b></b><b></b><b></b></div>
@@ -118,6 +167,18 @@
   <button id="skip">تخطي ⟵</button>
   <div id="ver">v0.1.0</div>
 
+  <div id="connect"><div class="spin"></div><div id="cmsg">جارِ الاتصال بالخادم…</div></div>
+  <div id="lobby">
+    <div class="top">
+      <div class="pcard"><div class="ava">👤</div><div><div class="pn">لاعب_عراقي</div><div class="pl">المستوى 1</div></div></div>
+      <div class="cur"><span>🪙 1,000</span><span>💎 50</span></div>
+    </div>
+    <div class="gtitle">لعبة عراقية</div>
+    <div class="hero"><div class="soldier">مكان شخصيتك</div></div>
+    <div class="side"><button class="on">فردي</button><button>ثنائي</button><button>فريق</button></div>
+    <button class="play">ابدأ</button>
+    <div class="nav"><button>المتجر</button><button>الفريق</button><button>الصندوق</button><button>المهام</button><button>الإعدادات</button></div>
+  </div>
   <div id="flash"></div>
   <div class="vignette"></div>
   <div class="grain"></div>
@@ -127,66 +188,16 @@
 (() => {
   const $ = id => document.getElementById(id);
   const stage = $('stage');
-  const bg = $('bg'), flagC = $('flag'), fx = $('fx');
-  const bctx = bg.getContext('2d'), fctx = flagC.getContext('2d'), xctx = fx.getContext('2d');
+  const bg = $('bg'), fx = $('fx');
+  const bctx = bg.getContext('2d'), xctx = fx.getContext('2d');
   let W, H, DPR;
   function resize(){
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = innerWidth; H = innerHeight;
-    for (const c of [bg, flagC, fx]) { c.width = W*DPR; c.height = H*DPR; }
-    for (const x of [bctx, fctx, xctx]) x.setTransform(DPR,0,0,DPR,0,0);
+    for (const c of [bg, fx]) { c.width = W*DPR; c.height = H*DPR; }
+    for (const x of [bctx, xctx]) x.setTransform(DPR,0,0,DPR,0,0);
   }
   addEventListener('resize', resize); resize();
-
-  /* ---------- العلم العراقي (يُرسم مرة واحدة ثم يُموَّج) ---------- */
-  const FW = 900, FH = 600;
-  const flagTex = document.createElement('canvas');
-  flagTex.width = FW; flagTex.height = FH;
-  function paintFlag(){
-    const g = flagTex.getContext('2d');
-    g.fillStyle = '#ce1126'; g.fillRect(0,0,FW,FH/3);
-    g.fillStyle = '#ffffff'; g.fillRect(0,FH/3,FW,FH/3);
-    g.fillStyle = '#000000'; g.fillRect(0,FH*2/3,FW,FH/3);
-    g.fillStyle = '#007a3d';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = '700 150px "Reem Kufi", "Cairo", sans-serif';
-    g.fillText('الله أكبر', FW/2, FH/2 + 10);
-    // نسيج القماش
-    g.globalAlpha = .025;
-    for (let y=0; y<FH; y+=3){ g.fillStyle = y%6 ? '#000' : '#fff'; g.fillRect(0,y,FW,1); }
-    g.globalAlpha = 1;
-  }
-
-  // يُرسم العلم بشرائح عمودية مع موجة وظلال
-  function drawFlag(t, alpha, scale){
-    fctx.clearRect(0,0,W,H);
-    if (alpha <= 0) return;
-    const fw = Math.min(W*0.62, H*0.78*1.5) * scale;
-    const fh = fw/1.5;
-    const ox = (W - fw)/2, oy = (H - fh)/2 - H*0.03;
-    const slices = 180, sw = fw/slices, tw = FW/slices;
-    fctx.save(); fctx.globalAlpha = alpha;
-    // السارية
-    const poleX = ox - 10;
-    const pg = fctx.createLinearGradient(poleX-6,0,poleX+6,0);
-    pg.addColorStop(0,'#3a3a3a'); pg.addColorStop(.5,'#d8d8d8'); pg.addColorStop(1,'#2a2a2a');
-    fctx.fillStyle = pg; fctx.fillRect(poleX-5, oy-30, 10, fh*1.9);
-    fctx.fillStyle = '#e6c46a'; fctx.beginPath(); fctx.arc(poleX, oy-34, 9, 0, Math.PI*2); fctx.fill();
-
-    for (let i=0;i<slices;i++){
-      const u = i/slices;                       // 0 عند السارية
-      const amp = fh*0.07*u;                     // التموج يزداد بعيداً عن السارية
-      const ph = u*9 - t*3.2;
-      const dy = Math.sin(ph)*amp + Math.sin(ph*0.5+1.3)*amp*0.4;
-      const slope = Math.cos(ph);                // للإضاءة
-      const sx = ox + i*sw - Math.abs(Math.sin(ph))*u*fw*0.012;
-      fctx.drawImage(flagTex, i*tw, 0, tw+1, FH, sx, oy+dy, sw+1, fh);
-      const shade = slope*0.32*Math.min(1,u*3);
-      fctx.fillStyle = shade>0 ? `rgba(255,255,255,${shade*0.55})` : `rgba(0,0,0,${-shade})`;
-      fctx.fillRect(sx, oy+dy, sw+1, fh);
-    }
-    fctx.restore();
-  }
 
   /* ---------- الخلفية: دخان + جمر ---------- */
   const embers = Array.from({length:140}, () => newEmber(true));
@@ -252,13 +263,11 @@
     '<b>نصيحة:</b> الماء والذخيرة أهم من السلاح الثقيل.',
     '<b>من تراثنا:</b> بغداد، بابل، أور… كل خريطة تحكي حضارة.'
   ];
-  const T = { flagIn:0.4, caption:1.6, flagOut:4.6, logo:5.2, loader:7.0 };
+  const T = { flagIn:0.4, caption:1.4, flagOut:3.6, logo:4.3, loader:6.0 };
   const params = new URLSearchParams(location.search);
   let start = performance.now() - (parseFloat(params.get('t'))||0)*1000;
   let last = performance.now(), slammed = false, loaderShown = false, done = false, tipI = 0;
-  paintFlag();
-  document.fonts && document.fonts.ready.then(paintFlag);
-
+  
   function slam(){
     slammed = true;
     $('phaseLogo').classList.add('show'); $('logo').classList.add('slam');
@@ -272,15 +281,8 @@
     const warm = slammed ? 1 : Math.min(1, t/4)*0.5;
     drawBg(t, warm);
 
-    // العلم: يظهر، ثم يقترب ويتلاشى
-    let fa = 0, sc = 1;
-    if (t > T.flagIn && t < T.flagOut+0.8){
-      fa = Math.min(1,(t-T.flagIn)/1.2);
-      if (t > T.flagOut) fa *= 1 - (t-T.flagOut)/0.8;
-      sc = 0.92 + (t-T.flagIn)*0.025;
-    }
-    drawFlag(t, fa, sc);
-    $('phaseFlag').classList.toggle('show', t > T.flagIn && t < T.flagOut);
+    $('phaseFlag').classList.toggle('show', t > T.flagIn && t < T.flagOut+0.7);
+    $('phaseFlag').classList.toggle('out', t > T.flagOut);
     $('flagCaption').classList.toggle('show', t > T.caption && t < T.flagOut);
 
     if (!slammed && t > T.logo) slam();
@@ -302,7 +304,12 @@
     if (!done) setTimeout(nextTip, 2600);
   }
   $('skip').onclick = () => { start = performance.now() - (T.loader + 5.2)*1000; };
-  $('start').onclick = () => { boom(); $('start').textContent = 'جارِ الدخول…'; };
+  $('start').onclick = () => {
+    boom(); $('start').classList.remove('show'); $('connect').classList.add('show');
+    const steps=['جارِ الاتصال بالخادم…','جارِ التحقق من الحساب…','جارِ تحميل اللوبي…'];
+    steps.forEach((m,i)=>setTimeout(()=>$('cmsg').textContent=m, i*800));
+    setTimeout(()=>{ $('connect').classList.remove('show'); $('lobby').classList.add('show'); $('flash').classList.remove('go'); void $('flash').offsetWidth; $('flash').classList.add('go'); }, 2400);
+  };
   requestAnimationFrame(frame);
 })();
 </script>

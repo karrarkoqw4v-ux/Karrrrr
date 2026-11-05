@@ -308,7 +308,7 @@
     boom(); $('start').classList.remove('show'); $('connect').classList.add('show');
     const steps=['جارِ الاتصال بالخادم…','جارِ التحقق من الحساب…','جارِ تحميل اللوبي…'];
     steps.forEach((m,i)=>setTimeout(()=>$('cmsg').textContent=m, i*800));
-    setTimeout(()=>{ $('connect').classList.remove('show'); $('lobby').classList.add('show'); $('flash').classList.remove('go'); void $('flash').offsetWidth; $('flash').classList.add('go'); }, 2400);
+    setTimeout(()=>{ location.href = '../game/index.html'; return; $('flash').classList.remove('go'); void $('flash').offsetWidth; $('flash').classList.add('go'); }, 2400);
   };
   requestAnimationFrame(frame);
 })();

@@ -1,0 +1,164 @@
+:root{--gold1:#fff1b8;--gold2:#f2c14e;--gold3:#a8741a;--ink:#0a0b0d;--glass:rgba(14,16,20,.62);--line:rgba(242,193,78,.28);--red:#ff3b30}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{height:100%;overflow:hidden;background:#000;color:#fff;font-family:"Cairo",system-ui,sans-serif;touch-action:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+.screen{position:fixed;inset:0;z-index:10}
+.hidden{display:none!important}
+.glass{background:linear-gradient(180deg,rgba(28,31,38,.66),rgba(10,11,14,.72));border:1px solid var(--line);backdrop-filter:blur(8px);box-shadow:0 8px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
+svg{fill:currentColor}
+
+/* ---------- اللوبي ---------- */
+#lobby{direction:ltr;pointer-events:none}
+#lobby>*{pointer-events:auto}
+#lobby:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 40% 50%,transparent 40%,rgba(0,0,0,.55)),linear-gradient(180deg,rgba(0,0,0,.55),transparent 18%,transparent 78%,rgba(0,0,0,.6))}
+.top{position:absolute;top:calc(10px + env(safe-area-inset-top));left:14px;right:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:2}
+.profile{display:flex;gap:10px;align-items:center;padding:6px 18px 6px 6px;background:linear-gradient(90deg,rgba(0,0,0,.65),rgba(0,0,0,.2));border:1px solid var(--line);border-radius:40px 8px 8px 40px}
+.ava{position:relative;width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#4a525e,#1b1e24);border:2px solid var(--gold2);display:grid;place-items:center;box-shadow:0 0 14px rgba(242,193,78,.35)}
+.ava svg{width:28px;height:28px;color:#cfd6df}
+.lvl{position:absolute;bottom:-6px;right:-6px;min-width:22px;height:22px;border-radius:6px;background:linear-gradient(180deg,var(--gold1),var(--gold3));color:#1d1203;font:900 12px Cairo;display:grid;place-items:center;transform:skewX(-8deg)}
+.pname{font-weight:900;font-size:15px;direction:rtl;text-align:left}
+.xp{width:130px;height:5px;background:rgba(255,255,255,.14);margin:3px 0;overflow:hidden;transform:skewX(-20deg)}.xp i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold3),var(--gold2));transition:width .6s}
+.pid{font-size:10.5px;color:#aab;direction:rtl;text-align:left}
+.tabs{display:flex;gap:4px;background:rgba(0,0,0,.45);padding:4px;border:1px solid rgba(255,255,255,.08);border-radius:6px;direction:rtl}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:68px;padding:7px 12px 5px;background:transparent;border:0;color:#a9afb9;font:700 11.5px Cairo;cursor:pointer;position:relative;transition:.2s}
+.tabs svg{width:22px;height:22px}
+.tabs button:hover{color:#fff}
+.tabs button.on{color:var(--gold2);background:linear-gradient(180deg,rgba(242,193,78,.2),rgba(242,193,78,.02))}
+.tabs button.on:after{content:"";position:absolute;bottom:0;left:15%;right:15%;height:3px;background:var(--gold2);box-shadow:0 0 10px var(--gold2)}
+.cur{display:flex;gap:8px;align-items:center}
+.chip{display:flex;align-items:center;gap:7px;padding:5px 6px 5px 12px;min-width:104px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);border-radius:20px;font-weight:900;font-size:14px}
+.chip b{flex:1;text-align:center}.chip u{width:20px;height:20px;border-radius:50%;background:linear-gradient(180deg,#ffe58c,#c88a14);color:#2a1a02;text-decoration:none;display:grid;place-items:center;font-weight:900;cursor:pointer}
+.coin{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#e0a41c 60%,#8a5a06);box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.gem{width:16px;height:18px;background:linear-gradient(135deg,#bff3ff,#2fb4e8 55%,#1568a8);clip-path:polygon(50% 0,100% 35%,50% 100%,0 35%)}
+.ibtn{position:relative;width:38px;height:38px;border-radius:6px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.14);color:#dfe3ea;display:grid;place-items:center;cursor:pointer}
+.ibtn svg{width:20px;height:20px}.ibtn em{position:absolute;top:3px;right:3px;width:9px;height:9px;border-radius:50%;background:var(--red);border:1px solid #000}
+.ibtn:active,.tabs button:active{transform:scale(.95)}
+
+.left{position:absolute;left:14px;top:calc(88px + env(safe-area-inset-top));bottom:20px;width:min(250px,26vw);display:flex;flex-direction:column;gap:10px;direction:rtl;z-index:1}
+.ev{padding:10px 12px;border-radius:4px 14px 4px 14px}
+.evh{display:flex;justify-content:space-between;align-items:center;font-size:13px}.ev p{font-size:12px;color:#c9ced7;margin:3px 0 7px}
+.tag{font-size:10px;padding:1px 8px;background:rgba(255,255,255,.12);border-radius:10px}.tag.hot{background:var(--red)}
+.bar{height:6px;background:rgba(255,255,255,.12);overflow:hidden;transform:skewX(-20deg)}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold3),var(--gold2))}
+.ev small{font-size:10.5px;color:#aab;display:block;margin-top:4px}
+.weapon{margin-top:auto;padding:10px 12px;border-radius:4px 14px 4px 14px}
+.wh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}.wh b{font-size:20px;color:var(--gold2);font-family:"Reem Kufi"}.wh span{font-size:11px;color:#aab}
+.stat{display:flex;align-items:center;gap:8px;font-size:11px;color:#cfd3da;margin:4px 0}.stat span{width:80px}.stat div{flex:1;height:5px;background:rgba(255,255,255,.12);transform:skewX(-20deg);overflow:hidden}.stat i{display:block;height:100%;background:linear-gradient(90deg,#8f6b1a,var(--gold2))}
+.att{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.att em{font-style:normal;font-size:10px;padding:2px 8px;border:1px solid var(--line);background:rgba(242,193,78,.08);color:var(--gold1)}
+
+.right{position:absolute;right:14px;top:calc(88px + env(safe-area-inset-top));width:min(290px,30vw);display:flex;flex-direction:column;gap:10px;direction:rtl;z-index:1}
+.mode{display:flex;gap:10px;align-items:center;padding:8px;cursor:pointer;border-radius:4px 16px 4px 16px;transition:.2s;position:relative}
+.mode:hover{border-color:var(--gold2);box-shadow:0 0 22px rgba(242,193,78,.25)}
+.mapthumb{position:relative;width:96px;height:96px;background:radial-gradient(circle at 50% 50%,#1b2430,#0a0d12);border:1px solid var(--line);flex:none}
+.mapthumb svg{width:100%;height:100%}
+.pin{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--gold2);box-shadow:0 0 0 0 rgba(242,193,78,.8);animation:ping 1.6s infinite}
+@keyframes ping{to{box-shadow:0 0 0 14px rgba(242,193,78,0)}}
+.mt small{color:#aab;font-size:11px;display:block}.mt b{font-size:24px;font-family:"Reem Kufi";color:#fff;display:block;line-height:1.1}
+.live{display:inline-block;margin-top:4px;font-size:10px;padding:1px 9px;background:rgba(61,214,100,.18);color:#6bff8f;border:1px solid rgba(61,214,100,.4)}
+.mchg{position:absolute;bottom:6px;left:10px;font-size:11px;color:var(--gold2)}
+.modes{padding:8px;border-radius:4px 14px 4px 14px}
+.mrow{display:flex;gap:6px}.mrow button{flex:1;padding:9px 0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#cfd3da;font:700 13px Cairo;cursor:pointer;transform:skewX(-10deg)}
+.mrow button.on{background:linear-gradient(180deg,rgba(242,193,78,.4),rgba(242,193,78,.12));border-color:var(--gold2);color:#fff;box-shadow:0 0 14px rgba(242,193,78,.25)}
+.mrow.small{justify-content:space-between;font-size:12px;color:#b9bec7;padding:8px 4px 0}.mrow.small b{color:#fff}
+
+.squad{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:12px;z-index:1;direction:rtl}
+.slot{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#aab}
+.sa{width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.55);border:1.5px dashed rgba(255,255,255,.3);display:grid;place-items:center;font-size:22px;color:#dfe3ea;cursor:pointer;transition:.2s}
+.sa:hover{border-color:var(--gold2);color:var(--gold2)}.sa svg{width:26px;height:26px}
+.slot.me .sa{border:2px solid var(--gold2);background:radial-gradient(circle at 35% 30%,#4a525e,#1b1e24);box-shadow:0 0 14px rgba(242,193,78,.4)}
+.nametag{position:absolute;left:36%;bottom:100px;transform:translateX(-50%);text-align:center;direction:rtl;pointer-events:none!important}
+.nametag b{display:block;font-size:14px;padding:3px 22px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.65),transparent);color:var(--gold1);letter-spacing:.04em}
+.nametag small{font-size:10px;color:#889}
+
+.start{position:absolute;right:22px;bottom:18px;min-width:min(300px,34vw);padding:10px 30px 8px;border:0;cursor:pointer;color:#1d1203;
+  background:linear-gradient(180deg,#fff3c0 0%,#f5c94f 45%,#c8861a 100%);clip-path:polygon(22px 0,100% 0,calc(100% - 22px) 100%,0 100%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.8);font-family:Cairo;transition:transform .12s;overflow:hidden;z-index:2}
+.start:before{content:"";position:absolute;top:0;bottom:0;width:60px;left:-80px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.75),transparent);animation:sweep 3s infinite}
+@keyframes sweep{0%,60%{left:-80px}100%{left:110%}}
+.start .stt{display:block;font:900 clamp(26px,3.6vw,38px) "Reem Kufi";letter-spacing:.2em;line-height:1.1}
+.start small{display:block;font-weight:700;font-size:12px;opacity:.75;margin-top:-2px}
+.start:active{transform:scale(.97)}.start.sm{position:static;min-width:200px;padding:10px 24px}
+.ver{position:absolute;left:14px;bottom:4px;font-size:10px;color:#555;direction:rtl}
+
+/* ---------- خريطة العراق ---------- */
+#mapScreen{background:radial-gradient(ellipse at 50% 40%,#16202c,#05070a);direction:rtl;z-index:30}
+#mapScreen header{position:absolute;top:0;left:0;right:0;height:64px;display:flex;align-items:center;gap:18px;padding:0 20px;background:linear-gradient(180deg,rgba(0,0,0,.7),transparent);z-index:2}
+#mapScreen h2{font:700 26px "Reem Kufi";color:var(--gold2)}.sub{color:#8c94a3;font-size:13px}
+.back{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;padding:7px 18px;font:700 14px Cairo;cursor:pointer}
+.mapwrap{position:absolute;inset:0}
+#iraqSvg{position:absolute;inset:60px 280px 10px 260px;width:calc(100% - 540px);height:calc(100% - 70px)}
+#iraqSvg path{fill:#243142;stroke:#6e7f95;stroke-width:.012;stroke-linejoin:round;transition:fill .2s;cursor:pointer}
+#iraqSvg path:hover{fill:#37506f}
+#iraqSvg path.playable{fill:#a77a1d;stroke:#ffe08a;stroke-width:.02}
+#iraqSvg path.playable:hover{fill:#d19a26}
+#iraqSvg path.sel{fill:#4a8a62!important;stroke:#fff;stroke-width:.025}
+#iraqSvg path.playable.sel{fill:#e0a92a!important}
+#iraqSvg text{font-family:Cairo;font-weight:700;fill:#dfe6f0;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#05070a;stroke-width:.03}
+#iraqSvg .cap{fill:#ffd24a;pointer-events:none}
+.plist{position:absolute;right:14px;top:70px;bottom:14px;width:250px;padding:8px;overflow:auto;border-radius:6px}
+.plist button{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:4px;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#d7dce5;font:700 14px Cairo;cursor:pointer;text-align:right}
+.plist button:hover{background:rgba(255,255,255,.1)}.plist button.on{border-color:var(--gold2);background:rgba(242,193,78,.14);color:#fff}
+.plist em{font-style:normal;font-size:10px;padding:1px 8px;background:rgba(255,255,255,.1);color:#9aa3b2}.plist em.ok{background:rgba(61,214,100,.2);color:#6bff8f}
+.pinfo2{position:absolute;left:14px;top:70px;width:250px;padding:16px;border-radius:6px}
+.pinfo2 h3{font:700 30px "Reem Kufi";color:var(--gold2);margin-bottom:8px}.row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);color:#9aa3b2}.row b{color:#fff}.row b.ok{color:#6bff8f}.row b.no{color:#ff9a8a}
+.pinfo2 p{font-size:12.5px;color:#b7bdc9;margin:10px 0;line-height:1.7;min-height:60px}
+.confirm{width:100%;padding:12px;border:0;cursor:pointer;font:900 16px Cairo;color:#1d1203;background:linear-gradient(180deg,#fff3c0,#f5c94f 50%,#c8861a);clip-path:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%)}
+.confirm:disabled{filter:grayscale(1) brightness(.5);cursor:not-allowed}
+
+/* ---------- التحميل ---------- */
+#loading{z-index:50;background:radial-gradient(ellipse at 50% 55%,#2b1d0e,#050403 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.ltitle{font:700 clamp(40px,8vw,90px) "Reem Kufi";background:linear-gradient(180deg,#fff6c8,#f2c14e 45%,#a8741a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #2a1a02)}
+.lsub{color:#d8d0b8;font-size:16px}.lbar{width:min(480px,80vw);height:7px;background:rgba(255,255,255,.1);transform:skewX(-20deg);overflow:hidden}.lbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold3),var(--gold2),#fff3c4);transition:width .25s}
+.ltip{color:#9a927a;font-size:13px;min-height:20px}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;z-index:20;display:none;pointer-events:none;direction:rtl}
+#hud.on{display:block}
+#vignette{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(190,0,0,.75));transition:opacity .1s}
+#dmgDir{position:absolute;left:50%;top:50%;width:6px;height:min(30vh,200px);margin-top:calc(min(30vh,200px)/-2 - 0px);opacity:0;background:linear-gradient(0deg,transparent,rgba(255,40,30,.9) 70%,transparent);transform-origin:center;filter:blur(2px)}
+.hud-top{position:absolute;top:calc(8px + env(safe-area-inset-top));left:0;right:0;display:flex;justify-content:center;align-items:flex-start;gap:14px}
+.counts{display:flex;gap:4px}.counts div{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.14);padding:2px 14px;text-align:center;min-width:62px}.counts b{display:block;font-size:20px;line-height:1.1}.counts small{font-size:10px;color:#aab}
+#compass{width:min(400px,50vw);height:40px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.45),transparent)}
+#zoneBox{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.55);border:1px solid rgba(58,168,255,.6);padding:5px 12px;font-size:12px;font-weight:700;color:#bfe3ff}#zoneBox i{width:10px;height:10px;border-radius:50%;border:2px solid #3aa8ff}
+#zoneBox.danger{border-color:var(--red);color:#ffb0a8;animation:blink .8s infinite}@keyframes blink{50%{background:rgba(255,40,30,.35)}}
+#minimap{position:absolute;left:14px;top:calc(10px + env(safe-area-inset-top));width:150px;height:150px;border-radius:50%;border:3px solid rgba(255,255,255,.75);box-shadow:0 0 0 2px rgba(0,0,0,.6),0 6px 20px rgba(0,0,0,.6)}
+#killfeed{position:absolute;right:14px;top:70px;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.kf{background:rgba(0,0,0,.55);border-right:3px solid var(--gold2);padding:3px 12px;font-size:13px;font-weight:700;animation:fi .25s}@keyframes fi{from{transform:translateX(30px);opacity:0}}
+#zoneWarn{position:absolute;top:92px;left:50%;transform:translateX(-50%);padding:5px 20px;background:rgba(190,20,10,.8);font-weight:900;display:none}#zoneWarn.show{display:block}
+#toast{position:absolute;top:22%;left:50%;transform:translateX(-50%);padding:6px 24px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.7),transparent);font-weight:700;font-size:16px;opacity:0;transition:opacity .25s;text-shadow:0 2px 4px #000}#toast.show{opacity:1}
+#crosshair{position:absolute;left:50%;top:50%;width:0;height:0;--sp:3px}
+#crosshair i{position:absolute;background:#fff;box-shadow:0 0 2px #000;transition:all .06s}
+#crosshair i:nth-child(1){width:2px;height:8px;left:-1px;top:calc(-8px - var(--sp))}#crosshair i:nth-child(2){width:2px;height:8px;left:-1px;top:var(--sp)}
+#crosshair i:nth-child(3){height:2px;width:8px;top:-1px;left:calc(-8px - var(--sp))}#crosshair i:nth-child(4){height:2px;width:8px;top:-1px;left:var(--sp)}
+#crosshair b{position:absolute;width:3px;height:3px;left:-1.5px;top:-1.5px;background:#ff3b30;border-radius:50%}
+#crosshair.ads i{opacity:0}
+#hitmark{position:absolute;left:50%;top:50%;opacity:0}#hitmark i{position:absolute;width:3px;height:11px;background:#fff;left:-1.5px;top:-5.5px}
+#hitmark i:nth-child(1){transform:rotate(45deg) translateY(-12px)}#hitmark i:nth-child(2){transform:rotate(-45deg) translateY(-12px)}#hitmark i:nth-child(3){transform:rotate(135deg) translateY(-12px)}#hitmark i:nth-child(4){transform:rotate(-135deg) translateY(-12px)}
+#hitmark.head i{background:#ff3b30}
+.hp{position:absolute;left:min(22vw,200px);bottom:calc(18px + env(safe-area-inset-bottom));width:min(300px,38vw)}
+.hpb{height:12px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.3);transform:skewX(-20deg);overflow:hidden}.hpb i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#3dd664,#a8ff7a);transition:width .15s}.hpb i.low{background:linear-gradient(90deg,#d62a1f,#ff6a4a)}
+.hp span{font:900 24px Cairo;text-shadow:0 2px 3px #000}.hp small{margin-right:8px;color:#aab;font-size:11px}
+.ammo{position:absolute;right:min(12vw,150px);bottom:calc(16px + env(safe-area-inset-bottom));text-align:center;text-shadow:0 2px 4px #000;direction:ltr}
+.ammo b{font:900 54px Cairo;line-height:1}.ammo u{text-decoration:none;font-size:30px;color:#999;margin:0 4px}.ammo span{font:700 28px Cairo;color:#bbb}.ammo small{display:block;font-size:11px;color:var(--gold2);letter-spacing:.1em}
+.ammo.low b{color:var(--red)}
+#hint{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:6px 18px;font-size:12px;opacity:0;transition:opacity .5s;white-space:nowrap}#hint.show{opacity:1}
+#lockPrompt{position:absolute;inset:0;display:none;place-items:center;font:900 28px Cairo;text-shadow:0 3px 8px #000;background:rgba(0,0,0,.35)}#lockPrompt.show{display:grid}
+.tbtn{position:absolute;pointer-events:auto;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.5);color:#fff;font-size:26px;display:none;place-items:center;backdrop-filter:blur(3px)}
+@media (pointer:coarse){.tbtn{display:grid}#hint{display:none}}
+#bFire{right:calc(14px + env(safe-area-inset-right));bottom:70px;width:92px;height:92px;background:rgba(255,70,50,.3);border-color:rgba(255,120,100,.9);font-size:34px}
+#bAds{right:130px;bottom:150px}#bJump{right:130px;bottom:40px}#bReload{right:24px;bottom:180px;width:58px;height:58px}
+.tbtn.menu{left:auto;right:12px;top:12px;width:40px;height:40px;font-size:16px;display:grid}
+#joyBase{position:absolute;left:30px;bottom:50px;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.06);opacity:.35;display:none}
+@media (pointer:coarse){#joyBase{display:block}}
+#joyKnob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.4)}
+
+#endScreen{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:radial-gradient(ellipse at center,rgba(0,0,0,.55),rgba(0,0,0,.92));direction:rtl}
+#endScreen.show{display:grid;animation:fi2 .6s}@keyframes fi2{from{opacity:0}}
+.endc{text-align:center;padding:20px}#endTitle{font:700 clamp(40px,8vw,84px) "Reem Kufi"}#endTitle.win{color:var(--gold2);text-shadow:0 0 30px rgba(242,193,78,.6)}#endTitle.lose{color:#ff6a5a}
+#endSub{color:#cfd3da;margin:4px 0 22px}.stats{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}.stats div{background:rgba(255,255,255,.07);border:1px solid var(--line);padding:12px 26px;min-width:110px}.stats b{display:block;font:900 30px Cairo;color:var(--gold2)}.stats small{color:#aab;font-size:12px}
+.eb{display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap}.ghost{padding:12px 28px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.3);color:#fff;font:700 15px Cairo;cursor:pointer}
+#modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(0,0,0,.6)}#modal.hidden{display:none}.mc{padding:24px 30px;text-align:center;max-width:min(380px,86vw);direction:rtl}.mc h3{color:var(--gold2);font:700 24px "Reem Kufi";margin-bottom:8px}.mc p{color:#cfd3da;font-size:14px;margin-bottom:16px;line-height:1.7}
+
+@media (max-width:900px),(max-height:520px){
+  .tabs button{min-width:46px;padding:5px 6px}.tabs span{display:none}.chip{min-width:80px;font-size:12px}.left{display:none}.right{width:min(230px,36vw)}.mapthumb{width:64px;height:64px}.mt b{font-size:18px}
+  .nametag{display:none}.profile .pid{display:none}.start{min-width:150px}#iraqSvg{inset:56px 10px 150px 10px;width:calc(100% - 20px);height:calc(100% - 210px)}.plist{display:none}.pinfo2{top:auto;bottom:8px;left:8px;right:8px;width:auto;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.pinfo2 h3{font-size:22px;margin:0}.pinfo2 p{display:none}.pinfo2 .row{border:0}.confirm{width:auto;padding:8px 24px}
+}

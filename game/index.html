@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>لعبة عراقية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Reem+Kufi:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<!-- ============ اللوبي ============ -->
+<div id="lobby" class="screen">
+  <div class="top">
+    <div class="profile">
+      <div class="ava"><svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm-8 9c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5z"/></svg><span class="lvl" id="pLvl">1</span></div>
+      <div class="pinfo"><div class="pname" id="pName">لاعب_عراقي</div><div class="xp"><i id="pXp"></i></div><div class="pid">ID 5120847 · <span id="pRank">المستوى: مجنّد</span></div></div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-t="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/></svg><span>الرئيسية</span></button>
+      <button data-t="weapons"><svg viewBox="0 0 24 24"><path d="M2 11h12l2-2h6v3h-4l-1 2h-3l-1 4H8l1-4H2z"/></svg><span>الأسلحة</span></button>
+      <button data-t="team"><svg viewBox="0 0 24 24"><path d="M8 11a3 3 0 100-6 3 3 0 000 6zm8 0a3 3 0 100-6 3 3 0 000 6zM2 20c0-3 3-5 6-5s6 2 6 5zm12 0c0-1 .4-2 1-3 .6-.2 1.3-.3 2-.3 3 0 5 1.7 5 4.3z"/></svg><span>الفريق</span></button>
+      <button data-t="shop"><svg viewBox="0 0 24 24"><path d="M6 8h12l1 13H5zM9 8V6a3 3 0 016 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>المتجر</span></button>
+      <button data-t="missions"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3"/></svg><span>المهام</span></button>
+    </nav>
+    <div class="cur">
+      <div class="chip"><i class="coin"></i><b id="pCoins">1,000</b><u>+</u></div>
+      <div class="chip"><i class="gem"></i><b id="pGems">50</b><u>+</u></div>
+      <button class="ibtn" id="btnMail"><svg viewBox="0 0 24 24"><path d="M3 5h18v14H3zm0 0l9 8 9-8" fill="none" stroke="currentColor" stroke-width="2"/></svg><em></em></button>
+      <button class="ibtn" id="btnSet"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 5v-2l-2.1-.6a7 7 0 00-.7-1.7l1.1-1.9-1.4-1.4-1.9 1.1a7 7 0 00-1.7-.7L13 3h-2l-.6 2.1a7 7 0 00-1.7.7L6.8 4.7 5.4 6.1l1.1 1.9a7 7 0 00-.7 1.7L3.7 11v2l2.1.6c.2.6.4 1.2.7 1.7l-1.1 1.9 1.4 1.4 1.9-1.1c.5.3 1.1.6 1.7.7L11 21h2l.6-2.1c.6-.2 1.2-.4 1.7-.7l1.9 1.1 1.4-1.4-1.1-1.9c.3-.5.6-1.1.7-1.7z"/></svg></button>
+    </div>
+  </div>
+
+  <aside class="left">
+    <div class="glass ev"><div class="evh"><b>مهمة اليوم</b><span class="tag">يومي</span></div><p>أطِح بـ 5 أعداء في بغداد</p><div class="bar"><i id="mProg" style="width:0%"></i></div><small><span id="mCnt">0</span> / 5 · المكافأة 🪙 200</small></div>
+    <div class="glass ev"><div class="evh"><b>فعالية: درع الرافدين</b><span class="tag hot">جديد</span></div><p>اربح مباراة واحدة لتفتح زيّ «الأسد الذهبي»</p><div class="bar"><i id="mProg2" style="width:0%"></i></div><small><span id="mCnt2">0</span> / 1</small></div>
+    <div class="weapon glass">
+      <div class="wh"><b>M4A1</b><span>بندقية هجومية · 5.56</span></div>
+      <div class="stat"><span>الضرر</span><div><i style="width:62%"></i></div></div>
+      <div class="stat"><span>المدى</span><div><i style="width:70%"></i></div></div>
+      <div class="stat"><span>الثبات</span><div><i style="width:66%"></i></div></div>
+      <div class="stat"><span>معدل الإطلاق</span><div><i style="width:80%"></i></div></div>
+      <div class="att"><em>كاتم</em><em>منظار هولوغرافي</em><em>قبضة</em><em>ليزر</em></div>
+    </div>
+  </aside>
+
+  <aside class="right">
+    <div class="glass mode" id="modeCard">
+      <div class="mapthumb"><svg id="thumbSvg" viewBox="0 0 100 100"></svg><span class="pin"></span></div>
+      <div class="mt"><small>الخريطة</small><b id="mapName">بغداد</b><span class="live">متاح الآن</span></div>
+      <div class="mchg">تغيير ›</div>
+    </div>
+    <div class="glass modes">
+      <div class="mrow" id="modeRow"><button class="on" data-m="solo">فردي</button><button data-m="duo">ثنائي</button><button data-m="squad">فريق</button></div>
+      <div class="mrow small"><span>المنظور</span><b>شخص أول</b></div>
+      <div class="mrow small"><span>اللاعبون</span><b>16</b></div>
+    </div>
+  </aside>
+
+  <div class="squad" id="squad">
+    <div class="slot me"><div class="sa"><svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm-8 9c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5z"/></svg></div><small>أنت</small></div>
+    <div class="slot"><div class="sa plus">+</div><small>دعوة</small></div>
+    <div class="slot"><div class="sa plus">+</div><small>دعوة</small></div>
+  </div>
+  <div class="nametag"><b>الرقيب · قوات مكافحة الإرهاب</b><small>اسحب لتدوير الشخصية</small></div>
+
+  <button class="start" id="btnStart"><span class="stt">ابدأ</span><small id="startSub">بغداد · فردي</small></button>
+  <div class="ver">v0.2.0 · نسخة تجريبية</div>
+</div>
+
+<!-- ============ خريطة المحافظات ============ -->
+<div id="mapScreen" class="screen hidden">
+  <header><button class="back" id="mapBack">‹ رجوع</button><h2>اختر المحافظة</h2><span class="sub">خريطة العراق — 18 محافظة</span></header>
+  <div class="mapwrap">
+    <svg id="iraqSvg" preserveAspectRatio="xMidYMid meet"></svg>
+    <aside class="plist glass" id="plist"></aside>
+    <div class="pinfo2 glass" id="pinfo">
+      <h3 id="piName">بغداد</h3><div class="row"><span>المركز</span><b id="piCap">بغداد</b></div>
+      <div class="row"><span>الحالة</span><b id="piState" class="ok">متاح للعب</b></div>
+      <p id="piDesc"></p>
+      <button class="confirm" id="piBtn">اعتماد الخريطة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ شاشة التحميل ============ -->
+<div id="loading" class="screen hidden">
+  <div class="ltitle">لعبة عراقية</div>
+  <div class="lsub" id="lMsg">جارِ إنزال القوات في بغداد…</div>
+  <div class="lbar"><i id="lFill"></i></div>
+  <div class="ltip" id="lTip"></div>
+</div>
+
+<!-- ============ واجهة اللعب ============ -->
+<div id="hud">
+  <div id="vignette"></div><div id="dmgDir"></div>
+  <div class="hud-top">
+    <div class="counts"><div><b id="alive">16</b><small>أحياء</small></div><div><b id="kills">0</b><small>إطاحات</small></div></div>
+    <canvas id="compass" width="400" height="40"></canvas>
+    <div id="zoneBox"><i></i><span id="zoneT">—</span></div>
+  </div>
+  <canvas id="minimap" width="170" height="170"></canvas>
+  <div id="killfeed"></div>
+  <div id="zoneWarn">⚠ أنت خارج المنطقة الآمنة</div>
+  <div id="toast"></div>
+  <div id="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+  <div id="hitmark"><i></i><i></i><i></i><i></i></div>
+  <div class="hp"><div class="hpb"><i id="hpFill"></i></div><span id="hpNum">100</span><small>الصحة</small></div>
+  <div class="ammo" id="ammoBox"><b id="mag">30</b><u>/</u><span id="reserve">120</span><small>M4A1 · 5.56</small></div>
+  <div id="hint">WASD حركة · الفأرة نظر · زر أيسر إطلاق · زر أيمن تصويب · R تعبئة · Shift ركض · Space قفز</div>
+  <div id="lockPrompt">انقر لبدء التحكم</div>
+  <div id="joyBase"><div id="joyKnob"></div></div>
+  <button class="tbtn" id="bFire">🔥</button><button class="tbtn" id="bAds">◎</button><button class="tbtn" id="bJump">⤒</button><button class="tbtn" id="bReload">↻</button>
+  <button class="tbtn menu" id="bExit">✕</button>
+</div>
+
+<div id="endScreen"><div class="endc">
+  <h1 id="endTitle">—</h1><p id="endSub"></p>
+  <div class="stats"><div><b id="sRank">#1</b><small>المركز</small></div><div><b id="sKills">0</b><small>إطاحات</small></div><div><b id="sTime">0:00</b><small>مدة البقاء</small></div><div><b id="sXp">+0</b><small>خبرة</small></div></div>
+  <div class="eb"><button class="start sm" id="btnAgain">العب مجدداً</button><button class="ghost" id="btnLobby">العودة للوبي</button></div>
+</div></div>
+
+<div id="modal" class="hidden"><div class="mc glass"><h3 id="mTitle"></h3><p id="mBody"></p><button class="ghost" id="mClose">حسناً</button></div></div>
+
+<script src="lib/three.min.js"></script>
+<script src="data/provinces.js"></script>
+<script src="js/soldier.js"></script>
+<script src="js/world.js"></script>
+<script src="js/game.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

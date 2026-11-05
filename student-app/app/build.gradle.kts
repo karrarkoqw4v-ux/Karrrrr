@@ -31,6 +31,8 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    // مكتبات native مكررة بين ML Kit و Tesseract
+    packaging { jniLibs { pickFirsts += listOf("**/libjpeg.so", "**/libpng.so") } }
 }
 
 dependencies {

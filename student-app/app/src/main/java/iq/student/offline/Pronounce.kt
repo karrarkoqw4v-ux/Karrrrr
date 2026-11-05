@@ -69,6 +69,9 @@ object Pronounce {
         return key.map { letters[it] ?: "" }.joinToString("")
     }
 
-    suspend fun sentence(ctx: Context, text: String): String =
-        text.split(Regex("\\s+")).filter { it.isNotBlank() }.joinToString(" ") { word(ctx, it) }.trim()
+    suspend fun sentence(ctx: Context, text: String): String {
+        val out = mutableListOf<String>()
+        for (w in text.split(Regex("\\s+"))) if (w.isNotBlank()) out += word(ctx, w)
+        return out.joinToString(" ").trim()
+    }
 }

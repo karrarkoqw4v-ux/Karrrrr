@@ -14,47 +14,45 @@ import iq.student.data.Prefs
 import iq.student.ui.components.*
 import iq.student.ui.theme.AppColors
 import iq.student.ui.theme.dimens
+import iq.student.util.rememberSpeaker
 
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onChangeGrade: () -> Unit, onLogout: () -> Unit) {
-    var key by remember { mutableStateOf(Prefs.apiKey) }
-    var model by remember { mutableStateOf(Prefs.model) }
+    val speaker = rememberSpeaker()
     var rate by remember { mutableFloatStateOf(Prefs.ttsRate) }
-    var show by remember { mutableStateOf(false) }
+    var base by remember { mutableStateOf(Prefs.ministryBase) }
     var saved by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().background(AppColors.Bg)) {
         ScreenHeader("الإعدادات", onBack)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = dimens.pad).padding(top = 8.dp, bottom = 24.dp)) {
-            Text("الذكاء الاصطناعي", style = MaterialTheme.typography.titleMedium, color = AppColors.Ink)
-            Spacer(Modifier.height(10.dp))
-            AppCard(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
-                    AppField("مفتاح الخدمة (API key)", key, { key = it; saved = false }, Icons.Outlined.Lock, placeholder = "sk-ant-...",
-                        trailing = Icons.Outlined.Visibility, onTrailing = { show = !show }, password = true, showText = show)
-                    Spacer(Modifier.height(6.dp))
-                    Text("المفتاح يُحفظ على جهازك فقط ويُرسل لخدمة Claude حتى يشتغل الماسح والترجمة والحل.",
-                        style = MaterialTheme.typography.labelSmall, color = AppColors.Muted)
-                    Spacer(Modifier.height(12.dp))
-                    AppField("اسم الموديل", model, { model = it; saved = false }, Icons.Outlined.Memory, placeholder = Prefs.DEFAULT_MODEL)
-                    Spacer(Modifier.height(14.dp))
-                    AppButton(if (saved) "انحفظ" else "حفظ", {
-                        Prefs.apiKey = key; Prefs.model = model; saved = true
-                    }, icon = Icons.Outlined.Check)
-                }
-            }
-            Spacer(Modifier.height(20.dp))
             Text("القراءة الصوتية", style = MaterialTheme.typography.titleMedium, color = AppColors.Ink)
             Spacer(Modifier.height(10.dp))
             AppCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
                     Text("سرعة القراءة", style = MaterialTheme.typography.bodyMedium, color = AppColors.Ink)
-                    Slider(value = rate, onValueChange = { rate = it; Prefs.ttsRate = it }, valueRange = 0.5f..1.5f,
-                        colors = SliderDefaults.colors(thumbColor = AppColors.Primary, activeTrackColor = AppColors.Primary))
+                    Slider(
+                        value = rate, onValueChange = { rate = it; Prefs.ttsRate = it }, valueRange = 0.5f..1.5f,
+                        colors = SliderDefaults.colors(thumbColor = AppColors.Primary, activeTrackColor = AppColors.Primary),
+                    )
                     Row {
                         Text("بطيئة", style = MaterialTheme.typography.labelSmall, color = AppColors.Faint, modifier = Modifier.weight(1f))
                         Text("سريعة", style = MaterialTheme.typography.labelSmall, color = AppColors.Faint)
                     }
+                    Spacer(Modifier.height(10.dp))
+                    AppButton("جرّب الصوت", { speaker.speak("مرحباً بك في تطبيق طالب العراق", speaker.arabic) }, icon = Icons.Outlined.VolumeUp, outlined = true)
+                }
+            }
+            Spacer(Modifier.height(20.dp))
+            Text("بنك الأسئلة الوزارية (اختياري)", style = MaterialTheme.typography.titleMedium, color = AppColors.Ink)
+            Spacer(Modifier.height(10.dp))
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    AppField("رابط مجلد ملفات الأسئلة", base, { base = it; saved = false }, Icons.Outlined.Public, placeholder = "https://...")
+                    Spacer(Modifier.height(6.dp))
+                    Text("ملفات بصيغة مادة_سنة_دور.json مثل chemistry_2024_1.json. تُجلب عند توفر الإنترنت.", style = MaterialTheme.typography.labelSmall, color = AppColors.Muted)
+                    Spacer(Modifier.height(12.dp))
+                    AppButton(if (saved) "انحفظ" else "حفظ", { Prefs.ministryBase = base; saved = true }, icon = Icons.Outlined.Check)
                 }
             }
             Spacer(Modifier.height(20.dp))

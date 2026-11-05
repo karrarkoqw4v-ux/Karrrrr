@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import iq.student.data.Catalog
 import iq.student.data.Prefs
 import iq.student.data.Section
+import iq.student.ui.components.Entrance
 import iq.student.ui.components.ScreenHeader
 import iq.student.ui.components.SectionCard
 import iq.student.ui.theme.AppColors
@@ -27,10 +28,12 @@ fun SubjectScreen(subjectId: String, onBack: () -> Unit, onSection: (Section) ->
             Text("شنو تريد تسوي؟", style = MaterialTheme.typography.titleLarge, color = AppColors.Ink)
             Spacer(Modifier.height(14.dp))
             subject?.let { s ->
-                Catalog.sectionsFor(s.kind).forEach { sec ->
-                    SectionCard(sec.icon, sec.title, sec.sub, sec.tone, action = if (sec.typed) "اكتب" else "امسح") {
-                        ScanSession.subjectId = s.id
-                        onSection(sec)
+                Catalog.sectionsFor(s.kind).forEachIndexed { i, sec ->
+                    Entrance(i) {
+                        SectionCard(sec.icon, sec.title, sec.sub, sec.tone, action = if (sec.typed) "اكتب" else "امسح") {
+                            ScanSession.subjectId = s.id
+                            onSection(sec)
+                        }
                     }
                     Spacer(Modifier.height(14.dp))
                 }

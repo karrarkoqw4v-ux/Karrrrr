@@ -1,19 +1,19 @@
 package iq.student.nav
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import iq.student.data.AiTask
 import iq.student.data.Catalog
-import iq.student.data.Handouts
 import iq.student.data.Prefs
+import iq.student.data.StudyTask
 import iq.student.ui.screens.*
-import iq.student.util.Books
 
 object Route {
     const val Login = "login"
@@ -29,24 +29,30 @@ object Route {
     const val Pdf = "pdf/{key}"
     const val PdfUrl = "pdfurl?u={u}"
     const val Ministry = "ministry"
+    const val MinistrySubject = "ministry/{subject}"
+    const val Qa = "qa/{subject}/{year}/{round}/{index}"
     const val Handout = "handout/{id}"
+    const val Web = "web"
     const val Settings = "settings"
     const val Tab = "tab/{name}"
 }
 
-private fun task(s: String?) = AiTask.entries.firstOrNull { it.name == s } ?: AiTask.Ask
+private const val SITE = "https://mlazemna.com/"
 
-private fun scanTitle(t: AiTask) = when (t) {
-    AiTask.TranslateText -> "ترجمة النصوص"
-    AiTask.TranslatePronounce -> "ترجمة مع النطق"
-    AiTask.MathSimple -> "حل مسائل بالصورة"
-    AiTask.MathExplain -> "حل وشرح المسألة"
-    AiTask.SciencePage -> "مسح الصفحة"
-    AiTask.ScienceSolve -> "حل المسائل"
-    AiTask.BioExplain -> "شرح الدرس"
-    AiTask.BioDiagram -> "الرسومات والتسميات"
-    else -> "مسح الصفحة"
+private fun task(s: String?) = StudyTask.entries.firstOrNull { it.name == s } ?: StudyTask.ReadPage
+
+private fun scanTitle(t: StudyTask) = when (t) {
+    StudyTask.TranslateText -> "ترجمة النصوص"
+    StudyTask.TranslatePronounce -> "ترجمة مع النطق"
+    StudyTask.MathSimple -> "حل مسائل بالصورة"
+    StudyTask.MathExplain -> "حل وشرح المسألة"
+    StudyTask.ScienceSolve -> "حل المسائل"
+    StudyTask.SciencePage -> "مسح الصفحة"
+    StudyTask.PageAnswers -> "أسئلة الصفحة"
+    else -> "قراءة الصفحة"
 }
+
+private val ease = tween<Float>(340, easing = FastOutSlowInEasing)
 
 @Composable
 fun AppNav() {
@@ -56,7 +62,14 @@ fun AppNav() {
         Prefs.gradeId == null -> Route.Grades
         else -> Route.Home
     }
-    NavHost(nav, startDestination = start) {
+    NavHost(
+        nav, startDestination = start,
+        // انتقال سلس: الشاشة الجديدة تنزلق من اليسار (اتجاه RTL) مع تلاشي، والقديمة تتراجع قليلاً
+        enterTransition = { slideInHorizontally(tween(340, easing = FastOutSlowInEasing)) { -it / 3 } + fadeIn(ease) + scaleIn(ease, initialScale = 0.96f) },
+        exitTransition = { slideOutHorizontally(tween(340, easing = FastOutSlowInEasing)) { it / 6 } + fadeOut(ease) },
+        popEnterTransition = { slideInHorizontally(tween(340, easing = FastOutSlowInEasing)) { it / 6 } + fadeIn(ease) },
+        popExitTransition = { slideOutHorizontally(tween(340, easing = FastOutSlowInEasing)) { -it / 3 } + fadeOut(ease) + scaleOut(ease, targetScale = 0.96f) },
+    ) {
         composable(Route.Login) {
             LoginScreen(
                 onDone = { needsGrade -> nav.navigate(if (needsGrade) Route.Grades else Route.Home) { popUpTo(Route.Login) { inclusive = true } } },
@@ -90,7 +103,7 @@ fun AppNav() {
             val t = task(e.arguments?.getString("task"))
             CaptureScreen(
                 title = scanTitle(t),
-                hint = if (t == AiTask.TranslateText || t == AiTask.TranslatePronounce) "صوّر الصفحة كلها أو الجزء المطلوب" else "صوّر المسألة أو الصفحة بوضوح",
+                hint = "صوّر الصفحة أو المسألة بوضوح وإضاءة جيدة",
                 onBack = { nav.popBackStack() },
                 onCaptured = { nav.navigate("crop/${t.name}") },
             )
@@ -101,14 +114,10 @@ fun AppNav() {
         }
         composable(Route.Result) { e ->
             val t = task(e.arguments?.getString("task"))
-            ResultScreen(
-                t, onBack = { nav.popBackStack() },
-                onAgain = { nav.popBackStack(Route.Scan, inclusive = false) },
-                onSettings = { nav.navigate(Route.Settings) },
-            )
+            ResultScreen(t, onBack = { nav.popBackStack() }, onAgain = { nav.popBackStack(Route.Scan, inclusive = false) })
         }
         composable(Route.Typed) { e ->
-            TypedScreen(task(e.arguments?.getString("task")), onBack = { nav.popBackStack() }, onSettings = { nav.navigate(Route.Settings) })
+            TypedScreen(task(e.arguments?.getString("task")), onBack = { nav.popBackStack() })
         }
         composable(Route.Library) {
             LibraryScreen(onBack = { nav.popBackStack() }, onOpen = { nav.navigate("pdf/$it") })
@@ -124,11 +133,35 @@ fun AppNav() {
             PdfScreen("الملزمة", if (u.isBlank()) null else "url:$u", onBack = { nav.popBackStack() })
         }
         composable(Route.Ministry) {
-            MinistryScreen(onBack = { nav.popBackStack() }, onOpen = { nav.navigate("handout/$it") })
+            MinistryScreen(
+                onBack = { nav.popBackStack() },
+                onSubject = { nav.navigate("ministry/$it") },
+                onOpenHandout = { nav.navigate("handout/$it") },
+                onSite = { nav.navigate(Route.Web) },
+            )
+        }
+        composable(Route.MinistrySubject) { e ->
+            val sub = e.arguments?.getString("subject").orEmpty()
+            MinistrySubjectScreen(sub, onBack = { nav.popBackStack() }, onQuestion = { y, r, i -> nav.navigate("qa/$sub/$y/$r/$i") })
+        }
+        composable(
+            Route.Qa,
+            arguments = listOf(
+                navArgument("year") { type = NavType.IntType }, navArgument("round") { type = NavType.IntType },
+                navArgument("index") { type = NavType.IntType },
+            ),
+        ) { e ->
+            MinistryQaScreen(
+                e.arguments?.getString("subject").orEmpty(), e.arguments?.getInt("year") ?: 2026,
+                e.arguments?.getInt("round") ?: 1, e.arguments?.getInt("index") ?: 0, onBack = { nav.popBackStack() },
+            )
         }
         composable(Route.Handout) { e ->
             HandoutDetailScreen(e.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() },
                 onView = { url -> nav.navigate("pdfurl?u=${android.net.Uri.encode(url)}") })
+        }
+        composable(Route.Web) {
+            WebScreen(SITE, "ملازم", onBack = { nav.popBackStack() }, onPdf = { url -> nav.navigate("pdfurl?u=${android.net.Uri.encode(url)}") })
         }
         composable(Route.Settings) {
             SettingsScreen(
@@ -145,7 +178,7 @@ private fun tabNav(nav: NavHostController, index: Int) {
     when (index) {
         0 -> {}
         1 -> nav.navigate(Route.Library)
-        2 -> nav.navigate("typed/${AiTask.Ask.name}")
+        2 -> nav.navigate(Route.Web)
         3 -> nav.navigate("tab/progress")
         4 -> nav.navigate(Route.Settings)
     }

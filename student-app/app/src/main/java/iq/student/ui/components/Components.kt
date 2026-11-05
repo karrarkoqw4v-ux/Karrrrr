@@ -41,10 +41,10 @@ fun AppButton(
         modifier = modifier
             .fillMaxWidth()
             .height(dimens.buttonHeight)
+            .bounceClick(onClick = onClick)
             .clip(shape)
             .background(bg)
-            .then(if (outlined) Modifier.border(1.2.dp, AppColors.Line, shape) else Modifier)
-            .clickable(onClick = onClick),
+            .then(if (outlined) Modifier.border(1.2.dp, AppColors.Line, shape) else Modifier),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -100,23 +100,24 @@ fun AppField(
     }
 }
 
-/** مربع أيقونة ملوّن (outline على خلفية فاتحة) */
+/** أيقونة واضحة: مربع ملوّن بتدرج + أيقونة بيضاء كبيرة */
 @Composable
 fun IconTile(icon: ImageVector, tone: Tone, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = dimens.iconTile) {
     Box(
-        modifier.size(size).clip(RoundedCornerShape(dimens.iconTileRadius)).background(tone.soft),
+        modifier.size(size).clip(RoundedCornerShape(size * 0.3f))
+            .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(tone.fg, tone.fg.copy(alpha = 0.78f)))),
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, null, tint = tone.fg, modifier = Modifier.size(size * 0.5f)) }
+    ) { Icon(icon, null, tint = Color.White, modifier = Modifier.size(size * 0.56f)) }
 }
 
 @Composable
 fun AppChip(text: String, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
     Box(
-        Modifier.height(36.dp).clip(shape)
+        Modifier.height(36.dp).bounceClick(onClick = onClick).clip(shape)
             .background(if (selected) AppColors.Primary else AppColors.Surface)
             .then(if (selected) Modifier else Modifier.border(1.dp, AppColors.Line, shape))
-            .clickable(onClick = onClick).padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
@@ -145,9 +146,8 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)?) {
         Text(title, style = MaterialTheme.typography.titleLarge, color = AppColors.Ink, textAlign = TextAlign.Center)
         if (onBack != null) {
             Box(
-                Modifier.align(Alignment.CenterStart).size(dimens.touchMin).clip(CircleShape)
-                    .background(AppColors.Surface).border(1.dp, AppColors.Line, CircleShape)
-                    .clickable(onClick = onBack),
+                Modifier.align(Alignment.CenterStart).size(dimens.touchMin).bounceClick(onClick = onBack).clip(CircleShape)
+                    .background(AppColors.Surface).border(1.dp, AppColors.Line, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 // في RTL يشير السهم لليمين تلقائياً (AutoMirrored)
@@ -161,8 +161,8 @@ data class NavItem(val icon: ImageVector, val label: String)
 
 val NavItems = listOf(
     NavItem(Icons.Outlined.Home, "الرئيسية"),
-    NavItem(Icons.Outlined.GridView, "الأدوات"),
-    NavItem(Icons.Outlined.ChatBubbleOutline, "المساعد"),
+    NavItem(Icons.Outlined.MenuBook, "الكتب"),
+    NavItem(Icons.Outlined.Description, "الملازم"),
     NavItem(Icons.Outlined.BarChart, "تقدمي"),
     NavItem(Icons.Outlined.Person, "حسابي"),
 )
@@ -176,14 +176,14 @@ fun AppBottomBar(selected: Int, onSelect: (Int) -> Unit) {
         ) {
             NavItems.forEachIndexed { i, item ->
                 val on = i == selected
-                val col = if (on) AppColors.Primary else AppColors.Faint
+                val col by androidx.compose.animation.animateColorAsState(if (on) AppColors.Primary else AppColors.Faint, label = "navcol")
                 Column(
-                    Modifier.weight(1f).clickable { onSelect(i) },
+                    Modifier.weight(1f).bounceClick { onSelect(i) },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
                         Modifier.clip(RoundedCornerShape(14.dp))
-                            .background(if (on) AppColors.PrimarySoft else Color.Transparent)
+                            .background(androidx.compose.animation.animateColorAsState(if (on) AppColors.PrimarySoft else Color.Transparent, label = "navbg").value)
                             .padding(horizontal = 18.dp, vertical = 5.dp),
                     ) { Icon(item.icon, null, tint = col, modifier = Modifier.size(dimens.iconNav)) }
                     Spacer(Modifier.height(2.dp))

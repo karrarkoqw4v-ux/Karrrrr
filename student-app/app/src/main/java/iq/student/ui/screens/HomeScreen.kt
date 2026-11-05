@@ -58,12 +58,14 @@ fun HomeScreen(
                     val n = Catalog.sectionsFor(s.kind).size
                     add(Entry(s.id, s.icon, s.title, if (n == 1) "قسم واحد" else "$n أقسام", s.tone) { onSubject(s.id) })
                 }
-                if (grade?.id == "m3") add(Entry("ministry", Icons.Outlined.Quiz, "الوزاريات", "ملازم المدرسين", Tone.Rose, onMinistry))
+                if (grade?.id == "m3") add(Entry("ministry", Icons.Outlined.Quiz, "الوزاريات", "أسئلة 2011 - 2026 وملازم", Tone.Rose, onMinistry))
                 add(Entry("library", Icons.Outlined.MenuBook, "مكتبة الكتب", "كتب المنهج PDF", Tone.Blue, onLibrary))
             }
-            entries.chunked(2).forEach { row ->
+            entries.chunked(2).forEachIndexed { r, row ->
                 Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    row.forEach { e -> SubjectCard(e.icon, e.title, e.sub, e.tone, Modifier.weight(1f), e.action) }
+                    row.forEachIndexed { c, e ->
+                        Entrance(r * 2 + c, Modifier.weight(1f)) { SubjectCard(e.icon, e.title, e.sub, e.tone, Modifier.fillMaxWidth(), e.action) }
+                    }
                     if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }

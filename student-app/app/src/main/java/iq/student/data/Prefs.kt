@@ -27,17 +27,13 @@ object Prefs {
     var branch: String
         get() = sp.getString("branch", "sci") ?: "sci"
         set(v) { sp.edit().putString("branch", v).apply() }
-    var apiKey: String
-        get() = sp.getString("api_key", "") ?: ""
-        set(v) { sp.edit().putString("api_key", v.trim()).apply() }
-    var model: String
-        get() = sp.getString("model", DEFAULT_MODEL) ?: DEFAULT_MODEL
-        set(v) { sp.edit().putString("model", v.trim().ifEmpty { DEFAULT_MODEL }).apply() }
+    /** رابط اختياري لبنك أسئلة وزارية (ملفات JSON) يُجلب منه عند توفر الإنترنت */
+    var ministryBase: String
+        get() = sp.getString("ministry_base", "") ?: ""
+        set(v) { sp.edit().putString("ministry_base", v.trim().trimEnd('/')).apply() }
     var ttsRate: Float
         get() = sp.getFloat("tts_rate", 0.9f)
         set(v) { sp.edit().putFloat("tts_rate", v).apply() }
-
-    const val DEFAULT_MODEL = "claude-opus-5-5"
 
     val userName: String get() = currentEmail?.let { sp.getString("name_$it", "") } ?: ""
 

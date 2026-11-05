@@ -1,7 +1,6 @@
 package iq.student.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,7 +22,7 @@ import iq.student.ui.theme.dimens
 /** بطاقة مادة بالشاشة الرئيسية (عمودين) */
 @Composable
 fun SubjectCard(icon: ImageVector, title: String, sub: String, tone: Tone, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    AppCard(modifier.clip(RoundedCornerShape(dimens.radiusCard)).clickable(onClick = onClick)) {
+    AppCard(modifier.bounceClick(onClick = onClick)) {
         Row(Modifier.padding(12.dp).heightIn(min = 62.dp), verticalAlignment = Alignment.CenterVertically) {
             IconTile(icon, tone, size = 46.dp)
             Spacer(Modifier.width(10.dp))
@@ -38,7 +37,7 @@ fun SubjectCard(icon: ImageVector, title: String, sub: String, tone: Tone, modif
 /** بطاقة قسم كبيرة داخل المادة */
 @Composable
 fun SectionCard(icon: ImageVector, title: String, sub: String, tone: Tone, action: String = "ابدأ", onClick: () -> Unit) {
-    AppCard(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).clickable(onClick = onClick)) {
+    AppCard(Modifier.fillMaxWidth().bounceClick(onClick = onClick)) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconTile(icon, tone, size = 56.dp)

@@ -31,12 +31,13 @@ jobs:
           name: IraqiStudent-apk
           path: IraqiStudent.apk
       - name: Publish APK release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: student-apk-latest
-          name: طالب العراق - APK (أحدث نسخة)
-          prerelease: true
-          files: IraqiStudent.apk
-          body: |
-            نسخة تجريبية من تطبيق الطالب (أندرويد 8.0 فما فوق).
-            Commit: ${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=student-apk-latest
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --prerelease --target "${{ github.sha }}" \
+              --title "طالب العراق - APK (أحدث نسخة)" --notes "نسخة تجريبية من تطبيق الطالب"
+          fi
+          gh release upload "$TAG" IraqiStudent.apk --clobber
+          gh release edit "$TAG" --notes "نسخة تجريبية من تطبيق الطالب (أندرويد 8.0 فما فوق). Commit: ${{ github.sha }}"

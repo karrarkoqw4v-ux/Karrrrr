@@ -144,7 +144,7 @@ object Repo {
 
     fun signOut() { sp.edit().remove("cur").apply(); loggedIn = false }
 
-    fun setDark(v: Boolean) { dark = v; sp.edit().putBoolean("dark", v).apply() }
+    fun updateDark(v: Boolean) { dark = v; sp.edit().putBoolean("dark", v).apply() }
     fun flag(key: String, def: Boolean) = sp.getBoolean("f_$key", def)
     fun setFlag(key: String, v: Boolean) { sp.edit().putBoolean("f_$key", v).apply() }
 

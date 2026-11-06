@@ -128,7 +128,7 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit) {
         TopBack("الإعدادات", onBack)
         Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
             Text("المظهر", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 8.dp))
-            SettingRow(Icons.Outlined.DarkMode, "الوضع الداكن", "تغيير ألوان التطبيق", Color(0xFF3B82F6), toggle = Repo.dark, onToggle = { Repo.setDark(it) })
+            SettingRow(Icons.Outlined.DarkMode, "الوضع الداكن", "تغيير ألوان التطبيق", Color(0xFF3B82F6), toggle = Repo.dark, onToggle = { Repo.updateDark(it) })
             SettingRow(Icons.Outlined.Language, "اللغة", null, Color(0xFF0891B2), value = "العربية") { lang = true }
             Text("الخصوصية", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
             SettingRow(Icons.Outlined.Lock, "حساب خاص", "فقط من توافق عليه يشوف منشوراتك", Color(0xFF7C5CFF), toggle = priv, onToggle = { priv = it; Repo.setFlag("private", it) })

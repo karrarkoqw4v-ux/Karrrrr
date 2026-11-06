@@ -144,7 +144,7 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit) {
             SettingRow(Icons.Outlined.Image, "جرّب إشعار منشور", "منشور جديد من صديق", Color(0xFFEC4899)) { iq.quiz.data.Notifier.friendPost(Repo.appCtx, "علي حسن", 2, "غروب الشمس على دجلة") }
             SettingRow(Icons.Outlined.Call, "جرّب إشعار مكالمة", "مكالمة فيديو فائتة", Success) { iq.quiz.data.Notifier.call(Repo.appCtx, "زينب كريم", 3, true) }
             Text("المحتوى", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
-            SettingRow(Icons.Outlined.Science, "محتوى تجريبي", "أشخاص ومنشورات ورسائل وهمية لتجربة التطبيق", Color(0xFFF59E0B), toggle = Repo.demo, onToggle = { Repo.setDemo(it) })
+            SettingRow(Icons.Outlined.Science, "محتوى تجريبي", "أشخاص ومنشورات ورسائل وهمية لتجربة التطبيق", Color(0xFFF59E0B), toggle = Repo.demo, onToggle = { Repo.updateDemo(it) })
             Text("الحساب", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
             SettingRow(Icons.Outlined.Logout, "تسجيل الخروج", null, Danger) { Repo.signOut(); onLogout() }
             Text("كويز تواصلكم 0.2 - البيانات محفوظة على جهازك فقط", style = MaterialTheme.typography.labelSmall, color = p.faint, modifier = Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center)

@@ -95,7 +95,7 @@ object Repo {
         loadMessages()
     }
 
-    fun setDemo(v: Boolean) {
+    fun updateDemo(v: Boolean) {
         if (demo == v) return
         demo = v
         sp.edit().putBoolean("demo", v).apply()

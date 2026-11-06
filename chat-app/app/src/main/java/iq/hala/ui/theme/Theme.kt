@@ -46,15 +46,15 @@ val Tajawal = FontFamily(
 private fun st(size: Float, w: FontWeight, lh: Float = size * 1.5f) = TextStyle(fontFamily = Tajawal, fontSize = size.sp, fontWeight = w, lineHeight = lh.sp)
 
 val HalaTypography = Typography(
-    displaySmall = st(26f, FontWeight.ExtraBold, 36f),
-    headlineSmall = st(22f, FontWeight.ExtraBold, 30f),
-    titleLarge = st(18f, FontWeight.Bold, 26f),
-    titleMedium = st(16f, FontWeight.Bold, 24f),
-    bodyLarge = st(15f, FontWeight.Medium, 22f),
-    bodyMedium = st(14f, FontWeight.Normal, 21f),
-    labelLarge = st(15f, FontWeight.Bold, 22f),
-    labelMedium = st(12f, FontWeight.Medium, 18f),
-    labelSmall = st(11f, FontWeight.Medium, 16f),
+    displaySmall = st(28f, FontWeight.ExtraBold, 38f),
+    headlineSmall = st(24f, FontWeight.ExtraBold, 32f),
+    titleLarge = st(20f, FontWeight.Bold, 28f),
+    titleMedium = st(17f, FontWeight.Bold, 25f),
+    bodyLarge = st(16f, FontWeight.Medium, 24f),
+    bodyMedium = st(15f, FontWeight.Normal, 23f),
+    labelLarge = st(16f, FontWeight.Bold, 24f),
+    labelMedium = st(13.5f, FontWeight.Medium, 20f),
+    labelSmall = st(12.5f, FontWeight.Medium, 18f),
 )
 
 @Composable

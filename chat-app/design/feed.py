@@ -28,23 +28,29 @@ def stories(c, y, n=7):
         c.text(cx, y + 42, labels[i], 11, "m", INK if i < 5 else MUTED, "c")
 
 
-def post(c, y, idx, name, kind, likes, caption, ago, img_h=270, liked=False, saved=False):
-    c.avatar(R - 18, y + 22, 18, name, idx, ring="new" if idx % 2 == 0 else None)
-    c.text(R - 46, y + 15, name, 14, "b", INK, "r")
-    c.text(R - 46, y + 33, "بغداد - الكرخ", 11, "r", MUTED, "r")
-    c.icon("dots", L + 10, y + 22, 22, INK)
-    iy = y + 50
+def post(c, y, idx, name, kind, likes, caption, ago, img_h=250, liked=False, saved=False, comments="86", follow=True):
+    c.avatar(R - 20, y + 26, 20, name, idx, ring="new" if idx % 2 == 0 else None)
+    c.text(R - 52, y + 18, name, 14.5, "b", INK, "r")
+    c.text(R - 52, y + 38, "بغداد - الكرخ", 11, "r", MUTED, "r")
+    if follow:
+        c.rr(L + 30, y + 12, L + 100, y + 40, 14, fill=PRIMARY_SOFT)
+        c.text(L + 65, y + 26, "متابعة", 11.5, "b", PRIMARY_DARK, "c")
+    c.icon("dots", L + 10, y + 26, 22, INK)
+    iy = y + 54
     c.photo(0, iy, W, iy + img_h, kind)
-    ay = iy + img_h + 22
-    c.icon("heart-fill" if liked else "heart", R - 14, ay, 26, LIKE if liked else INK, sw=1.9)
-    c.icon("chat", R - 54, ay, 25, INK, sw=1.9)
-    c.icon("send", R - 94, ay, 25, INK, sw=1.9)
-    c.icon("bookmark", L + 14, ay, 25, PRIMARY if saved else INK, sw=1.9)
-    c.text(R, ay + 30, f"{likes} إعجاب", 13.5, "b", INK, "r")
-    c.runs(R, ay + 52, [(name + " ", INK, "b"), (caption, INK, "r")], 13.5)
-    c.text(R, ay + 74, "عرض كل التعليقات", 12.5, "r", MUTED, "r")
-    c.text(R, ay + 94, ago, 11, "r", FAINT, "r")
-    return ay + 110
+    ay = iy + img_h + 24
+    # أزرار بكلمات وأعداد
+    c.icon("heart-fill" if liked else "heart", R - 14, ay, 27, LIKE if liked else INK, sw=1.9)
+    c.text(R - 34, ay, likes, 12, "b", LIKE if liked else INK, "r", rtl=False)
+    c.icon("chat", R - 100, ay, 26, INK, sw=1.9)
+    c.text(R - 120, ay, comments, 12, "b", INK, "r", rtl=False)
+    c.icon("send", R - 176, ay, 26, INK, sw=1.9)
+    c.text(R - 196, ay, "شارك", 11, "b", INK, "r")
+    c.icon("bookmark", L + 14, ay, 26, PRIMARY if saved else INK, sw=1.9)
+    c.runs(R, ay + 32, [(name + "  ", INK, "b"), (caption, INK, "r")], 13.5)
+    c.text(R, ay + 56, "عرض كل التعليقات", 12, "m", MUTED, "r")
+    c.text(R, ay + 78, ago, 11, "r", FAINT, "r")
+    return ay + 96
 
 
 def feed():
@@ -53,7 +59,7 @@ def feed():
     c.hline(0, W, 70, LINE)
     stories(c, 118)
     c.hline(0, W, 176, LINE)
-    post(c, 184, 0, "سارة علي", 0, "1,284", "غروب الشمس على دجلة", "قبل ساعتين", img_h=300, liked=True)
+    post(c, 184, 0, "سارة علي", 0, "1,284", "غروب الشمس على دجلة", "قبل ساعتين", img_h=270, liked=True, comments="86")
     c.tabbar(0)
     return c
 
@@ -62,8 +68,8 @@ def feed2():
     c = K(BG)
     topbar(c)
     c.hline(0, W, 70, LINE)
-    post(c, 78, 3, "حسن كريم", 1, "932", "صباح الخير من الجبال", "قبل 5 ساعات", img_h=270)
-    y = post(c, 78 + 50 + 270 + 110 + 18, 2, "نور محمد", 5, "2,310", "الربيع بالحديقة", "أمس", img_h=210)
+    y = post(c, 78, 3, "حسن كريم", 1, "932", "صباح الخير من الجبال", "قبل 5 ساعات", img_h=220, comments="41")
+    post(c, y + 4, 2, "نور محمد", 5, "2,310", "الربيع بالحديقة", "أمس", img_h=150, comments="120", follow=False)
     c.tabbar(0)
     return c
 
@@ -260,7 +266,7 @@ def post_editor():
     y = c.row(y, "السماح بالتعليقات", icon="chat", toggle=True, h=52)
     y = c.row(y, "إخفاء عدد الإعجابات", icon="eye", toggle=False, h=52)
     c.text(R, y + 24, "الفلاتر", 13, "b", MUTED, "r")
-    for i, nm in enumerate(["عادي", "دافئ", "بارد", "ذهبي", "أبيض وأسود"]):
+    for i, nm in enumerate(["عادي", "دافئ", "بارد", "ذهبي", "أسود"]):
         xr = R - i * 64
         c.photo(xr - 56, y + 40, xr, y + 96, [1, 0, 3, 4, 2][i], r=10)
         c.text(xr - 28, y + 108, nm, 11, "b" if i == 0 else "m", PRIMARY_DARK if i == 0 else MUTED, "c")
@@ -279,11 +285,11 @@ def reels():
         c.icon(ic, ax, y, 30, "#FFFFFF", bg="#000000")
         if lab:
             c.text(ax, y + 24, lab, 11, "b", "#FFFFFF", "c")
-    c.avatar(R - 16, 668, 16, "ك", 5, ring="new")
-    c.text(R - 42, 660, "كرار الموسوي", 14, "b", "#FFFFFF", "r")
-    c.rr(L + 70 + 100, 650, L + 70 + 100 + 1, 651, 1, fill="#000000") if False else None
-    c.rr(R - 186, 650, R - 110, 676, 13, line="#FFFFFF", lw=1.3); c.text(R - 148, 663, "متابعة", 12, "b", "#FFFFFF", "c")
-    c.text(R, 700, "رحلة الأهوار - أجمل ما شفت", 13.5, "r", "#FFFFFF", "r")
+    c.avatar(R - 20, 660, 20, "ك", 5, ring="new")
+    c.text(R - 52, 650, "كرار الموسوي", 14.5, "b", "#FFFFFF", "r")
+    c.text(R - 52, 670, "قبل ساعة", 11, "r", "#E6EEF2", "r")
+    c.rr(L, 644, L + 92, 676, 16, line="#FFFFFF", lw=1.4); c.text(L + 46, 660, "متابعة", 12.5, "b", "#FFFFFF", "c")
+    c.text(R, 704, "رحلة الأهوار - أجمل ما شفت", 14, "m", "#FFFFFF", "r")
     c.icon("music", R - 8, 730, 16, "#FFFFFF", bg="#000000")
     c.text(R - 30, 730, "صوت أصلي - كرار", 12, "r", "#E6EEF2", "r")
     return c

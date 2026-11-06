@@ -64,19 +64,19 @@ fun MainScreen(nav: Nav) {
             }
         }
         HorizontalDivider(color = p.line)
-        Row(Modifier.fillMaxWidth().navigationBarsPadding().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
+        val labels = listOf("الرئيسية", "استكشاف", "نشر", "ريلز", "حسابي")
+        Row(Modifier.fillMaxWidth().navigationBarsPadding().height(68.dp), verticalAlignment = Alignment.CenterVertically) {
             listOf(Icons.Outlined.Home, Icons.Outlined.Search, Icons.Outlined.Add, Icons.Outlined.PlayCircleOutline, Icons.Outlined.Person).forEachIndexed { i, ic ->
                 Box(Modifier.weight(1f).fillMaxHeight().bounceClick { if (i == 2) nav.create() else tab = i }, contentAlignment = Alignment.Center) {
-                    if (i == 2) {
-                        Box(Modifier.size(width = 40.dp, height = 30.dp).clip(RoundedCornerShape(10.dp)).background(Brush.horizontalGradient(listOf(Primary, PrimaryDark))), contentAlignment = Alignment.Center) {
-                            Icon(ic, null, tint = Color.White)
-                        }
-                    } else {
-                        val c by animateColorAsState(if (tab == i) p.ink else p.faint, label = "tab")
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(ic, null, tint = c, modifier = Modifier.size(if (tab == i) 28.dp else 26.dp))
-                            Box(Modifier.padding(top = 3.dp).size(4.dp).clip(CircleShape).background(if (tab == i) Primary else Color.Transparent))
-                        }
+                    val c by animateColorAsState(if (tab == i) PrimaryDark else p.faint, label = "tab")
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (i == 2) {
+                            Box(Modifier.size(width = 44.dp, height = 32.dp).clip(RoundedCornerShape(11.dp)).background(Brush.horizontalGradient(listOf(Primary, PrimaryDark))), contentAlignment = Alignment.Center) {
+                                Icon(ic, null, tint = Color.White)
+                            }
+                        } else Icon(ic, null, tint = c, modifier = Modifier.size(if (tab == i) 29.dp else 27.dp))
+                        Spacer(Modifier.height(3.dp))
+                        Text(labels[i], style = MaterialTheme.typography.labelSmall, color = if (i == 2) p.muted else c)
                     }
                 }
             }
@@ -128,8 +128,7 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit) {
     var burst by remember { mutableStateOf(0) }
     val burstScale by animateFloatAsState(if (burst > 0) 1f else 0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow), label = "burst")
     LaunchedEffect(burst) { if (burst > 0) { delay(650); burst = 0 } }
-    val heartScale by animateFloatAsState(if (post.liked) 1.15f else 1f, spring(Spring.DampingRatioHighBouncy, Spring.StiffnessMedium), label = "heart")
-
+    
     Column(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Avatar(u.name, u.idx, 36.dp, Modifier.bounceClick { nav.user(u.id) }, if (u.id % 2 == 0) Ring.New else Ring.None)
@@ -150,18 +149,26 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit) {
             else PhotoArt(post.kind, Modifier.fillMaxSize())
             Icon(Icons.Filled.Favorite, null, tint = Color.White, modifier = Modifier.size(96.dp).graphicsLayer { scaleX = burstScale; scaleY = burstScale; alpha = burstScale })
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconBtn(if (post.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, "إعجاب", if (post.liked) Like else p.ink, 27.dp) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            PostAction(if (post.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, "${post.likes}", if (post.liked) Like else p.ink) {
                 post.liked = !post.liked; post.likes += if (post.liked) 1 else -1
             }
-            IconBtn(Icons.Outlined.ChatBubbleOutline, "تعليق", size = 25.dp) { onComments() }
-            IconBtn(Icons.Outlined.Send, "مشاركة", size = 25.dp) {}
+            PostAction(Icons.Outlined.ChatBubbleOutline, "${post.commentCount.value}", p.ink) { onComments() }
+            PostAction(Icons.Outlined.Send, "شارك", p.ink) {}
             Spacer(Modifier.weight(1f))
-            IconBtn(if (post.saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder, "حفظ", if (post.saved) Primary else p.ink, 25.dp) { post.saved = !post.saved }
+            PostAction(if (post.saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder, if (post.saved) "محفوظ" else "حفظ", if (post.saved) Primary else p.ink) { post.saved = !post.saved }
         }
-        Text("${post.likes} إعجاب", style = MaterialTheme.typography.bodyLarge, color = p.ink, modifier = Modifier.padding(horizontal = 14.dp).graphicsLayer { scaleX = heartScale; scaleY = heartScale })
         Text("${u.name}  ${post.caption}", style = MaterialTheme.typography.bodyMedium, color = p.ink, modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp))
         Text("عرض كل ${post.commentCount.value} تعليق", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.bounceClick { onComments() }.padding(horizontal = 14.dp, vertical = 4.dp))
+    }
+}
+
+@Composable
+private fun PostAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color, onClick: () -> Unit) {
+    Row(Modifier.height(44.dp).bounceClick(onClick = onClick).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, label, tint = tint, modifier = Modifier.size(26.dp))
+        Spacer(Modifier.width(5.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = tint)
     }
 }
 

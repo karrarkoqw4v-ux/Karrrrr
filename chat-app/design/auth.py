@@ -6,6 +6,20 @@ R = W - PAD
 L = PAD
 
 
+def bullets(c, y, items, title=None):
+    """قائمة نقاط توضيحية: أيقونة + عنوان + شرح"""
+    if title:
+        c.text(R, y, title, 15, "b", INK, "r")
+        y += 26
+    for ic, t, d in items:
+        c.rr(R - 44, y, R, y + 44, 14, fill=PRIMARY_SOFT)
+        c.icon(ic, R - 22, y + 22, 22, PRIMARY_DARK, bg=PRIMARY_SOFT)
+        c.text(R - 58, y + 12, t, 14, "b", INK, "r")
+        c.text(R - 58, y + 34, d, 12, "r", MUTED, "r")
+        y += 62
+    return y
+
+
 def splash():
     c = K(PRIMARY)
     c.grad(0, 0, W, H, "#12C9B1", "#075E57")
@@ -97,7 +111,8 @@ def login_error():
     y = c.input(y + 12, "", "lock", value="•••••", trailing="eye", err=True)
     c.text(L, y + 24, "نسيت كلمة المرور؟", 13, "b", PRIMARY_DARK, "l")
     c.btn(y + 52, "دخول")
-    c.text(180, y + 52 + BUTTON_H + 30, "بقيت لك 3 محاولات قبل القفل المؤقت", 12, "m", FAINT, "c")
+    c.text(180, y + 52 + BUTTON_H + 30, "بقيت لك 3 محاولات قبل القفل المؤقت", 12.5, "m", MUTED, "c")
+    bullets(c, 520, [("lock", "استعادة كلمة المرور", "اضغط نسيت كلمة المرور"), ("user", "تأكد من اسم المستخدم", "بدون مسافات أو حروف كبيرة")], "جرّب هذا")
     return c
 
 
@@ -112,6 +127,7 @@ def forgot():
     y = c.input(336, "البريد أو رقم الهاتف", "mail", focus=True, value="sara@email.com")
     c.btn(y + 22, "إرسال الرمز")
     c.text(180, y + 100, "رجوع إلى تسجيل الدخول", 14, "b", PRIMARY_DARK, "c")
+    bullets(c, 520, [("mail", "عبر البريد الإلكتروني", "نرسل لك رابط الاستعادة"), ("phone", "عبر رسالة SMS", "نرسل لك رمز من 6 أرقام"), ("info", "تحتاج مساعدة؟", "تواصل مع فريق الدعم")], "طرق الاستعادة")
     return c
 
 
@@ -167,7 +183,8 @@ def signup1():
     c.text(R - 16, 266 + FIELD_H / 2, "7701234567", 15, "m", INK, "r", rtl=False)
     c.text(R, 346, "قد نرسل لك رسالة SMS للتأكيد، وقد تطبّق رسوم الشبكة.", 11.5, "r", FAINT, "r")
     c.btn(380, "التالي")
-    c.runs(R - 58, 734, [("عندك حساب؟ ", MUTED, "r"), ("سجّل دخول", PRIMARY_DARK, "b")], 14)
+    bullets(c, 470, [("shield", "حماية حسابك", "نتأكد إنك أنت صاحب الحساب"), ("lock", "استعادة كلمة المرور", "ترجع لحسابك إذا نسيت الرمز"), ("users", "إيجاد أصحابك", "نقترح عليك ناس تعرفهم")], "ليش نطلب رقمك؟")
+    c.runs(R - 60, 748, [("عندك حساب؟ ", MUTED, "r"), ("سجّل دخول", PRIMARY_DARK, "b")], 14)
     return c
 
 
@@ -181,7 +198,14 @@ def signup2():
     for i in range(4):
         c.rr(R - (i + 1) * 80 + 4, y + 14, R - i * 80, y + 19, 2.5, fill=SUCCESS if i < 3 else LINE)
     c.text(R, y + 36, "قوية  - استخدم 8 أحرف مع رموز وأرقام", 12, "m", SUCCESS, "r")
-    c.btn(y + 66, "التالي")
+    yy = y + 66
+    c.text(R, yy, "كلمة مرور قوية تحتوي على:", 13.5, "b", INK, "r")
+    for i, (t, ok) in enumerate([("8 أحرف أو أكثر", True), ("حرف كبير وصغير", True), ("رقم واحد على الأقل", True), ("رمز مثل # أو @", False)]):
+        yb = yy + 26 + i * 30
+        c.circle(R - 11, yb + 8, 10, fill=SUCCESS if ok else LINE)
+        c.icon("check", R - 11, yb + 8, 13, "#FFFFFF", sw=2.6, bg=SUCCESS if ok else LINE)
+        c.text(R - 32, yb + 8, t, 13, "m", INK if ok else MUTED, "r")
+    c.btn(yy + 160, "التالي")
     return c
 
 
@@ -203,7 +227,11 @@ def signup3():
             c.text(cx, y + 100 + vi * 26, v, 17 if sel else 13.5, "b" if sel else "r", INK if sel else FAINT, "c", rtl=not v.isdigit())
     c.rr(L + 10, y + 150, R - 10, y + 180, 10, fill="#0FB5A01F") if False else c.hline(L + 14, R - 14, y + 140, LINE)
     c.hline(L + 14, R - 14, y + 166, LINE)
-    c.btn(y + 254, "التالي")
+    c.text(R, y + 262, "اقتراحات متاحة:", 12.5, "m", MUTED, "r")
+    x = R
+    for t in ["sara_ali", "sara.2000", "sara_baghdad"]:
+        x = c.chip(x, y + 276, t, False, h=32, size=12, pad=22)
+    c.btn(y + 330, "التالي")
     return c
 
 

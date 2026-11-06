@@ -121,6 +121,16 @@ private fun OnboardArt(page: Int) {
 }
 
 @Composable
+private fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, desc: String) {
+    val p = pal
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(p.soft), contentAlignment = Alignment.Center) { Icon(icon, null, tint = PrimaryDark, modifier = Modifier.size(22.dp)) }
+        Spacer(Modifier.width(14.dp))
+        Column { Text(title, style = MaterialTheme.typography.bodyLarge, color = p.ink); Text(desc, style = MaterialTheme.typography.labelMedium, color = p.muted) }
+    }
+}
+
+@Composable
 private fun rememberShake(trigger: Int): Animatable<Float, AnimationVector1D> {
     val s = remember { Animatable(0f) }
     LaunchedEffect(trigger) { if (trigger > 0) for (v in listOf(-16f, 14f, -10f, 8f, -4f, 0f)) s.animateTo(v, tween(55)) }
@@ -272,6 +282,12 @@ fun SignupScreen(onBack: () -> Unit, onDone: () -> Unit) {
                             }
                             Spacer(Modifier.height(14.dp))
                             HalaField(contact, { contact = it }, if (phone) "7701234567" else "name@email.com", if (phone) Icons.Outlined.PhoneAndroid else Icons.Outlined.MailOutline, error = error != null)
+                            Spacer(Modifier.height(26.dp))
+                            Text("ليش نطلب ${if (phone) "رقمك" else "بريدك"}؟", style = MaterialTheme.typography.titleMedium, color = p.ink)
+                            Spacer(Modifier.height(6.dp))
+                            InfoRow(Icons.Outlined.Shield, "حماية حسابك", "نتأكد إنك أنت صاحب الحساب")
+                            InfoRow(Icons.Outlined.Lock, "استعادة كلمة المرور", "ترجع لحسابك إذا نسيت الرمز")
+                            InfoRow(Icons.Outlined.People, "إيجاد أصحابك", "نقترح عليك ناس تعرفهم")
                         }
                         1 -> {
                             Text("اسمك وكلمة المرور", style = MaterialTheme.typography.headlineSmall, color = p.ink)
@@ -282,7 +298,16 @@ fun SignupScreen(onBack: () -> Unit, onDone: () -> Unit) {
                             HalaField(pass, { pass = it }, "كلمة المرور", Icons.Outlined.Lock, trailing = if (show) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, onTrailing = { show = !show }, password = true, show = show)
                             Spacer(Modifier.height(10.dp))
                             Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(p.line)) { Box(Modifier.fillMaxHeight().fillMaxWidth(stFrac).clip(RoundedCornerShape(3.dp)).background(stColor)) }
-                            Text(when (st) { 0 -> if (pass.isEmpty()) "" else "ضعيفة جداً"; 1 -> "ضعيفة"; 2 -> "مقبولة"; 3 -> "قوية"; else -> "قوية جداً" }, style = MaterialTheme.typography.labelSmall, color = stColor)
+                            Text(when (st) { 0 -> if (pass.isEmpty()) "" else "ضعيفة جداً"; 1 -> "ضعيفة"; 2 -> "مقبولة"; 3 -> "قوية"; else -> "قوية جداً" }, style = MaterialTheme.typography.labelMedium, color = stColor)
+                            Spacer(Modifier.height(14.dp))
+                            Text("كلمة مرور قوية تحتوي على:", style = MaterialTheme.typography.titleMedium, color = p.ink)
+                            listOf("6 أحرف أو أكثر" to (pass.length >= 6), "9 أحرف أو أكثر" to (pass.length >= 9), "حروف وأرقام معاً" to (pass.any { it.isDigit() } && pass.any { it.isLetter() }), "رمز أو حرف كبير وصغير" to (st >= 4)).forEach { (t, ok) ->
+                                Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(if (ok) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, null, tint = if (ok) Success else p.faint, modifier = Modifier.size(22.dp))
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(t, style = MaterialTheme.typography.bodyMedium, color = if (ok) p.ink else p.muted)
+                                }
+                            }
                         }
                         2 -> {
                             Text("اختر اسم مستخدم", style = MaterialTheme.typography.headlineSmall, color = p.ink)
@@ -290,7 +315,13 @@ fun SignupScreen(onBack: () -> Unit, onDone: () -> Unit) {
                             Spacer(Modifier.height(18.dp))
                             HalaField(username, { username = it.lowercase().filter { c -> c.isLetterOrDigit() || c == '.' || c == '_' } }, "اسم المستخدم", Icons.Outlined.AlternateEmail,
                                 trailing = if (free) Icons.Outlined.CheckCircle else null)
-                            if (username.length >= 3) Text(if (free) "متاح" else "غير متاح", style = MaterialTheme.typography.labelMedium, color = if (free) Success else Danger, modifier = Modifier.padding(top = 6.dp))
+                            if (username.length >= 3) Text(if (free) "متاح - تقدر تستخدمه" else "غير متاح - جرّب اسم ثاني", style = MaterialTheme.typography.labelMedium, color = if (free) Success else Danger, modifier = Modifier.padding(top = 6.dp))
+                            Spacer(Modifier.height(10.dp))
+                            Text("اقتراحات:", style = MaterialTheme.typography.labelMedium, color = p.muted)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
+                                val base = name.trim().split(" ").firstOrNull().orEmpty().ifBlank { "hala" }.filter { it.isLetterOrDigit() }.lowercase().ifBlank { "hala" }
+                                listOf("${base}_iq", "$base.2000", "${base}_baghdad").forEach { sug -> Chip(sug, false) { username = sug } }
+                            }
                             Spacer(Modifier.height(18.dp))
                             Text("تاريخ الميلاد", style = MaterialTheme.typography.titleMedium, color = p.ink)
                             Spacer(Modifier.height(8.dp))

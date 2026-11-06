@@ -19,6 +19,17 @@ EXTRA = {"heart", "heart-fill", "dots", "dots-v", "video", "call", "smile", "moo
 
 
 class K(_C):
+    # كل النصوص أكبر بـ 10% وبحد أدنى 13 (للوضوح)
+    @staticmethod
+    def _fs(size):
+        return max(13.0, size * 1.1)
+
+    def text(self, x, y, s, size=14, w="r", color=INK, al="r", rtl=True):
+        super().text(x, y, s, self._fs(size), w, color, al, rtl)
+
+    def width(self, s, size=14, w="r", rtl=True):
+        return super().width(s, self._fs(size), w, rtl)
+
     # ---------------- أيقونات ----------------
     def icon(self, name, cx, cy, size=24, color=INK, sw=1.75, bg=SURFACE):
         if name not in EXTRA:
@@ -212,24 +223,23 @@ class K(_C):
 
     def tabbar(self, active=0):
         y0 = H - NAV_H
+        self.shadow(0, y0, W, H + 20, r=0, blur=6, dy=-1, alpha=18)
+        self.rr(0, y0, W, H + 20, 0, fill=SURFACE)
         self.hline(0, W, y0, LINE)
-        self.rr(0, y0 + 1, W, H + 10, 0, fill=SURFACE)
-        icons = ["home", "search", "plus", "reel", "user"]
+        items = [("home", "الرئيسية"), ("search", "استكشاف"), ("plus", "نشر"), ("reel", "ريلز"), ("user", "حسابي")]
         slot = W / 5
-        for i, ic in enumerate(icons):
+        for i, (ic, lb) in enumerate(items):
             cx = W - slot * (i + 0.5)       # RTL: الأول من اليمين
-            col = INK if i == active else FAINT
+            on = i == active
+            col = PRIMARY_DARK if on else FAINT
             if ic == "plus":
-                self.rr(cx - 17, y0 + 14, cx + 17, y0 + 46, 11, fill=PRIMARY)
-                self.icon("plus", cx, y0 + 30, 20, "#FFFFFF", sw=2.2, bg=PRIMARY)
+                self.grad(cx - 22, y0 + 10, cx + 22, y0 + 42, PRIMARY, PRIMARY_DARK, r=12, horizontal=True)
+                self.icon("plus", cx, y0 + 26, 22, "#FFFFFF", sw=2.4, bg=PRIMARY)
             elif ic == "user":
-                self.avatar(cx, y0 + 30, 13, "", 4, ring="new" if i == active else None)
+                self.avatar(cx, y0 + 26, 14, "س", 0, ring="new" if on else None)
             else:
-                self.icon(ic, cx, y0 + 30, 26, col, sw=2.0 if i == active else 1.7)
-        # مؤشر
-        ax = W - slot * (active + 0.5)
-        if active != 2:
-            self.circle(ax, y0 + 54, 2.2, fill=PRIMARY)
+                self.icon(ic, cx, y0 + 26, 27, col, sw=2.1 if on else 1.7)
+            self.text(cx, y0 + 58, lb, 11, "b" if on else "m", col, "c")
 
     def back(self, title, right=None, left=None, size=17):
         """ترويسة: سهم رجوع يمين، عنوان وسط، أيقونات يسار"""

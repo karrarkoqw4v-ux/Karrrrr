@@ -58,6 +58,8 @@ object Repo {
     val chats = mutableStateListOf<Chat>()
     var loggedIn by mutableStateOf(false)
     var dark by mutableStateOf(true)
+    /** محتوى تجريبي (أشخاص ومنشورات ورسائل وهمية): مغلق افتراضياً */
+    var demo by mutableStateOf(false)
 
     // ---------- المتابعة ----------
     val following = mutableStateListOf<Int>()
@@ -76,6 +78,7 @@ object Repo {
         sp = ctx.applicationContext.getSharedPreferences("hala", Context.MODE_PRIVATE)
         media = File(ctx.filesDir, "media").apply { mkdirs() }
         dark = sp.getBoolean("dark", true)
+        demo = sp.getBoolean("demo", false)
         sp.getString("following", "")?.split(",")?.mapNotNull { it.toIntOrNull() }?.let { following.addAll(it) }
         sp.getString("cur", null)?.let { loadMe(it) }
         seed()
@@ -84,7 +87,30 @@ object Repo {
 
     // ---------- بيانات تجريبية ----------
     private fun seed() {
-        if (posts.isNotEmpty()) return
+        chats.add(Chat(0, 0, "مذكرتي - رسائل لنفسك"))
+        if (demo) seedDemo()
+        loadMessages()
+    }
+
+    fun setDemo(v: Boolean) {
+        if (demo == v) return
+        demo = v
+        sp.edit().putBoolean("demo", v).apply()
+        posts.removeAll { it.userId != 0 }
+        chats.removeAll { it.id != 0 }
+        if (v) { seedDemo(); loadMessages(skipSelf = true) }
+    }
+
+    fun deletePost(p: Post) {
+        posts.remove(p)
+        val arr = JSONArray(sp.getString("my_posts", "[]"))
+        val out = JSONArray()
+        for (i in 0 until arr.length()) if (arr.getJSONObject(i).getLong("id") != p.id) out.put(arr.getJSONObject(i))
+        sp.edit().putString("my_posts", out.toString()).apply()
+    }
+
+    private fun seedDemo() {
+        if (posts.any { it.userId != 0 }) return
         val caps = listOf("غروب الشمس على دجلة", "صباح الخير من الجبال", "الربيع بالحديقة", "ليل بغداد", "رحلة الأهوار", "قهوة الصباح", "دفء الصحراء", "نسمة بحرية")
         val ago = listOf("قبل ساعتين", "قبل 5 ساعات", "أمس", "قبل يومين", "قبل 3 أيام", "الأسبوع الماضي", "الأسبوع الماضي", "قبل شهر")
         for (i in 0 until 8) {
@@ -102,8 +128,6 @@ object Repo {
             chats.add(c)
         }
         chats.add(1, Chat(99, 2, "شباب بغداد", true).also { it.msgs.add(Msg(1, false, "علي: الاجتماع الساعة 8")); it.unread = 5 })
-        // رسائل محفوظة
-        loadMessages()
     }
 
     // ---------- الحسابات (محلية) ----------
@@ -199,6 +223,7 @@ object Repo {
     }
 
     suspend fun botReply(chat: Chat) {
+        if (!demo || chat.id == 0) return
         val replies = listOf("هلا والله!", "تمام، شكراً", "ههههه حلو", "باجر نشوفك ان شاء الله", "أكيد! متى؟", "حبيبي والله", "شلونك أنت؟", "أرسل لي التفاصيل")
         chat.typing = true
         kotlinx.coroutines.delay(1400)
@@ -217,9 +242,10 @@ object Repo {
         sp.edit().putString("msgs", o.toString()).apply()
     }
 
-    private fun loadMessages() {
+    private fun loadMessages(skipSelf: Boolean = false) {
         val o = JSONObject(sp.getString("msgs", "{}"))
         for (c in chats) {
+            if (skipSelf && c.id == 0) continue
             val arr = o.optJSONArray(c.id.toString()) ?: continue
             for (i in 0 until arr.length()) {
                 val m = arr.getJSONObject(i)

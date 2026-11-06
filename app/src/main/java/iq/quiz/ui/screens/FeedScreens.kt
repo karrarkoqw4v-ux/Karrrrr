@@ -59,14 +59,14 @@ fun MainScreen(nav: Nav) {
             when (tab) {
                 0 -> FeedScreen(nav)
                 1 -> ExploreScreen(nav)
-                3 -> ReelsScreen()
+                3 -> SavedScreen(nav)
                 else -> ProfileScreen(0, nav, onBack = null)
             }
         }
         HorizontalDivider(color = p.line)
-        val labels = listOf("الرئيسية", "استكشاف", "نشر", "ريلز", "حسابي")
+        val labels = listOf("الرئيسية", "استكشاف", "نشر", "المحفوظات", "حسابي")
         Row(Modifier.fillMaxWidth().navigationBarsPadding().height(68.dp), verticalAlignment = Alignment.CenterVertically) {
-            listOf(Icons.Outlined.Home, Icons.Outlined.Search, Icons.Outlined.Add, Icons.Outlined.PlayCircleOutline, Icons.Outlined.Person).forEachIndexed { i, ic ->
+            listOf(Icons.Outlined.Home, Icons.Outlined.Search, Icons.Outlined.Add, Icons.Outlined.BookmarkBorder, Icons.Outlined.Person).forEachIndexed { i, ic ->
                 Box(Modifier.weight(1f).fillMaxHeight().bounceClick { if (i == 2) nav.create() else tab = i }, contentAlignment = Alignment.Center) {
                     val c by animateColorAsState(if (tab == i) PrimaryDark else p.faint, label = "tab")
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -107,7 +107,7 @@ fun FeedScreen(nav: Nav) {
                         Text("قصتك", style = MaterialTheme.typography.labelSmall, color = p.ink)
                     }
                 }
-                itemsIndexed(Repo.users.take(7)) { i, u ->
+                if (Repo.demo) itemsIndexed(Repo.users.take(7)) { i, u ->
                     Column(Modifier.bounceClick { nav.story(i) }, horizontalAlignment = Alignment.CenterHorizontally) {
                         Avatar(u.name, u.idx, 56.dp, ring = if (i < 5) Ring.New else Ring.Seen)
                         Text(u.name.substringBefore(" "), style = MaterialTheme.typography.labelSmall, color = if (i < 5) p.ink else p.muted)
@@ -116,9 +116,19 @@ fun FeedScreen(nav: Nav) {
             }
             HorizontalDivider(color = p.line)
         }
+        if (Repo.posts.isEmpty()) item(key = "empty") {
+            Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Outlined.Image, null, tint = p.faint, modifier = Modifier.size(64.dp))
+                Spacer(Modifier.height(12.dp))
+                Text("ما في منشورات بعد", style = MaterialTheme.typography.titleMedium, color = p.ink)
+                Text("انشر أول صورة لك وتظهر هنا", style = MaterialTheme.typography.bodyMedium, color = p.muted)
+                Spacer(Modifier.height(18.dp))
+                GradButton("انشر الآن", { nav.create() }, icon = Icons.Outlined.Add)
+            }
+        }
         Repo.posts.forEachIndexed { i, post ->
             item(key = post.id) { PostCard(post, nav, onComments = { commentsFor = post }, onLikes = { likesFor = post }) }
-            if (i == 1) item(key = "suggestions") { Suggestions(nav) }
+            if (i == 1 && Repo.demo) item(key = "suggestions") { Suggestions(nav) }
         }
         item { Spacer(Modifier.height(24.dp)) }
     }
@@ -169,8 +179,8 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit, onLikes: () -> Unit) 
                 Text(if (u.id == 0) Repo.me.name else u.name, style = MaterialTheme.typography.bodyLarge, color = p.ink)
                 Text("بغداد - " + post.time, style = MaterialTheme.typography.labelSmall, color = p.muted)
             }
-            if (u.id != 0) { FollowPill(u.id); Spacer(Modifier.width(6.dp)) }
-            Icon(Icons.Outlined.MoreHoriz, null, tint = p.ink)
+            if (u.id != 0) { FollowPill(u.id); Spacer(Modifier.width(6.dp)); Icon(Icons.Outlined.MoreHoriz, null, tint = p.ink) }
+            else IconBtn(Icons.Outlined.DeleteOutline, "حذف المنشور", Danger) { Repo.deletePost(post) }
         }
         Box(
             Modifier.fillMaxWidth().aspectRatio(1.08f).pointerInput(post.id) {
@@ -192,7 +202,7 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit, onLikes: () -> Unit) 
             PostAction(if (post.saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder, if (post.saved) "محفوظ" else "حفظ", if (post.saved) Primary else p.ink) { post.saved = !post.saved }
         }
         val likers = remember(post.id) { Repo.likers(post) }
-        Row(Modifier.fillMaxWidth().bounceClick { onLikes() }.padding(horizontal = 14.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (post.userId != 0) Row(Modifier.fillMaxWidth().bounceClick { onLikes() }.padding(horizontal = 14.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(54.dp).height(24.dp)) {
                 likers.take(3).forEachIndexed { i, l -> Avatar(l.name, l.idx, 24.dp, Modifier.offset(x = (i * 15).dp)) }
             }
@@ -278,8 +288,9 @@ fun ExploreScreen(nav: Nav) {
                 itemsIndexed(listOf("لك", "رحلات", "طعام", "فن", "رياضة", "موسيقى")) { i, t -> Chip(t, cat == i) { cat = i } }
             }
             Spacer(Modifier.height(10.dp))
+            if (Repo.posts.isEmpty()) Text("لا توجد منشورات للاستكشاف بعد. انشر صورك وتظهر هنا", Modifier.fillMaxWidth().padding(32.dp), color = p.muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
             LazyVerticalGrid(GridCells.Fixed(3), Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                items(Repo.posts.size + 8) { i ->
+                items(if (Repo.demo) Repo.posts.size + 8 else Repo.posts.size) { i ->
                     val post = Repo.posts.getOrNull(i)
                     Box(Modifier.aspectRatio(1f).bounceClick {}) {
                         if (post?.imagePath != null) AsyncImage(File(post.imagePath), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -292,27 +303,24 @@ fun ExploreScreen(nav: Nav) {
 }
 
 @Composable
-fun ReelsScreen() {
-    val pager = rememberPagerState { 6 }
-    VerticalPager(pager, Modifier.fillMaxSize()) { page ->
-        var liked by remember { mutableStateOf(false) }
-        Box(Modifier.fillMaxSize()) {
-            PhotoArt(page + 1, Modifier.fillMaxSize())
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xB0000000)), startY = 900f)))
-            Column(Modifier.align(Alignment.BottomStart).padding(16.dp).padding(bottom = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                IconBtn(if (liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, "إعجاب", if (liked) Like else Color.White, 32.dp) { liked = !liked }
-                IconBtn(Icons.Outlined.ChatBubbleOutline, "تعليق", Color.White, 30.dp) {}
-                IconBtn(Icons.Outlined.Send, "مشاركة", Color.White, 28.dp) {}
+fun SavedScreen(nav: Nav) {
+    val p = pal
+    val saved = Repo.posts.filter { it.saved }
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        Text("المحفوظات", style = MaterialTheme.typography.headlineSmall, color = p.ink, modifier = Modifier.padding(16.dp))
+        if (saved.isEmpty()) {
+            Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Outlined.BookmarkBorder, null, tint = p.faint, modifier = Modifier.size(64.dp))
+                Spacer(Modifier.height(12.dp))
+                Text("ما حفظت منشورات", style = MaterialTheme.typography.titleMedium, color = p.ink)
+                Text("اضغط على علامة الحفظ تحت أي منشور وتظهر هنا", style = MaterialTheme.typography.bodyMedium, color = p.muted, textAlign = TextAlign.Center)
             }
-            Column(Modifier.align(Alignment.BottomEnd).padding(16.dp).padding(bottom = 12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Avatar(Repo.users[page % 8].name, Repo.users[page % 8].idx, 34.dp, ring = Ring.New)
-                    Spacer(Modifier.width(10.dp))
-                    Text(Repo.users[page % 8].name, style = MaterialTheme.typography.bodyLarge, color = Color.White)
+        } else LazyVerticalGrid(GridCells.Fixed(3), Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            items(saved, key = { it.id }) { post ->
+                Box(Modifier.aspectRatio(1f)) {
+                    if (post.imagePath != null) AsyncImage(File(post.imagePath), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) else PhotoArt(post.kind, Modifier.fillMaxSize())
                 }
-                Text("لحظات من العراق - اسحب للأعلى للمزيد", style = MaterialTheme.typography.bodyMedium, color = Color.White, modifier = Modifier.padding(top = 8.dp))
             }
-            Text("ريلز", style = MaterialTheme.typography.headlineSmall, color = Color.White, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp))
         }
     }
 }
@@ -379,7 +387,7 @@ fun CreatePostScreen(onBack: () -> Unit) {
             Text("نشر", style = MaterialTheme.typography.labelLarge, color = if (path != null) PrimaryDark else p.faint,
                 modifier = Modifier.bounceClick(enabled = path != null) { Repo.addPost(path!!, caption.trim()); onBack() }.padding(12.dp))
         }
-        Column(Modifier.weight(1f).padding(16.dp)) {
+        Column(Modifier.weight(1f).padding(16.dp).navigationBarsPadding()) {
             Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(20.dp)).background(p.bg2).bounceClick { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
                 if (path != null) AsyncImage(File(path!!), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -390,6 +398,12 @@ fun CreatePostScreen(onBack: () -> Unit) {
             }
             Spacer(Modifier.height(14.dp))
             HalaField(caption, { caption = it }, "اكتب وصفاً...", singleLine = false)
+            Spacer(Modifier.weight(1f))
+            GradButton("نشر الآن", {
+                val img = path
+                if (img == null) Toast.makeText(ctx, "اختر صورة أول", Toast.LENGTH_SHORT).show()
+                else { Repo.addPost(img, caption.trim()); Toast.makeText(ctx, "تم النشر", Toast.LENGTH_SHORT).show(); onBack() }
+            }, enabled = path != null, icon = Icons.Outlined.Send)
         }
     }
 }
@@ -397,9 +411,15 @@ fun CreatePostScreen(onBack: () -> Unit) {
 @Composable
 fun NotificationsScreen(onBack: () -> Unit) {
     val p = pal
-    val items = listOf(Triple(1, "أعجب بمنشورك", "5 د"), Triple(2, "بدأت بمتابعتك", "20 د"), Triple(4, "علّقت: جميلة جداً!", "1 س"), Triple(3, "ذكرك بتعليق", "2 س"), Triple(6, "أعجبت بتعليقك", "أمس"), Triple(7, "بدأ بمتابعتك", "الاثنين"))
+    val items = if (!Repo.demo) emptyList() else listOf(Triple(1, "أعجب بمنشورك", "5 د"), Triple(2, "بدأت بمتابعتك", "20 د"), Triple(4, "علّقت: جميلة جداً!", "1 س"), Triple(3, "ذكرك بتعليق", "2 س"), Triple(6, "أعجبت بتعليقك", "أمس"), Triple(7, "بدأ بمتابعتك", "الاثنين"))
     Column(Modifier.fillMaxSize().background(p.bg)) {
         TopBack("النشاط", onBack)
+        if (items.isEmpty()) Column(Modifier.fillMaxWidth().padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Outlined.NotificationsNone, null, tint = p.faint, modifier = Modifier.size(64.dp))
+            Spacer(Modifier.height(10.dp))
+            Text("ما في نشاط جديد", style = MaterialTheme.typography.titleMedium, color = p.ink)
+            Text("الإعجابات والتعليقات تظهر هنا", style = MaterialTheme.typography.bodyMedium, color = p.muted, textAlign = TextAlign.Center)
+        }
         LazyColumn {
             itemsIndexed(items) { i, (uid, t, ago) ->
                 val u = Repo.user(uid)

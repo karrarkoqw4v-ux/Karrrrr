@@ -45,9 +45,13 @@ fun InboxScreen(onBack: () -> Unit, onChat: (Int) -> Unit) {
     Column(Modifier.fillMaxSize().background(p.bg)) {
         TopBack("الرسائل", onBack)
         HalaField(q, { q = it }, "بحث", Icons.Outlined.Search, modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp))
+        if (!Repo.demo) Row(Modifier.fillMaxWidth().padding(14.dp).clip(RoundedCornerShape(14.dp)).background(p.bg2).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Info, null, tint = Primary, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(10.dp))
+            Text("المراسلة بين الحسابات تحتاج سيرفر. حالياً تقدر تكتب رسائل لنفسك وتنحفظ بجهازك.", style = MaterialTheme.typography.labelMedium, color = p.muted)
+        }
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
             Text("الرسائل", style = MaterialTheme.typography.bodyLarge, color = p.ink, modifier = Modifier.weight(1f))
-            Text("الطلبات (3)", style = MaterialTheme.typography.labelMedium, color = PrimaryDark)
         }
         LazyColumn {
             val shown = Repo.chats.filter { q.isBlank() || it.title.contains(q) }
@@ -56,7 +60,7 @@ fun InboxScreen(onBack: () -> Unit, onChat: (Int) -> Unit) {
                     val last = c.msgs.lastOrNull()
                     Row(Modifier.fillMaxWidth().bounceClick { c.unread = 0; onChat(c.id) }.padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                         val u = Repo.user(c.userId)
-                        Avatar(c.title, u.idx, 54.dp, online = !c.group && i % 2 == 0)
+                        Avatar(c.title, u.idx, 54.dp, online = Repo.demo && !c.group && i % 2 == 0)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(c.title, style = MaterialTheme.typography.bodyLarge, color = p.ink)
@@ -102,11 +106,10 @@ fun ChatScreen(chatId: Int, onBack: () -> Unit, onCall: (Boolean) -> Unit, onUse
                 Spacer(Modifier.width(10.dp))
                 Column {
                     Text(chat.title, style = MaterialTheme.typography.bodyLarge, color = p.ink)
-                    Text(if (chat.typing) "يكتب الآن..." else if (chat.group) "15 عضو" else "متصل الآن", style = MaterialTheme.typography.labelSmall, color = Success)
+                    Text(if (chat.typing) "يكتب الآن..." else if (chat.id == 0) "محفوظة لك فقط" else if (chat.group) "15 عضو" else "متصل الآن", style = MaterialTheme.typography.labelSmall, color = Success)
                 }
             }
-            IconBtn(Icons.Outlined.Videocam, "فيديو", size = 26.dp) { onCall(true) }
-            IconBtn(Icons.Outlined.Call, "اتصال") { onCall(false) }
+            if (chat.id != 0) { IconBtn(Icons.Outlined.Videocam, "فيديو", size = 26.dp) { onCall(true) }; IconBtn(Icons.Outlined.Call, "اتصال") { onCall(false) } }
         }
         HorizontalDivider(color = p.line)
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = listState, contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

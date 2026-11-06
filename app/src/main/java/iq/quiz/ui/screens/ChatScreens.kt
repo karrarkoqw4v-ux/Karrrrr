@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.lazy.LazyColumn
@@ -181,7 +182,7 @@ fun ChatScreen(chatId: Int, onBack: () -> Unit, onCall: (Boolean) -> Unit, onUse
                         Box(
                             Modifier.widthIn(max = 270.dp).clip(RoundedCornerShape(20.dp))
                                 .then(if (m.mine) Modifier.background(Brush.horizontalGradient(listOf(Primary, PrimaryDark))) else Modifier.background(p.bg2))
-                                .pointerInput(m.id) { androidx.compose.foundation.gestures.detectTapGestures(onLongPress = { msgMenu = true }, onDoubleTap = { m.reaction = if (m.reaction.isEmpty()) "❤" else "" }) },
+                                .pointerInput(m.id) { detectTapGestures(onLongPress = { msgMenu = true }, onDoubleTap = { m.reaction = if (m.reaction.isEmpty()) "❤" else "" }) },
                         ) {
                             if (m.imagePath != null) AsyncImage(File(m.imagePath), null, Modifier.size(210.dp, 180.dp), contentScale = ContentScale.Crop)
                             else Text(m.text, color = if (m.mine) Color.White else p.ink, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp))

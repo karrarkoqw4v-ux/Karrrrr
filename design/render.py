@@ -10,7 +10,7 @@ from lib import font
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "screens")
 os.makedirs(OUT, exist_ok=True)
 MODULES = ["auth", "feed", "chatscreens", "account"]
-BG = "#EAF1F3"
+BG = "#101014"
 
 
 def phone(img, scale):
@@ -22,17 +22,17 @@ def phone(img, scale):
     sh = Image.new("L", out.size, 0)
     ImageDraw.Draw(sh).rounded_rectangle([pad, pad + int(12 * scale), pad + w, pad + h + int(12 * scale)], r, fill=70)
     sh = sh.filter(ImageFilter.GaussianBlur(int(20 * scale)))
-    out.paste(Image.new("RGBA", out.size, (14, 26, 36, 255)), (0, 0), sh)
+    out.paste(Image.new("RGBA", out.size, (60, 60, 66, 255)), (0, 0), sh)
     mask = Image.new("L", (w, h), 0)
     ImageDraw.Draw(mask).rounded_rectangle([0, 0, w, h], r, fill=255)
     bez = int(6 * scale)
-    ImageDraw.Draw(out).rounded_rectangle([pad - bez, pad - bez, pad + w + bez, pad + h + bez], r + bez, fill=(14, 26, 36, 255))
+    ImageDraw.Draw(out).rounded_rectangle([pad - bez, pad - bez, pad + w + bez, pad + h + bez], r + bez, fill=(60, 60, 66, 255))
     out.paste(shot, (pad, pad), mask)
     return out
 
 
 def label(d, cx, y, text, size):
-    d.text((cx, y), text, font=font("b", size), fill="#0E1A24", anchor="mm", direction="rtl", language="ar")
+    d.text((cx, y), text, font=font("b", size), fill="#F5F5F7", anchor="mm", direction="rtl", language="ar")
 
 
 def sheet(items, name, title, scale=0.5):
@@ -66,7 +66,7 @@ def main():
     per = 5
     for i in range(0, len(rendered), per):
         k = i // per + 1
-        sheet(rendered[i:i + per], f"sheet_{k:02d}.png", f"تطبيق هلا - لوحة {k} (الشاشات {i + 1} إلى {min(i + per, len(rendered))})")
+        sheet(rendered[i:i + per], f"sheet_{k:02d}.png", f"تطبيق كويز تواصلكم - لوحة {k} (الشاشات {i + 1} إلى {min(i + per, len(rendered))})")
     # لوحة شاملة
     ph = [phone(im, 0.26) for _, im in rendered]
     cols, gap = 13, 18
@@ -76,7 +76,7 @@ def main():
     Hd = rows * (phh + 56) + 130
     canvas = Image.new("RGB", (Wd, Hd), BG)
     d = ImageDraw.Draw(canvas)
-    label(d, Wd // 2, 50, f"تطبيق هلا - كل الشاشات ({n} شاشة)", 44)
+    label(d, Wd // 2, 50, f"تطبيق كويز تواصلكم - كل الشاشات ({n} شاشة)", 44)
     for i, ((t, _), p) in enumerate(zip(rendered, ph)):
         r, ci = divmod(i, cols)
         x = Wd - gap - pw - ci * (pw + gap)

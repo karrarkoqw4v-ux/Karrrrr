@@ -197,8 +197,10 @@ class K(_C):
     def avatar(self, cx, cy, r, name="", idx=0, ring=None, online=False, ring_w=2.6):
         col = AVATARS[idx % len(AVATARS)]
         if ring == "new":
-            self.d.ellipse([(cx - r - 4) * S, (cy - r - 4) * S, (cx + r + 4) * S, (cy + r + 4) * S], outline=PRIMARY, width=int(ring_w * S))
-            self.d.arc([(cx - r - 4) * S, (cy - r - 4) * S, (cx + r + 4) * S, (cy + r + 4) * S], 200, 330, fill=ACCENT, width=int(ring_w * S))
+            bb = [(cx - r - 4) * S, (cy - r - 4) * S, (cx + r + 4) * S, (cy + r + 4) * S]
+            self.d.ellipse(bb, outline=BRAND2, width=int(ring_w * S))
+            self.d.arc(bb, 90, 220, fill=BRAND1, width=int(ring_w * S))
+            self.d.arc(bb, 300, 390, fill=BRAND3, width=int(ring_w * S))
             self.circle(cx, cy, r + 1.5, fill=SURFACE)
         elif ring == "seen":
             self.d.ellipse([(cx - r - 4) * S, (cy - r - 4) * S, (cx + r + 4) * S, (cy + r + 4) * S], outline=LINE, width=int(2 * S))
@@ -211,15 +213,19 @@ class K(_C):
             self.circle(cx + r * 0.72, cy + r * 0.72, 3.6, fill=SUCCESS)
 
     # ---------------- مكونات واجهة ----------------
-    def logo(self, cx, cy, size):
-        """شعار هلا: مربع بتدرج تركواز وفقاعة محادثة بيضاء (شعار أصلي)"""
-        self.grad(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2, PRIMARY, "#0A8F7E", r=size * 0.3)
-        bw = size * 0.52
-        self.rr(cx - bw / 2, cy - bw * 0.42, cx + bw / 2, cy + bw * 0.28, bw * 0.28, fill="#FFFFFF")
-        self.d.polygon([((cx + bw * 0.12) * S, (cy + bw * 0.2) * S), ((cx + bw * 0.38) * S, (cy + bw * 0.52) * S), ((cx - bw * 0.05) * S, (cy + bw * 0.28) * S)], fill="#FFFFFF")
-        self.circle(cx - bw * 0.2, cy - bw * 0.07, size * 0.035, fill=PRIMARY)
-        self.circle(cx, cy - bw * 0.07, size * 0.035, fill=PRIMARY)
-        self.circle(cx + bw * 0.2, cy - bw * 0.07, size * 0.035, fill=PRIMARY)
+    def logo(self, cx, cy, size, white=False):
+        """شعار كويز تواصلكم: مربع بتدرج الهوية + فقاعة محادثة بيضاء + علامة استفهام"""
+        if white:
+            self.rr(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2, size * 0.3, fill="#FFFFFF")
+            bub, mark = BRAND1, "#FFFFFF"
+        else:
+            self.grad(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2, BRAND1, BRAND2, r=size * 0.3)
+            bub, mark = "#FFFFFF", BRAND1
+        bw = size * 0.56
+        self.rr(cx - bw / 2, cy - size * 0.3, cx + bw / 2, cy - size * 0.3 + bw * 0.78, bw * 0.3, fill=bub)
+        by = cy - size * 0.3 + bw * 0.78
+        self.d.polygon([((cx + bw * 0.08) * S, (by - 1) * S), ((cx + bw * 0.36) * S, (by + bw * 0.28) * S), ((cx - bw * 0.16) * S, (by - 1) * S)], fill=bub)
+        self.text(cx, cy - size * 0.3 + bw * 0.39, "؟", size * 0.34, "b", mark, "c")
 
     def tabbar(self, active=0):
         y0 = H - NAV_H
@@ -316,7 +322,7 @@ class K(_C):
         else:
             self.text(xr, y + h / 2, title, 14.5, "m", INK, "r")
         if toggle is not None:
-            self.rr(PAD, y + h / 2 - 13, PAD + 46, y + h / 2 + 13, 13, fill=PRIMARY if toggle else "#D5DCE2")
+            self.rr(PAD, y + h / 2 - 13, PAD + 46, y + h / 2 + 13, 13, fill=PRIMARY if toggle else "#3A3A3C")
             cx = PAD + 33 if toggle else PAD + 13
             self.circle(cx, y + h / 2, 10, fill="#FFFFFF")
         elif value:

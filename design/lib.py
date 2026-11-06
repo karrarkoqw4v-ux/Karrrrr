@@ -5,12 +5,12 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from tokens import *
 
 FONT_DIR = os.path.join(os.path.dirname(__file__), "fonts")
-WEIGHT = {"r": "Regular", "m": "Medium", "b": "Bold", "x": "ExtraBold"}
+WEIGHT = {"r": "Medium", "m": "SemiBold", "b": "Bold", "x": "Bold"}
 
 
 @lru_cache(maxsize=None)
 def font(w, px):
-    return ImageFont.truetype(os.path.join(FONT_DIR, f"Tajawal-{WEIGHT[w]}.ttf"), int(px))
+    return ImageFont.truetype(os.path.join(FONT_DIR, f"Plex-{WEIGHT[w]}.ttf"), int(px))
 
 
 class Canvas:

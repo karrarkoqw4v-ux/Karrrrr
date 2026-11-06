@@ -21,18 +21,14 @@ def bullets(c, y, items, title=None):
 
 
 def splash():
-    c = K(PRIMARY)
-    c.grad(0, 0, W, H, "#12C9B1", "#075E57")
-    c.circle(300, 110, 120, fill=mix("#12C9B1", "#FFFFFF", 0.10))
-    c.circle(40, 640, 150, fill=mix("#075E57", "#FFFFFF", 0.07))
-    c.rr(132, 282, 228, 378, 30, fill="#FFFFFF")
-    c.rr(150, 300, 210, 350, 16, fill=PRIMARY)
-    c.d.polygon([(186 * S, 345 * S), (200 * S, 366 * S), (176 * S, 349 * S)], fill=PRIMARY)
-    for x in (169, 180, 191):
-        c.circle(x, 325, 3.4, fill="#FFFFFF")
-    c.text(180, 424, "هلا", 40, "x", "#FFFFFF", "c")
-    c.text(180, 462, "دردش، شارك، وانبسط", 15, "m", "#D6F5F0", "c")
-    c.text(180, 730, "صُنع بحب للعراقيين", 12.5, "m", "#CFF3EE", "c")
+    c = K(BRAND1)
+    c.grad(0, 0, W, H, "#3B1275", "#0A0614")
+    c.circle(300, 110, 130, fill=mix("#3B1275", "#FFFFFF", 0.07))
+    c.circle(40, 650, 160, fill=mix("#0A0614", "#FFFFFF", 0.06))
+    c.logo(180, 318, 104, white=True)
+    c.text(180, 424, "كويز تواصلكم", 32, "b", "#FFFFFF", "c")
+    c.text(180, 462, "اسأل، شارك، وتواصل", 15, "m", "#D9CCF5", "c")
+    c.text(180, 730, "صُنع بحب للعراقيين", 12.5, "m", "#B9A6E8", "c")
     return c
 
 
@@ -49,20 +45,20 @@ def welcome(step):
     c = K(BG)
     c.text(L, 52, "تخطي", 14, "b", MUTED, "l")
     # رسم توضيحي
-    c.grad(L, 96, R, 456, "#E9FBF8", "#FFF3DC", r=28)
+    c.grad(L, 96, R, 456, "#1E1236", "#0B0A14", r=28)
     if step == 0:
         c.photo(66, 150, 190, 330, 0, r=0); c.photo(150, 190, 290, 392, 3); c.photo(98, 262, 230, 420, 5)
         c.circle(262, 168, 20, fill=LIKE); c.icon("heart-fill", 262, 168, 22, "#FFFFFF")
-        c.rr(80, 380, 168, 414, 17, fill="#FFFFFF"); c.text(124, 397, "لحظات حلوة", 12, "b", PRIMARY_DARK, "c")
+        c.rr(80, 380, 168, 414, 17, fill=BG2); c.text(124, 397, "لحظات حلوة", 12, "b", INK, "c")
     elif step == 1:
         msgs = [(True, "هلا بيك!", 270), (False, "شلونك اليوم؟", 140), (True, "تمام، وانت؟", 190), (False, "ننتظرك بالمقهى", 210)]
         y = 140
         for mine, t, w in msgs:
             x1, x0 = (R - 20, R - 20 - w) if mine else (L + 20 + w, L + 20)
-            c.rr(x0, y, x1, y + 44, 20, fill=PRIMARY if mine else "#FFFFFF")
+            c.rr(x0, y, x1, y + 44, 20, fill=PRIMARY if mine else BG2)
             c.text((x0 + x1) / 2, y + 22, t, 13.5, "m", "#FFFFFF" if mine else INK, "c")
             y += 58
-        c.rr(R - 150, y + 6, R - 20, y + 46, 20, fill="#FFFFFF")
+        c.rr(R - 150, y + 6, R - 20, y + 46, 20, fill=BG2)
         c.icon("mic", R - 40, y + 26, 20, PRIMARY); c.rr(R - 124, y + 24, R - 62, y + 28, 2, fill=PRIMARY_SOFT)
         for i in range(10):
             c.rr(R - 128 + i * 6, y + 26 - (4 + (i * 7) % 9), R - 125 + i * 6, y + 26 + (4 + (i * 7) % 9), 1.5, fill=PRIMARY)
@@ -83,7 +79,7 @@ def welcome(step):
 def login():
     c = K(BG)
     c.text(180, 40, "العربية ▾".replace("▾", "").strip(), 13, "m", MUTED, "c")
-    c.logo(180, 128, 72)
+    c.logo(180, 124, 76)
     c.text(180, 196, "هلا بيك مجدداً", 26, "x", INK, "c")
     c.text(180, 226, "ادخل حتى تكمل دردشتك", 13.5, "r", MUTED, "c")
     y = c.input(262, "رقم الهاتف أو البريد أو اسم المستخدم", "user", value="sara.ali", focus=True)

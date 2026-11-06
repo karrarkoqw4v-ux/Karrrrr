@@ -19,7 +19,7 @@ def bubble(c, y, text, mine, ticks=None, w=None, quote=None):
         col = INK
     ty = y + h / 2 + (13 if quote else 0)
     if quote:
-        c.rr(x1 - wd + 10 if mine else x0 + 10, y + 8, (x1 - 10) if mine else x1 - 10, y + 32, 8, fill=mix(PRIMARY, "#FFFFFF", 0.35) if mine else "#E1E7EB")
+        c.rr(x1 - wd + 10 if mine else x0 + 10, y + 8, (x1 - 10) if mine else x1 - 10, y + 32, 8, fill=mix(PRIMARY, "#FFFFFF", 0.35) if mine else "#2C2C2E")
         c.text((x1 - 18) if mine else (x1 - 18), y + 20, quote, 11.5, "r", "#FFFFFF" if mine else MUTED, "r")
     c.text(x1 - 15, ty, text, 14.5, "r", col, "r")
     if ticks:
@@ -274,10 +274,10 @@ def requests():
 
 def voice_call():
     c = K(PRIMARY)
-    c.grad(0, 0, W, H, "#0FB5A0", "#06433F")
-    c.circle(300, 140, 150, fill=mix("#0FB5A0", "#FFFFFF", 0.07)); c.circle(40, 600, 190, fill=mix("#0A6A63", "#FFFFFF", 0.05))
-    c.icon("arrow-r", R - 10, 52, 24, "#FFFFFF", bg="#0FB5A0")
-    c.icon("users", L + 14, 52, 24, "#FFFFFF", bg="#0FB5A0")
+    c.grad(0, 0, W, H, "#3B1275", "#090512")
+    c.circle(300, 140, 150, fill=mix("#3B1275", "#FFFFFF", 0.07)); c.circle(40, 600, 190, fill=mix("#090512", "#FFFFFF", 0.06))
+    c.icon("arrow-r", R - 10, 52, 24, "#FFFFFF", bg="#3B1275")
+    c.icon("users", L + 14, 52, 24, "#FFFFFF", bg="#3B1275")
     for r_, a in [(110, 0.10), (86, 0.16)]:
         c.acircle(180, 270, r_, "#FFFFFF", a)
     c.avatar(180, 270, 64, "س", 0, ring="new")
@@ -285,7 +285,7 @@ def voice_call():
     c.text(180, 412, "00:42", 16, "m", "#C9F2EC", "c", rtl=False)
     for i, (ic, t) in enumerate([("mic", "كتم"), ("speaker", "السماعة"), ("video", "فيديو")]):
         cx = R - 52 - i * 112
-        c.acircle(cx, 600, 30, "#FFFFFF", 0.2); c.icon(ic, cx, 600, 26, "#FFFFFF", bg="#0FB5A0")
+        c.acircle(cx, 600, 30, "#FFFFFF", 0.2); c.icon(ic, cx, 600, 26, "#FFFFFF", bg="#3B1275")
         c.text(cx, 646, t, 12, "m", "#E3F8F5", "c")
     c.circle(180, 700, 32, fill=DANGER); c.icon("call", 180, 700, 28, "#FFFFFF", bg=DANGER)
     return c

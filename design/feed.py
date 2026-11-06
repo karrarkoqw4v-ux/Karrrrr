@@ -9,7 +9,8 @@ NAMES = ["سارة", "علي", "نور", "حسن", "مريم", "كرار", "زي
 
 
 def topbar(c, y=44):
-    c.text(R, y, "هلا", 26, "x", PRIMARY_DARK, "r")
+    c.logo(R - 16, y, 30)
+    c.text(R - 40, y, "كويز تواصلكم", 19, "b", INK, "r")
     c.icon("heart", 28, y, 25, INK)
     c.icon("send", 66, y, 25, INK)
     c.circle(78, y - 9, 4.5, fill=LIKE)
@@ -47,10 +48,15 @@ def post(c, y, idx, name, kind, likes, caption, ago, img_h=250, liked=False, sav
     c.icon("send", R - 176, ay, 26, INK, sw=1.9)
     c.text(R - 196, ay, "شارك", 11, "b", INK, "r")
     c.icon("bookmark", L + 14, ay, 26, PRIMARY if saved else INK, sw=1.9)
-    c.runs(R, ay + 32, [(name + "  ", INK, "b"), (caption, INK, "r")], 13.5)
-    c.text(R, ay + 56, "عرض كل التعليقات", 12, "m", MUTED, "r")
-    c.text(R, ay + 78, ago, 11, "r", FAINT, "r")
-    return ay + 96
+    # سطر المعجبين: أفاتارات متداخلة + "أعجب بها فلان و N آخرون"
+    for k in range(3):
+        c.avatar(R - 11 - k * 13, ay + 34, 10, NAMES[(idx + k + 1) % 8], (idx + k + 1) % 8)
+    n_other = max(0, int(likes.replace(",", "")) - 1)
+    c.runs(R - 52, ay + 34, [("أعجب بها ", MUTED, "r"), (NAMES[(idx + 1) % 8], INK, "b"), (f" و {n_other:,} آخرون", MUTED, "r")], 12.5)
+    c.runs(R, ay + 58, [(name + "  ", INK, "b"), (caption, INK, "r")], 13.5)
+    c.text(R, ay + 82, "عرض كل التعليقات", 12, "m", MUTED, "r")
+    c.text(R, ay + 102, ago, 11, "r", FAINT, "r")
+    return ay + 118
 
 
 def feed():
@@ -64,13 +70,46 @@ def feed():
     return c
 
 
+def suggestions_band(c, y):
+    c.rr(0, y, W, y + 190, 0, fill=BG2)
+    c.text(R, y + 24, "اقتراحات لك", 15, "b", INK, "r")
+    c.text(L, y + 24, "عرض الكل", 12.5, "b", PRIMARY, "l")
+    for i, (nm, idx) in enumerate([("مريم أحمد", 4), ("كرار الموسوي", 5), ("زينب علي", 6)]):
+        x1 = R - i * 128
+        c.rr(x1 - 118, y + 44, x1, y + 178, 16, fill=BG, line=LINE)
+        c.avatar(x1 - 59, y + 86, 26, nm, idx, ring="new")
+        c.text(x1 - 59, y + 126, nm.split()[0], 13.5, "b", INK, "c")
+        c.text(x1 - 59, y + 144, "مقترح لك", 11.5, "r", MUTED, "c")
+        c.rr(x1 - 104, y + 154, x1 - 14, y + 172, 8, fill=PRIMARY)
+        c.text(x1 - 59, y + 163, "متابعة", 11.5, "b", "#FFFFFF", "c")
+
+
 def feed2():
     c = K(BG)
     topbar(c)
     c.hline(0, W, 70, LINE)
-    y = post(c, 78, 3, "حسن كريم", 1, "932", "صباح الخير من الجبال", "قبل 5 ساعات", img_h=220, comments="41")
-    post(c, y + 4, 2, "نور محمد", 5, "2,310", "الربيع بالحديقة", "أمس", img_h=150, comments="120", follow=False)
+    y = post(c, 78, 3, "حسن كريم", 1, "932", "صباح الخير من الجبال", "قبل 5 ساعات", img_h=190, comments="41")
+    suggestions_band(c, y + 6)
     c.tabbar(0)
+    return c
+
+
+def likers_sheet():
+    c = feed()
+    c.dim(0.55)
+    c.sheet_handle(190)
+    c.text(180, 228, "الإعجابات", 16, "b", INK, "c")
+    c.hline(0, W, 250, LINE)
+    y = 258
+    for nm, un, idx, on in [("علي حسين", "ali.h", 1, False), ("نور محمد", "noor.m", 2, True), ("حسن كريم", "hasan.k", 3, False), ("مريم أحمد", "maryam.a", 4, False), ("كرار الموسوي", "karrar.m", 5, True), ("زينب علي", "zainab.a", 6, False)]:
+        c.avatar(R - 26, y + 30, 22, nm, idx, ring="new")
+        c.text(R - 62, y + 22, nm, 14.5, "b", INK, "r")
+        c.text(R - 62, y + 44, "@" + un, 12, "r", MUTED, "r", rtl=False)
+        if on:
+            c.rr(L, y + 14, L + 92, y + 46, 10, fill=BG2, line=LINE); c.text(L + 46, y + 30, "متابَع", 12.5, "b", INK, "c")
+        else:
+            c.rr(L, y + 14, L + 92, y + 46, 10, fill=PRIMARY); c.text(L + 46, y + 30, "متابعة", 12.5, "b", "#FFFFFF", "c")
+        y += 70
     return c
 
 
@@ -297,8 +336,9 @@ def reels():
 
 SCREENS = [
     ("13_feed", "الرئيسية", feed),
-    ("14_feed2", "الرئيسية (تمرير)", feed2),
+    ("14_feed2", "اقتراحات المتابعة", feed2),
     ("15_comments", "التعليقات", comments_sheet),
+    ("15b_likers", "قائمة المعجبين", likers_sheet),
     ("16_story_view", "عرض القصة", story_view),
     ("17_story_create", "إنشاء قصة", story_create),
     ("18_explore", "الاستكشاف", explore),

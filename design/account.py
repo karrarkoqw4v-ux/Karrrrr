@@ -62,7 +62,7 @@ def edit_profile():
     c.avatar(180, 140, 46, "س", 0)
     c.text(180, 208, "تغيير الصورة", 14, "b", PRIMARY_DARK, "c")
     y = 232
-    for lab, val in [("الاسم", "سارة علي"), ("اسم المستخدم", "sara.ali"), ("النبذة", "مصورة هاوية - بغداد"), ("الرابط", "instagram.com/..." if False else "hala.app/sara")]:
+    for lab, val in [("الاسم", "سارة علي"), ("اسم المستخدم", "sara.ali"), ("النبذة", "مصورة هاوية - بغداد"), ("الرابط", "instagram.com/..." if False else "quiz.app/sara")]:
         c.text(R, y, lab, 12, "m", MUTED, "r")
         c.text(R, y + 24, val, 15, "r", INK, "r", rtl=lab not in ("اسم المستخدم", "الرابط"))
         c.hline(L, R, y + 42, LINE)
@@ -250,8 +250,8 @@ def close_friends():
 
 def qr():
     c = K(PRIMARY)
-    c.grad(0, 0, W, H, "#12C9B1", "#075E57")
-    c.icon("close", R - 10, 56, 26, "#FFFFFF", bg="#12C9B1")
+    c.grad(0, 0, W, H, "#3B1275", "#0A0614")
+    c.icon("close", R - 10, 56, 26, "#FFFFFF", bg="#3B1275")
     c.rr(48, 150, 312, 470, 28, fill="#FFFFFF")
     c.avatar(180, 196, 30, "س", 0)
     n = 21
@@ -274,7 +274,7 @@ def qr():
     c.text(180, 440, "@sara.ali", 15, "b", INK, "c", rtl=False)
     c.text(180, 510, "اجعل أصحابك يمسحون الرمز حتى يتابعونك", 13, "r", "#D6F5F0", "c")
     c.rr(80, 560, 180, 604, 22, fill="#FFFFFF"); c.icon("share", 150, 582, 20, PRIMARY_DARK); c.text(122, 582, "مشاركة", 13, "b", PRIMARY_DARK, "c")
-    c.rr(190, 560, 280, 604, 22, fill=mix("#12C9B1", "#FFFFFF", 0.2)); c.icon("camera", 258, 582, 20, "#FFFFFF", bg=mix("#12C9B1", "#FFFFFF", 0.2)); c.text(222, 582, "مسح", 13, "b", "#FFFFFF", "c")
+    c.rr(190, 560, 280, 604, 22, fill=mix("#3B1275", "#FFFFFF", 0.2)); c.icon("camera", 258, 582, 20, "#FFFFFF", bg=mix("#3B1275", "#FFFFFF", 0.2)); c.text(222, 582, "مسح", 13, "b", "#FFFFFF", "c")
     return c
 
 

@@ -70,10 +70,12 @@ fun InboxScreen(onBack: (() -> Unit)?, onChat: (Int) -> Unit) {
                     Text("خريطة", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(top = 4.dp))
                 }
             }
-            if (Repo.demo) androidx.compose.foundation.lazy.itemsIndexed(Repo.users.take(5)) { _, u ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Avatar(u.name, u.idx, 62.dp, ring = Ring.New)
-                    Text(u.name.substringBefore(" "), style = MaterialTheme.typography.labelMedium, color = p.ink, modifier = Modifier.padding(top = 4.dp))
+            if (Repo.demo) Repo.users.take(5).forEach { u ->
+                item(key = u.id) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Avatar(u.name, u.idx, 62.dp, ring = Ring.New)
+                        Text(u.name.substringBefore(" "), style = MaterialTheme.typography.labelMedium, color = p.ink, modifier = Modifier.padding(top = 4.dp))
+                    }
                 }
             }
         }

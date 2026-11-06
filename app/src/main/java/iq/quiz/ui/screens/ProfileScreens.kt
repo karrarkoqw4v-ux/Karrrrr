@@ -41,7 +41,10 @@ fun ProfileScreen(userId: Int, nav: Nav, onBack: (() -> Unit)?) {
     val p = pal
     val u = Repo.user(userId)
     val mine = userId == 0
-    val posts = Repo.posts.filter { it.userId == userId && !it.archived }
+    var ptab by remember { mutableIntStateOf(0) }
+    val allMine = Repo.posts.filter { it.userId == userId && !it.archived }
+    val posts = when (ptab) { 1 -> allMine.filter { it.videoPath != null }; 2 -> Repo.posts.filter { it.saved }; else -> allMine.filter { it.videoPath == null } }
+    val ctxP = androidx.compose.ui.platform.LocalContext.current
     var sheet by remember { mutableStateOf<Int?>(null) }
     val isF = Repo.isFollowing(userId)
     sheet?.let { which ->
@@ -59,7 +62,7 @@ fun ProfileScreen(userId: Int, nav: Nav, onBack: (() -> Unit)?) {
                         Avatar(u.name, u.idx, 80.dp, ring = Ring.New)
                         Spacer(Modifier.width(18.dp))
                         Row(Modifier.weight(1f)) {
-                            Stat("${posts.size}", "منشور", Modifier.weight(1f))
+                            Stat("${allMine.size}", "منشور", Modifier.weight(1f))
                             Stat(if (mine) "0" else "${Repo.followersOf(u)}", "متابِع", Modifier.weight(1f).bounceClick { sheet = 0 })
                             Stat(if (mine) "${Repo.following.size}" else "${u.following}", "يتابع", Modifier.weight(1f).bounceClick { sheet = 1 })
                         }
@@ -71,7 +74,10 @@ fun ProfileScreen(userId: Int, nav: Nav, onBack: (() -> Unit)?) {
                     if (mine) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(Modifier.weight(1f).height(38.dp).bounceClick { nav.edit() }.clip(RoundedCornerShape(12.dp)).background(p.bg2), contentAlignment = Alignment.Center) { Text("تعديل الملف", style = MaterialTheme.typography.labelLarge, color = p.ink) }
-                            Box(Modifier.weight(1f).height(38.dp).bounceClick { nav.settings() }.clip(RoundedCornerShape(12.dp)).background(p.bg2), contentAlignment = Alignment.Center) { Text("الإعدادات", style = MaterialTheme.typography.labelLarge, color = p.ink) }
+                            Box(Modifier.weight(1f).height(38.dp).bounceClick {
+                                val i = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, "تابعني على كويز تواصلكم: @" + Repo.me.username)
+                                ctxP.startActivity(android.content.Intent.createChooser(i, "مشاركة الملف"))
+                            }.clip(RoundedCornerShape(12.dp)).background(p.bg2), contentAlignment = Alignment.Center) { Text("مشاركة الملف", style = MaterialTheme.typography.labelLarge, color = p.ink) }
                         }
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -81,6 +87,14 @@ fun ProfileScreen(userId: Int, nav: Nav, onBack: (() -> Unit)?) {
                     }
                     Spacer(Modifier.height(10.dp))
                     HorizontalDivider(color = p.line)
+                    Row(Modifier.fillMaxWidth()) {
+                        listOf(Icons.Outlined.GridOn, Icons.Outlined.Movie, Icons.Outlined.BookmarkBorder).forEachIndexed { k, ic ->
+                            if (k < 2 || mine) Box(Modifier.weight(1f).height(46.dp).bounceClick { ptab = k }, contentAlignment = Alignment.Center) {
+                                Icon(ic, null, tint = if (ptab == k) p.ink else p.faint, modifier = Modifier.size(26.dp))
+                                if (ptab == k) Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp).background(p.ink))
+                            }
+                        }
+                    }
                 }
             }
             if (posts.isEmpty()) item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
@@ -88,7 +102,9 @@ fun ProfileScreen(userId: Int, nav: Nav, onBack: (() -> Unit)?) {
             }
             items(posts, key = { it.id }) { post ->
                 Box(Modifier.aspectRatio(1f)) {
-                    if (post.imagePath != null) AsyncImage(File(post.imagePath), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) else PhotoArt(post.kind, Modifier.fillMaxSize())
+                    if (post.imagePath != null) AsyncImage(File(post.imagePath), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    else if (post.videoPath != null) Box(Modifier.fillMaxSize().background(p.bg2), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.PlayCircleOutline, null, tint = p.ink, modifier = Modifier.size(34.dp)) }
+                    else PhotoArt(post.kind, Modifier.fillMaxSize())
                 }
             }
         }

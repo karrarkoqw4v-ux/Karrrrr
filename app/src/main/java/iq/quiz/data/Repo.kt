@@ -34,7 +34,9 @@ class Post(val id: Long, val userId: Int, val kind: Int, val imagePath: String?,
     val commentCount = mutableStateOf(comments.size)
 }
 class Story(val id: Long, val path: String, val time: Long)
-class Msg(val id: Long, val mine: Boolean, val text: String, val imagePath: String? = null, val time: String = "الآن")
+class Msg(val id: Long, val mine: Boolean, val text: String, val imagePath: String? = null, val time: String = "الآن") {
+    var reaction by mutableStateOf("")
+}
 class Chat(val id: Int, val userId: Int, val title: String, val group: Boolean = false, val msgs: MutableList<Msg> = mutableStateListOf()) {
     var unread by mutableStateOf(0)
     var typing by mutableStateOf(false)
@@ -198,7 +200,7 @@ object Repo {
 
     // ---------- المنشورات ----------
     var note by mutableStateOf("")
-    fun setNote(v: String) { note = v.take(60); sp.edit().putString("note", note).putLong("note_t", System.currentTimeMillis()).apply() }
+    fun saveNote(v: String) { note = v.take(60); sp.edit().putString("note", note).putLong("note_t", System.currentTimeMillis()).apply() }
 
     val myStories = mutableStateListOf<Story>()
     val hiddenIds = mutableStateListOf<Long>()
@@ -289,6 +291,34 @@ object Repo {
         saveMessages()
         if (!foreground && flag("n_msgs", true)) Notifier.message(appCtx, chat.title, user(chat.userId).idx, reply, chat.id)
     }
+
+    fun deleteMsg(chat: Chat, m: Msg) { chat.msgs.remove(m); saveMessages() }
+
+    /** فلاتر الصور: تُدمج في الملف عند النشر. 0 أصلي */
+    val filterNames = listOf("أصلي", "أبيض وأسود", "دافئ", "بارد", "قديم", "ساطع")
+    fun filterMatrix(kind: Int): FloatArray? = when (kind) {
+        1 -> floatArrayOf(.33f, .59f, .11f, 0f, 0f, .33f, .59f, .11f, 0f, 0f, .33f, .59f, .11f, 0f, 0f, 0f, 0f, 0f, 1f, 0f)
+        2 -> floatArrayOf(1.12f, 0f, 0f, 0f, 8f, 0f, 1.02f, 0f, 0f, 0f, 0f, 0f, .86f, 0f, -6f, 0f, 0f, 0f, 1f, 0f)
+        3 -> floatArrayOf(.9f, 0f, 0f, 0f, -4f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1.15f, 0f, 10f, 0f, 0f, 0f, 1f, 0f)
+        4 -> floatArrayOf(.39f, .77f, .19f, 0f, 0f, .35f, .69f, .17f, 0f, 0f, .27f, .53f, .13f, 0f, 0f, 0f, 0f, 0f, 1f, 0f)
+        5 -> floatArrayOf(1.2f, 0f, 0f, 0f, 14f, 0f, 1.2f, 0f, 0f, 14f, 0f, 0f, 1.2f, 0f, 14f, 0f, 0f, 0f, 1f, 0f)
+        else -> null
+    }
+    suspend fun bakeFilter(path: String, kind: Int): String = withContext(Dispatchers.IO) {
+        val m = filterMatrix(kind) ?: return@withContext path
+        val src = android.graphics.BitmapFactory.decodeFile(path) ?: return@withContext path
+        val out = android.graphics.Bitmap.createBitmap(src.width, src.height, android.graphics.Bitmap.Config.ARGB_8888)
+        val paint = android.graphics.Paint().apply { colorFilter = android.graphics.ColorMatrixColorFilter(android.graphics.ColorMatrix(m)) }
+        android.graphics.Canvas(out).drawBitmap(src, 0f, 0f, paint)
+        val f = newMediaFile("jpg")
+        f.outputStream().use { out.compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, it) }
+        f.absolutePath
+    }
+
+    /** الوسوم الأكثر استخداماً في المنشورات */
+    fun trendingTags(): List<Pair<String, Int>> =
+        posts.filter { !it.archived }.flatMap { Regex("#[\\p{L}\\p{N}_]+").findAll(it.caption).map { m -> m.value }.toList() }
+            .groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.take(10).map { it.key to it.value }
 
     private fun saveMessages() {
         val o = JSONObject()

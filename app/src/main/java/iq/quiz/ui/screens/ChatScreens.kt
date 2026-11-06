@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -93,8 +94,8 @@ fun InboxScreen(onBack: (() -> Unit)?, onChat: (Int) -> Unit) {
         if (noteDlg) AlertDialog(
             onDismissRequest = { noteDlg = false }, title = { Text("ملاحظتك (60 حرف، تختفي بعد 24 ساعة)") },
             text = { OutlinedTextField(noteText, { noteText = it.take(60) }, placeholder = { Text("شنو تفكر؟") }) },
-            confirmButton = { TextButton({ Repo.setNote(noteText.trim()); noteDlg = false }) { Text("مشاركة") } },
-            dismissButton = { TextButton({ Repo.setNote(""); noteDlg = false }) { Text("حذف") } },
+            confirmButton = { TextButton({ Repo.saveNote(noteText.trim()); noteDlg = false }) { Text("مشاركة") } },
+            dismissButton = { TextButton({ Repo.saveNote(""); noteDlg = false }) { Text("حذف") } },
         )
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("الرسائل", style = MaterialTheme.typography.titleMedium, color = if (!requests) p.ink else p.muted, modifier = Modifier.weight(1f).bounceClick { requests = false })
@@ -173,14 +174,26 @@ fun ChatScreen(chatId: Int, onBack: () -> Unit, onCall: (Boolean) -> Unit, onUse
                 LaunchedEffect(Unit) { shown = true }
                 val a by animateFloatAsState(if (shown) 1f else 0f, tween(250), label = "m")
                 val dy by animateDpAsState(if (shown) 0.dp else 12.dp, tween(250), label = "dy")
+                var msgMenu by remember { mutableStateOf(false) }
                 Row(Modifier.fillMaxWidth().graphicsLayer { alpha = a; translationY = dy.toPx() }, horizontalArrangement = if (m.mine) Arrangement.Start else Arrangement.End) {
                     // في RTL بداية الصف = اليمين: رسائلي يمين، رسائلهم يسار
-                    Box(
-                        Modifier.widthIn(max = 270.dp).clip(RoundedCornerShape(20.dp))
-                            .then(if (m.mine) Modifier.background(Brush.horizontalGradient(listOf(Primary, PrimaryDark))) else Modifier.background(p.bg2)),
-                    ) {
-                        if (m.imagePath != null) AsyncImage(File(m.imagePath), null, Modifier.size(210.dp, 180.dp), contentScale = ContentScale.Crop)
-                        else Text(m.text, color = if (m.mine) Color.White else p.ink, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp))
+                    Box {
+                        Box(
+                            Modifier.widthIn(max = 270.dp).clip(RoundedCornerShape(20.dp))
+                                .then(if (m.mine) Modifier.background(Brush.horizontalGradient(listOf(Primary, PrimaryDark))) else Modifier.background(p.bg2))
+                                .pointerInput(m.id) { androidx.compose.foundation.gestures.detectTapGestures(onLongPress = { msgMenu = true }, onDoubleTap = { m.reaction = if (m.reaction.isEmpty()) "❤" else "" }) },
+                        ) {
+                            if (m.imagePath != null) AsyncImage(File(m.imagePath), null, Modifier.size(210.dp, 180.dp), contentScale = ContentScale.Crop)
+                            else Text(m.text, color = if (m.mine) Color.White else p.ink, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp))
+                        }
+                        if (m.reaction.isNotEmpty()) Text(m.reaction, modifier = Modifier.align(Alignment.BottomStart).offset(y = 10.dp).clip(CircleShape).background(p.bg).padding(horizontal = 5.dp, vertical = 1.dp))
+                        DropdownMenu(msgMenu, { msgMenu = false }) {
+                            if (m.imagePath == null) DropdownMenuItem(text = { Text("نسخ") }, onClick = {
+                                (ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("msg", m.text)); msgMenu = false
+                            })
+                            DropdownMenuItem(text = { Text(if (m.reaction.isEmpty()) "تفاعل ❤" else "إزالة التفاعل") }, onClick = { m.reaction = if (m.reaction.isEmpty()) "❤" else ""; msgMenu = false })
+                            DropdownMenuItem(text = { Text("حذف", color = Danger) }, onClick = { msgMenu = false; Repo.deleteMsg(chat, m) })
+                        }
                     }
                 }
             }

@@ -294,6 +294,7 @@ fun ExploreScreen(nav: Nav) {
     var q by remember { mutableStateOf("") }
     var cat by remember { mutableIntStateOf(0) }
     val people = Repo.users.filter { q.isNotBlank() && (it.name.contains(q) || it.username.contains(q, true)) }
+    val found = Repo.posts.filter { q.isNotBlank() && !it.archived && it.caption.contains(q, true) }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         HalaField(q, { q = it }, "ابحث عن ناس، وسوم، أماكن", Icons.Outlined.Search, modifier = Modifier.padding(12.dp))
         if (q.isNotBlank()) {
@@ -305,11 +306,25 @@ fun ExploreScreen(nav: Nav) {
                         Column { Text(u.name, style = MaterialTheme.typography.bodyLarge, color = p.ink); Text("@" + u.username, style = MaterialTheme.typography.labelMedium, color = p.muted) }
                     }
                 }
-                if (people.isEmpty()) item { Text("لا توجد نتائج", Modifier.padding(24.dp), color = p.muted, style = MaterialTheme.typography.bodyMedium) }
+                items(found, key = { "f${it.id}" }) { post ->
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(46.dp).clip(RoundedCornerShape(10.dp))) { if (post.imagePath != null) AsyncImage(File(post.imagePath), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) else PhotoArt(post.kind, Modifier.fillMaxSize()) }
+                        Spacer(Modifier.width(12.dp))
+                        Text(hashtagText("", post.caption, Primary), style = MaterialTheme.typography.bodyMedium, color = p.ink, maxLines = 2)
+                    }
+                }
+                if (people.isEmpty() && found.isEmpty()) item { Text("لا توجد نتائج", Modifier.padding(24.dp), color = p.muted, style = MaterialTheme.typography.bodyMedium) }
             }
         } else {
             LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 itemsIndexed(listOf("لك", "رحلات", "طعام", "فن", "رياضة", "موسيقى")) { i, t -> Chip(t, cat == i) { cat = i } }
+            }
+            val tags = Repo.trendingTags()
+            if (tags.isNotEmpty()) {
+                Text("وسوم رائجة", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(start = 14.dp, top = 10.dp))
+                LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(tags) { (t, n) -> Chip("$t · $n", false) { q = t } }
+                }
             }
             Spacer(Modifier.height(10.dp))
             if (Repo.posts.isEmpty()) Text("لا توجد منشورات للاستكشاف بعد. انشر صورك وتظهر هنا", Modifier.fillMaxWidth().padding(32.dp), color = p.muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
@@ -407,6 +422,7 @@ fun CreatePostScreen(onBack: () -> Unit) {
     var mode by remember { mutableIntStateOf(1) } // 0 ريلز، 1 منشور، 2 قصة، 3 قوالب
     var target by remember { mutableIntStateOf(0) } // 0 منشور، 1 قصة
     var location by remember { mutableStateOf("") }
+    var filter by remember { mutableIntStateOf(0) }
     var hideLikes by remember { mutableStateOf(false) }
     var commentsOff by remember { mutableStateOf(false) }
     val imgPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -421,12 +437,15 @@ fun CreatePostScreen(onBack: () -> Unit) {
     if (path != null) {
         // خطوة الوصف والنشر
         fun publish() {
+            scope.launch {
+            if (!isVideo && filter != 0) path = Repo.bakeFilter(path!!, filter)
             when {
                 isVideo -> Repo.addReel(path!!, caption.trim(), location.trim(), hideLikes, commentsOff)
                 target == 1 -> Repo.addStory(path!!)
                 else -> Repo.addPost(path!!, caption.trim(), location.trim(), hideLikes, commentsOff)
             }
             Toast.makeText(ctx, if (target == 1 && !isVideo) "تمت إضافة القصة" else "تم النشر", Toast.LENGTH_SHORT).show(); onBack()
+            }
         }
         Column(Modifier.fillMaxSize().background(p.bg).imePadding()) {
             TopBack(if (isVideo) "ريل جديد" else if (target == 1) "قصة جديدة" else "منشور جديد", { path = null }) {
@@ -434,7 +453,8 @@ fun CreatePostScreen(onBack: () -> Unit) {
             }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp).navigationBarsPadding()) {
                 Box(Modifier.fillMaxWidth().aspectRatio(if (target == 1 && !isVideo) 0.8f else 1f).clip(RoundedCornerShape(20.dp)).background(p.bg2), contentAlignment = Alignment.Center) {
-                    if (!isVideo) AsyncImage(File(path!!), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    if (!isVideo) AsyncImage(File(path!!), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop,
+                        colorFilter = Repo.filterMatrix(filter)?.let { androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix(it)) })
                     else Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Outlined.Movie, null, tint = Primary, modifier = Modifier.size(64.dp))
                         Text("الفيديو جاهز للنشر", style = MaterialTheme.typography.bodyLarge, color = p.muted)
@@ -443,6 +463,9 @@ fun CreatePostScreen(onBack: () -> Unit) {
                 if (!isVideo) {
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Chip("منشور", target == 0) { target = 0 }; Chip("قصتك (24 ساعة)", target == 1) { target = 1 } }
+                    Spacer(Modifier.height(10.dp))
+                    Text("الفلاتر", style = MaterialTheme.typography.labelMedium, color = p.muted)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { itemsIndexed(Repo.filterNames) { k, n -> Chip(n, filter == k) { filter = k } } }
                 }
                 if (target == 0 || isVideo) {
                     Spacer(Modifier.height(14.dp))

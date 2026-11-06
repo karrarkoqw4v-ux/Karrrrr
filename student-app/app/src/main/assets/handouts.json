@@ -1,5 +1,0 @@
-[
-  {"id": "sample-math", "title": "ملزمة الرياضيات (نموذج)", "teacher": "اسم المدرس", "subject": "الرياضيات", "rating": 5, "pages": 0, "year": "2025 - 2026", "grade": "m3", "pdfUrl": "", "sample": true},
-  {"id": "sample-english", "title": "ملزمة الإنكليزي (نموذج)", "teacher": "اسم المدرس", "subject": "الإنكليزي", "rating": 4, "pages": 0, "year": "2025 - 2026", "grade": "m3", "pdfUrl": "", "sample": true},
-  {"id": "sample-chem", "title": "ملزمة الكيمياء (نموذج)", "teacher": "اسم المدرس", "subject": "الكيمياء", "rating": 5, "pages": 0, "year": "2025 - 2026", "grade": "m3", "pdfUrl": "", "sample": true}
-]

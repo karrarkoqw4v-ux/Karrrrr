@@ -101,6 +101,8 @@ fun ReelsScreen(nav: Nav) {
 private fun ReelPage(post: Post, active: Boolean, nav: Nav, onComments: () -> Unit) {
     val ctx = LocalContext.current
     var paused by remember { mutableStateOf(false) }
+    var menu by remember { mutableStateOf(false) }
+    if (menu) PostMenuSheet(post) { menu = false }
     val player = remember(post.id) {
         ExoPlayer.Builder(ctx).build().apply {
             setMediaItem(MediaItem.fromUri(Uri.fromFile(File(post.videoPath!!))))
@@ -121,17 +123,17 @@ private fun ReelPage(post: Post, active: Boolean, nav: Nav, onComments: () -> Un
 
         // أزرار الجانب (يسار)
         Column(Modifier.align(Alignment.BottomEnd).padding(start = 8.dp, end = 12.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            ReelAction(if (post.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, "${post.likes}", if (post.liked) Like else Color.White) {
+            ReelAction(if (post.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, if (post.hideLikes) "" else "${post.likes}", if (post.liked) Like else Color.White) {
                 post.liked = !post.liked; post.likes += if (post.liked) 1 else -1
             }
-            ReelAction(Icons.Outlined.ChatBubbleOutline, "${post.commentCount.value}", Color.White) { onComments() }
+            ReelAction(Icons.Outlined.ChatBubbleOutline, if (post.commentsOff) "" else "${post.commentCount.value}", Color.White) { if (!post.commentsOff) onComments() else Toast.makeText(ctx, "التعليقات مغلقة", Toast.LENGTH_SHORT).show() }
             ReelAction(Icons.Outlined.Repeat, "", Color.White) { Toast.makeText(ctx, "تمت إعادة النشر لمتابعيك", Toast.LENGTH_SHORT).show() }
             ReelAction(Icons.Outlined.Send, "", Color.White) {
                 val i = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, post.caption)
                 ctx.startActivity(android.content.Intent.createChooser(i, "مشاركة"))
             }
             ReelAction(if (post.saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder, "", if (post.saved) Primary else Color.White) { post.saved = !post.saved }
-            Icon(Icons.Outlined.MoreVert, null, tint = Color.White, modifier = Modifier.size(28.dp))
+            Icon(Icons.Outlined.MoreVert, null, tint = Color.White, modifier = Modifier.size(30.dp).bounceClick { menu = true })
         }
         // معلومات الناشر (يمين)
         Column(Modifier.align(Alignment.BottomStart).padding(start = 14.dp, end = 80.dp, bottom = 26.dp)) {
@@ -143,7 +145,7 @@ private fun ReelPage(post: Post, active: Boolean, nav: Nav, onComments: () -> Un
             }
             if (post.caption.isNotBlank()) {
                 Spacer(Modifier.height(10.dp))
-                Text(post.caption, style = MaterialTheme.typography.bodyMedium, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(hashtagText("", post.caption, Color(0xFF7CC4FF)), style = MaterialTheme.typography.bodyMedium, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }

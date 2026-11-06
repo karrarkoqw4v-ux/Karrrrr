@@ -22,12 +22,18 @@ class Comment(val userId: Int, val text: String, val time: String) {
     var liked by mutableStateOf(false)
     var likes by mutableStateOf(0)
 }
-class Post(val id: Long, val userId: Int, val kind: Int, val imagePath: String?, val caption: String, likes: Int, val time: String, val comments: MutableList<Comment> = mutableListOf(), val videoPath: String? = null) {
+class Post(val id: Long, val userId: Int, val kind: Int, val imagePath: String?, caption: String, likes: Int, val time: String, val comments: MutableList<Comment> = mutableListOf(), val videoPath: String? = null) {
+    var caption by mutableStateOf(caption)
     var likes by mutableStateOf(likes)
     var liked by mutableStateOf(false)
     var saved by mutableStateOf(false)
+    var archived by mutableStateOf(false)
+    var hideLikes by mutableStateOf(false)
+    var commentsOff by mutableStateOf(false)
+    var location by mutableStateOf("")
     val commentCount = mutableStateOf(comments.size)
 }
+class Story(val id: Long, val path: String, val time: Long)
 class Msg(val id: Long, val mine: Boolean, val text: String, val imagePath: String? = null, val time: String = "الآن")
 class Chat(val id: Int, val userId: Int, val title: String, val group: Boolean = false, val msgs: MutableList<Msg> = mutableStateListOf()) {
     var unread by mutableStateOf(0)
@@ -81,11 +87,12 @@ object Repo {
         sp = ctx.applicationContext.getSharedPreferences("hala", Context.MODE_PRIVATE)
         media = File(ctx.filesDir, "media").apply { mkdirs() }
         dark = sp.getBoolean("dark", true)
-        demo = sp.getBoolean("demo", false)
+        demo = sp.getBoolean("demo", true)
         sp.getString("following", "")?.split(",")?.mapNotNull { it.toIntOrNull() }?.let { following.addAll(it) }
         sp.getString("cur", null)?.let { loadMe(it) }
         seed()
         loadUserPosts()
+        if (System.currentTimeMillis() - sp.getLong("note_t", 0) < 24 * 3600_000L) note = sp.getString("note", "") ?: ""
     }
 
     // ---------- بيانات تجريبية ----------
@@ -102,14 +109,6 @@ object Repo {
         posts.removeAll { it.userId != 0 }
         chats.removeAll { it.id != 0 }
         if (v) { seedDemo(); loadMessages(skipSelf = true) }
-    }
-
-    fun deletePost(p: Post) {
-        posts.remove(p)
-        val arr = JSONArray(sp.getString("my_posts", "[]"))
-        val out = JSONArray()
-        for (i in 0 until arr.length()) if (arr.getJSONObject(i).getLong("id") != p.id) out.put(arr.getJSONObject(i))
-        sp.edit().putString("my_posts", out.toString()).apply()
     }
 
     private fun seedDemo() {
@@ -198,13 +197,20 @@ object Repo {
     }
 
     // ---------- المنشورات ----------
-    fun addPost(imagePath: String, caption: String) {
+    var note by mutableStateOf("")
+    fun setNote(v: String) { note = v.take(60); sp.edit().putString("note", note).putLong("note_t", System.currentTimeMillis()).apply() }
+
+    val myStories = mutableStateListOf<Story>()
+    val hiddenIds = mutableStateListOf<Long>()
+    val mutedUsers = mutableStateListOf<Int>()
+
+    fun addPost(imagePath: String, caption: String, location: String = "", hideLikes: Boolean = false, commentsOff: Boolean = false) {
         val p = Post(System.currentTimeMillis(), 0, 0, imagePath, caption, 0, "الآن")
-        posts.add(0, p)
-        val arr = JSONArray(sp.getString("my_posts", "[]"))
-        arr.put(JSONObject().put("id", p.id).put("img", imagePath).put("cap", caption))
-        sp.edit().putString("my_posts", arr.toString()).apply()
+        p.location = location; p.hideLikes = hideLikes; p.commentsOff = commentsOff
+        posts.add(0, p); persistMine()
     }
+
+    fun deletePost(p: Post) { posts.remove(p); persistMine() }
 
     fun newMediaFile(ext: String) = File(media, "m_${System.currentTimeMillis()}.$ext")
 
@@ -214,26 +220,51 @@ object Repo {
         f.absolutePath
     }
 
-    fun addReel(videoPath: String, caption: String) {
+    fun addReel(videoPath: String, caption: String, location: String = "", hideLikes: Boolean = false, commentsOff: Boolean = false) {
         val p = Post(System.currentTimeMillis(), 0, 0, null, caption, 0, "الآن", videoPath = videoPath)
-        posts.add(0, p)
-        val arr = JSONArray(sp.getString("my_reels", "[]"))
-        arr.put(JSONObject().put("id", p.id).put("vid", videoPath).put("cap", caption))
-        sp.edit().putString("my_reels", arr.toString()).apply()
+        p.location = location; p.hideLikes = hideLikes; p.commentsOff = commentsOff
+        posts.add(0, p); persistMine()
+    }
+
+    /** يحفظ منشوراتي وريلزي كاملة (الوصف، الأرشفة، إخفاء الإعجابات...) */
+    fun persistMine() {
+        val ps = JSONArray(); val rs = JSONArray()
+        posts.filter { it.userId == 0 }.reversed().forEach { p ->
+            val o = JSONObject().put("id", p.id).put("cap", p.caption).put("arch", p.archived).put("hide", p.hideLikes).put("coff", p.commentsOff).put("loc", p.location)
+            if (p.videoPath != null) rs.put(o.put("vid", p.videoPath)) else ps.put(o.put("img", p.imagePath ?: ""))
+        }
+        sp.edit().putString("my_posts", ps.toString()).putString("my_reels", rs.toString()).apply()
+    }
+
+    private fun readPost(o: JSONObject, video: Boolean): Post? {
+        val path = if (video) o.optString("vid") else o.optString("img")
+        if (!File(path).exists()) return null
+        val p = Post(o.getLong("id"), 0, 0, if (video) null else path, o.optString("cap"), 0, "قبل قليل", videoPath = if (video) path else null)
+        p.archived = o.optBoolean("arch"); p.hideLikes = o.optBoolean("hide"); p.commentsOff = o.optBoolean("coff"); p.location = o.optString("loc")
+        return p
     }
 
     private fun loadUserPosts() {
         val rs = JSONArray(sp.getString("my_reels", "[]"))
-        for (i in 0 until rs.length()) {
-            val o = rs.getJSONObject(i)
-            if (File(o.getString("vid")).exists()) posts.add(0, Post(o.getLong("id"), 0, 0, null, o.getString("cap"), 0, "قبل قليل", videoPath = o.getString("vid")))
-        }
+        for (i in 0 until rs.length()) readPost(rs.getJSONObject(i), true)?.let { posts.add(0, it) }
         val arr = JSONArray(sp.getString("my_posts", "[]"))
-        for (i in 0 until arr.length()) {
-            val o = arr.getJSONObject(i)
-            if (File(o.getString("img")).exists()) posts.add(0, Post(o.getLong("id"), 0, 0, o.getString("img"), o.getString("cap"), 0, "قبل قليل"))
+        for (i in 0 until arr.length()) readPost(arr.getJSONObject(i), false)?.let { posts.add(0, it) }
+        // القصص: تنتهي بعد 24 ساعة
+        val st = JSONArray(sp.getString("my_stories", "[]")); val now = System.currentTimeMillis()
+        for (i in 0 until st.length()) {
+            val o = st.getJSONObject(i)
+            if (now - o.getLong("t") < 24 * 3600_000L && File(o.getString("p")).exists()) myStories.add(Story(o.getLong("t"), o.getString("p"), o.getLong("t")))
         }
+        sp.getString("hidden", "")?.split(",")?.mapNotNull { it.toLongOrNull() }?.let { hiddenIds.addAll(it) }
     }
+
+    private fun saveStories() {
+        val a = JSONArray(); myStories.forEach { a.put(JSONObject().put("p", it.path).put("t", it.time)) }
+        sp.edit().putString("my_stories", a.toString()).apply()
+    }
+    fun addStory(path: String) { myStories.add(Story(System.currentTimeMillis(), path, System.currentTimeMillis())); saveStories() }
+    fun deleteStory(s: Story) { myStories.remove(s); saveStories() }
+    fun hidePost(p: Post) { hiddenIds.add(p.id); sp.edit().putString("hidden", hiddenIds.joinToString(",")).apply() }
 
     fun addComment(p: Post, text: String) {
         p.comments.add(Comment(0, text, "الآن")); p.commentCount.value = p.comments.size

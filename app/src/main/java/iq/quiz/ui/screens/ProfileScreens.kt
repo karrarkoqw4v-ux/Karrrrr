@@ -41,7 +41,7 @@ fun ProfileScreen(userId: Int, nav: Nav, onBack: (() -> Unit)?) {
     val p = pal
     val u = Repo.user(userId)
     val mine = userId == 0
-    val posts = Repo.posts.filter { it.userId == userId }
+    val posts = Repo.posts.filter { it.userId == userId && !it.archived }
     var sheet by remember { mutableStateOf<Int?>(null) }
     val isF = Repo.isFollowing(userId)
     sheet?.let { which ->
@@ -50,7 +50,7 @@ fun ProfileScreen(userId: Int, nav: Nav, onBack: (() -> Unit)?) {
     }
     Column(Modifier.fillMaxSize().background(p.bg)) {
         TopBack(if (mine) Repo.me.username else u.username, onBack) {
-            if (mine) IconBtn(Icons.Outlined.Settings, "الإعدادات") { nav.settings() }
+            if (mine) { IconBtn(Icons.Outlined.Archive, "الأرشيف") { nav.archive() }; IconBtn(Icons.Outlined.Settings, "الإعدادات") { nav.settings() } }
         }
         LazyVerticalGrid(GridCells.Fixed(3), Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
@@ -114,44 +114,4 @@ fun EditProfileScreen(onBack: () -> Unit) {
             HalaField(bio, { bio = it }, "نبذة عنك", Icons.Outlined.Edit, label = "النبذة", singleLine = false)
         }
     }
-}
-
-@Composable
-fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit) {
-    val p = pal
-    var priv by remember { mutableStateOf(Repo.flag("private", false)) }
-    var active by remember { mutableStateOf(Repo.flag("active", true)) }
-    var read by remember { mutableStateOf(Repo.flag("read", true)) }
-    var nLikes by remember { mutableStateOf(Repo.flag("n_likes", true)) }
-    var nMsgs by remember { mutableStateOf(Repo.flag("n_msgs", true)) }
-    var nCalls by remember { mutableStateOf(Repo.flag("n_calls", true)) }
-    var lang by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().background(p.bg)) {
-        TopBack("الإعدادات", onBack)
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
-            Text("المظهر", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 8.dp))
-            SettingRow(Icons.Outlined.DarkMode, "الوضع الداكن", "تغيير ألوان التطبيق", Color(0xFF3B82F6), toggle = Repo.dark, onToggle = { Repo.updateDark(it) })
-            SettingRow(Icons.Outlined.Language, "اللغة", null, Color(0xFF0891B2), value = "العربية") { lang = true }
-            Text("الخصوصية", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
-            SettingRow(Icons.Outlined.Lock, "حساب خاص", "فقط من توافق عليه يشوف منشوراتك", Color(0xFF7C5CFF), toggle = priv, onToggle = { priv = it; Repo.setFlag("private", it) })
-            SettingRow(Icons.Outlined.Visibility, "حالة النشاط", "اعرض متى كنت متصل", Primary, toggle = active, onToggle = { active = it; Repo.setFlag("active", it) })
-            SettingRow(Icons.Outlined.DoneAll, "إشعار القراءة", "علامة المشاهدة بالرسائل", Primary, toggle = read, onToggle = { read = it; Repo.setFlag("read", it) })
-            Text("الإشعارات", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
-            SettingRow(Icons.Outlined.FavoriteBorder, "الإعجابات والتعليقات", null, Like, toggle = nLikes, onToggle = { nLikes = it; Repo.setFlag("n_likes", it) })
-            SettingRow(Icons.Outlined.ChatBubbleOutline, "الرسائل", null, Primary, toggle = nMsgs, onToggle = { nMsgs = it; Repo.setFlag("n_msgs", it) })
-            SettingRow(Icons.Outlined.Call, "المكالمات", null, Success, toggle = nCalls, onToggle = { nCalls = it; Repo.setFlag("n_calls", it) })
-            SettingRow(Icons.Outlined.NotificationsNone, "جرّب إشعار رسالة", "يظهر مثل واتساب: صورة واسم المرسل والنص", Primary) { iq.quiz.data.Notifier.message(Repo.appCtx, "سارة أحمد", 1, "هلا! شلونك اليوم؟") }
-            SettingRow(Icons.Outlined.Image, "جرّب إشعار منشور", "منشور جديد من صديق", Color(0xFFEC4899)) { iq.quiz.data.Notifier.friendPost(Repo.appCtx, "علي حسن", 2, "غروب الشمس على دجلة") }
-            SettingRow(Icons.Outlined.Call, "جرّب إشعار مكالمة", "مكالمة فيديو فائتة", Success) { iq.quiz.data.Notifier.call(Repo.appCtx, "زينب كريم", 3, true) }
-            Text("المحتوى", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
-            SettingRow(Icons.Outlined.Science, "محتوى تجريبي", "أشخاص ومنشورات ورسائل وهمية لتجربة التطبيق", Color(0xFFF59E0B), toggle = Repo.demo, onToggle = { Repo.updateDemo(it) })
-            Text("الحساب", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
-            SettingRow(Icons.Outlined.Logout, "تسجيل الخروج", null, Danger) { Repo.signOut(); onLogout() }
-            Text("كويز تواصلكم 0.2 - البيانات محفوظة على جهازك فقط", style = MaterialTheme.typography.labelSmall, color = p.faint, modifier = Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center)
-        }
-    }
-    if (lang) AlertDialog(
-        onDismissRequest = { lang = false }, confirmButton = { TextButton({ lang = false }) { Text("تمام") } },
-        title = { Text("اللغة") }, text = { Text("النسخة الحالية بالعربية فقط. لغات إضافية تأتي بالتحديثات.") },
-    )
 }

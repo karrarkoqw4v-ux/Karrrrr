@@ -10,6 +10,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -50,6 +51,7 @@ import java.io.File
 class Nav(
     val story: (Int) -> Unit, val chat: (Int) -> Unit, val user: (Int) -> Unit, val create: () -> Unit,
     val notifs: () -> Unit, val inbox: () -> Unit, val settings: () -> Unit, val edit: () -> Unit,
+    val myStory: () -> Unit, val archive: () -> Unit,
 )
 
 @Composable
@@ -74,20 +76,17 @@ fun MainScreen(nav: Nav) {
                 else -> ProfileScreen(0, nav, onBack = null)
             }
         }
-        Row(Modifier.fillMaxWidth().background(if (dark) Color.Black else p.bg).navigationBarsPadding().height(62.dp), verticalAlignment = Alignment.CenterVertically) {
-            val icons = listOf(Icons.Outlined.Home, Icons.Outlined.Movie, Icons.Outlined.Send, Icons.Outlined.Search)
+        Row(Modifier.fillMaxWidth().background(if (dark) Color.Black else p.bg).navigationBarsPadding().height(66.dp), verticalAlignment = Alignment.CenterVertically) {
             (0..4).forEach { i ->
                 Box(Modifier.weight(1f).fillMaxHeight().bounceClick { tab = i }, contentAlignment = Alignment.Center) {
                     val sel = tab == i
-                    val c by animateColorAsState(if (sel) (if (dark) Color.White else p.ink) else (if (dark) Color(0xFFB0B0B8) else p.muted), label = "tab")
+                    val c = Color.White
                     if (i == 4) {
                         Box {
-                            Box(Modifier.border(if (sel) 2.dp else 0.dp, if (dark) Color.White else p.ink, CircleShape).padding(if (sel) 2.dp else 0.dp)) { Avatar(Repo.me.name, Repo.me.idx, 30.dp) }
-                            if (Repo.chats.any { it.unread > 0 }) Box(Modifier.align(Alignment.TopEnd).size(11.dp).clip(CircleShape).background(Color(0xFFFF3040)))
+                            Box(Modifier.border(if (sel) 2.dp else 1.dp, if (sel) Color.White else Color(0x33FFFFFF), CircleShape).padding(2.dp)) { Avatar(Repo.me.name, Repo.me.idx, 34.dp) }
+                            if (Repo.chats.any { it.unread > 0 }) Box(Modifier.align(Alignment.BottomEnd).offset(x = (-3).dp, y = 3.dp).size(18.dp).clip(CircleShape).background(if (dark) Color.Black else p.bg).padding(3.dp).clip(CircleShape).background(Color(0xFFFF3040)))
                         }
-                    } else Box {
-                        Icon(icons[i], null, tint = c, modifier = Modifier.size(if (sel) 31.dp else 29.dp))
-                    }
+                    } else NavGlyph(i.let { listOf(0, 1, 2, 3)[it] }, sel, c, if (dark) Color.Black else p.bg)
                 }
             }
         }
@@ -111,10 +110,12 @@ fun FeedScreen(nav: Nav) {
         item {
             LazyRow(Modifier.fillMaxWidth().padding(vertical = 10.dp), contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 item {
-                    Column(Modifier.bounceClick { nav.create() }, horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box { Avatar(Repo.me.name, Repo.me.idx, 56.dp, Modifier.padding(3.dp))
-                            Box(Modifier.align(Alignment.BottomEnd).size(22.dp).clip(CircleShape).background(p.bg).padding(2.dp).clip(CircleShape).background(Primary), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Add, null, tint = Color.White, modifier = Modifier.size(14.dp)) } }
-                        Text("قصتك", style = MaterialTheme.typography.labelSmall, color = p.ink)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box {
+                            Avatar(Repo.me.name, Repo.me.idx, 56.dp, Modifier.bounceClick { if (Repo.myStories.isNotEmpty()) nav.myStory() else nav.create() }, if (Repo.myStories.isNotEmpty()) Ring.New else Ring.None)
+                            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).clip(CircleShape).background(p.bg).padding(2.dp).clip(CircleShape).background(Primary).bounceClick { nav.create() }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Add, null, tint = Color.White, modifier = Modifier.size(16.dp)) }
+                        }
+                        Text("قصتك", style = MaterialTheme.typography.labelMedium, color = p.ink)
                     }
                 }
                 if (Repo.demo) itemsIndexed(Repo.users.take(7)) { i, u ->
@@ -126,7 +127,7 @@ fun FeedScreen(nav: Nav) {
             }
             HorizontalDivider(color = p.line)
         }
-        if (Repo.posts.none { it.videoPath == null }) item(key = "empty") {
+        if (Repo.posts.none { it.videoPath == null && !it.archived }) item(key = "empty") {
             Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Outlined.Image, null, tint = p.faint, modifier = Modifier.size(64.dp))
                 Spacer(Modifier.height(12.dp))
@@ -136,9 +137,9 @@ fun FeedScreen(nav: Nav) {
                 GradButton("انشر الآن", { nav.create() }, icon = Icons.Outlined.Add)
             }
         }
-        Repo.posts.filter { it.videoPath == null }.forEachIndexed { i, post ->
+        Repo.posts.filter { it.videoPath == null && !it.archived && it.id !in Repo.hiddenIds && it.userId !in Repo.mutedUsers }.forEachIndexed { i, post ->
             item(key = post.id) { PostCard(post, nav, onComments = { commentsFor = post }, onLikes = { likesFor = post }) }
-            if (i == 1 && Repo.demo) item(key = "suggestions") { Suggestions(nav) }
+            if (i == 1 && Repo.demo && Repo.flag("sugg", true)) item(key = "suggestions") { Suggestions(nav) }
         }
         item { Spacer(Modifier.height(24.dp)) }
     }
@@ -179,6 +180,9 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit, onLikes: () -> Unit) 
     val p = pal
     val u = Repo.user(post.userId)
     var burst by remember { mutableStateOf(0) }
+    val ctxP = LocalContext.current
+    var menu by remember { mutableStateOf(false) }
+    if (menu) PostMenuSheet(post) { menu = false }
     val burstScale by animateFloatAsState(if (burst > 0) 1f else 0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow), label = "burst")
     LaunchedEffect(burst) { if (burst > 0) { delay(650); burst = 0 } }
     
@@ -191,10 +195,10 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit, onLikes: () -> Unit) 
                     Text(if (u.id == 0) Repo.me.name else u.name, style = MaterialTheme.typography.bodyLarge, color = p.ink)
                     if (u.id % 3 == 0) { Spacer(Modifier.width(4.dp)); Icon(Icons.Filled.Verified, null, tint = Primary, modifier = Modifier.size(16.dp)) }
                 }
-                Text(if (u.id != 0 && !Repo.isFollowing(u.id)) "مقترح لك" else post.time, style = MaterialTheme.typography.labelMedium, color = p.muted)
+                Text(if (post.location.isNotBlank()) post.location else if (u.id != 0 && !Repo.isFollowing(u.id)) "مقترح لك" else post.time, style = MaterialTheme.typography.labelMedium, color = p.muted)
             }
-            if (u.id != 0) { FollowPill(u.id, outlined = true); Spacer(Modifier.width(4.dp)); Icon(Icons.Outlined.MoreVert, null, tint = p.ink, modifier = Modifier.size(24.dp)) }
-            else IconBtn(Icons.Outlined.DeleteOutline, "حذف المنشور", Danger) { Repo.deletePost(post) }
+            if (u.id != 0) { FollowPill(u.id, outlined = true); Spacer(Modifier.width(4.dp)) }
+            IconBtn(Icons.Outlined.MoreVert, "خيارات", p.ink, 26.dp) { menu = true }
         }
         Box(
             Modifier.fillMaxWidth().aspectRatio(1.08f).pointerInput(post.id) {
@@ -207,16 +211,16 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit, onLikes: () -> Unit) 
             Icon(Icons.Filled.Favorite, null, tint = Color.White, modifier = Modifier.size(96.dp).graphicsLayer { scaleX = burstScale; scaleY = burstScale; alpha = burstScale })
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            PostAction(if (post.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, "${post.likes}", if (post.liked) Like else p.ink) {
+            PostAction(if (post.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, if (post.hideLikes) "" else "${post.likes}", if (post.liked) Like else p.ink) {
                 post.liked = !post.liked; post.likes += if (post.liked) 1 else -1
             }
-            PostAction(Icons.Outlined.ChatBubbleOutline, "${post.commentCount.value}", p.ink) { onComments() }
-            PostAction(Icons.Outlined.Send, "شارك", p.ink) {}
+            PostAction(Icons.Outlined.ChatBubbleOutline, if (post.commentsOff) "" else "${post.commentCount.value}", p.ink) { if (!post.commentsOff) onComments() }
+            PostAction(Icons.Outlined.Send, "شارك", p.ink) { sharePost(ctxP, post) }
             Spacer(Modifier.weight(1f))
             PostAction(if (post.saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder, if (post.saved) "محفوظ" else "حفظ", if (post.saved) Primary else p.ink) { post.saved = !post.saved }
         }
         val likers = remember(post.id) { Repo.likers(post) }
-        if (post.userId != 0) Row(Modifier.fillMaxWidth().bounceClick { onLikes() }.padding(horizontal = 14.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (post.userId != 0 && !post.hideLikes) Row(Modifier.fillMaxWidth().bounceClick { onLikes() }.padding(horizontal = 14.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(54.dp).height(24.dp)) {
                 likers.take(3).forEachIndexed { i, l -> Avatar(l.name, l.idx, 24.dp, Modifier.offset(x = (i * 15).dp)) }
             }
@@ -225,8 +229,9 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit, onLikes: () -> Unit) 
                 style = MaterialTheme.typography.labelMedium, color = p.ink,
             )
         }
-        Text("${u.name}  ${post.caption}", style = MaterialTheme.typography.bodyMedium, color = p.ink, modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp))
-        Text("عرض كل ${post.commentCount.value} تعليق", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.bounceClick { onComments() }.padding(horizontal = 14.dp, vertical = 4.dp))
+        if (post.caption.isNotBlank()) Text(hashtagText(if (u.id == 0) Repo.me.name else u.name, post.caption, Primary), style = MaterialTheme.typography.bodyMedium, color = p.ink, modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp))
+        if (post.commentsOff) Text("التعليقات مغلقة", style = MaterialTheme.typography.labelMedium, color = p.faint, modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp))
+        else Text("عرض كل ${post.commentCount.value} تعليق", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.bounceClick { onComments() }.padding(horizontal = 14.dp, vertical = 4.dp))
     }
 }
 
@@ -399,9 +404,13 @@ fun CreatePostScreen(onBack: () -> Unit) {
     var path by remember { mutableStateOf<String?>(null) }
     var isVideo by remember { mutableStateOf(false) }
     var caption by remember { mutableStateOf("") }
-    var mode by remember { mutableIntStateOf(1) } // 0 ريلز، 1 قصة/منشور، 2 قوالب
+    var mode by remember { mutableIntStateOf(1) } // 0 ريلز، 1 منشور، 2 قصة، 3 قوالب
+    var target by remember { mutableIntStateOf(0) } // 0 منشور، 1 قصة
+    var location by remember { mutableStateOf("") }
+    var hideLikes by remember { mutableStateOf(false) }
+    var commentsOff by remember { mutableStateOf(false) }
     val imgPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) scope.launch { runCatching { Repo.importImage(ctx, uri) }.onSuccess { path = it; isVideo = false }.onFailure { Toast.makeText(ctx, "تعذر فتح الصورة", Toast.LENGTH_SHORT).show() } }
+        if (uri != null) scope.launch { runCatching { Repo.importImage(ctx, uri) }.onSuccess { path = it; isVideo = false; target = if (mode == 2) 1 else 0 }.onFailure { Toast.makeText(ctx, "تعذر فتح الصورة", Toast.LENGTH_SHORT).show() } }
     }
     val vidPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) scope.launch { runCatching { Repo.importVideo(ctx, uri) }.onSuccess { path = it; isVideo = true }.onFailure { Toast.makeText(ctx, "تعذر فتح الفيديو", Toast.LENGTH_SHORT).show() } }
@@ -411,26 +420,41 @@ fun CreatePostScreen(onBack: () -> Unit) {
 
     if (path != null) {
         // خطوة الوصف والنشر
-        Column(Modifier.fillMaxSize().background(p.bg).imePadding()) {
-            TopBack(if (isVideo) "ريل جديد" else "منشور جديد", { path = null }) {
-                Text("نشر", style = MaterialTheme.typography.labelLarge, color = PrimaryDark,
-                    modifier = Modifier.bounceClick { if (isVideo) Repo.addReel(path!!, caption.trim()) else Repo.addPost(path!!, caption.trim()); onBack() }.padding(12.dp))
+        fun publish() {
+            when {
+                isVideo -> Repo.addReel(path!!, caption.trim(), location.trim(), hideLikes, commentsOff)
+                target == 1 -> Repo.addStory(path!!)
+                else -> Repo.addPost(path!!, caption.trim(), location.trim(), hideLikes, commentsOff)
             }
-            Column(Modifier.weight(1f).padding(16.dp).navigationBarsPadding()) {
-                Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(20.dp)).background(p.bg2), contentAlignment = Alignment.Center) {
+            Toast.makeText(ctx, if (target == 1 && !isVideo) "تمت إضافة القصة" else "تم النشر", Toast.LENGTH_SHORT).show(); onBack()
+        }
+        Column(Modifier.fillMaxSize().background(p.bg).imePadding()) {
+            TopBack(if (isVideo) "ريل جديد" else if (target == 1) "قصة جديدة" else "منشور جديد", { path = null }) {
+                Text("نشر", style = MaterialTheme.typography.labelLarge, color = PrimaryDark, modifier = Modifier.bounceClick { publish() }.padding(12.dp))
+            }
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp).navigationBarsPadding()) {
+                Box(Modifier.fillMaxWidth().aspectRatio(if (target == 1 && !isVideo) 0.8f else 1f).clip(RoundedCornerShape(20.dp)).background(p.bg2), contentAlignment = Alignment.Center) {
                     if (!isVideo) AsyncImage(File(path!!), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     else Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Outlined.Movie, null, tint = Primary, modifier = Modifier.size(64.dp))
                         Text("الفيديو جاهز للنشر", style = MaterialTheme.typography.bodyLarge, color = p.muted)
                     }
                 }
-                Spacer(Modifier.height(14.dp))
-                HalaField(caption, { caption = it }, "اكتب وصفاً...", singleLine = false)
-                Spacer(Modifier.weight(1f))
-                GradButton("نشر الآن", {
-                    if (isVideo) Repo.addReel(path!!, caption.trim()) else Repo.addPost(path!!, caption.trim())
-                    Toast.makeText(ctx, "تم النشر", Toast.LENGTH_SHORT).show(); onBack()
-                }, icon = Icons.Outlined.Send)
+                if (!isVideo) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Chip("منشور", target == 0) { target = 0 }; Chip("قصتك (24 ساعة)", target == 1) { target = 1 } }
+                }
+                if (target == 0 || isVideo) {
+                    Spacer(Modifier.height(14.dp))
+                    HalaField(caption, { caption = it }, "اكتب وصفاً... استخدم # للوسوم", singleLine = false)
+                    Spacer(Modifier.height(10.dp))
+                    HalaField(location, { location = it }, "إضافة موقع", Icons.Outlined.Place)
+                    Spacer(Modifier.height(6.dp))
+                    SettingRow(Icons.Outlined.FavoriteBorder, "إخفاء عدد الإعجابات", null, Like, toggle = hideLikes, onToggle = { hideLikes = it })
+                    SettingRow(Icons.Outlined.ChatBubbleOutline, "إيقاف التعليقات", null, Primary, toggle = commentsOff, onToggle = { commentsOff = it })
+                }
+                Spacer(Modifier.height(16.dp))
+                GradButton(if (target == 1 && !isVideo) "شارك في قصتك" else "نشر الآن", { publish() }, icon = Icons.Outlined.Send)
             }
         }
         return
@@ -480,12 +504,12 @@ fun CreatePostScreen(onBack: () -> Unit) {
                 }
                 Box(Modifier.size(82.dp).border(5.dp, Color.White, CircleShape).padding(8.dp).clip(CircleShape).background(Color.White).bounceClick {
                     if (mode == 0) { Toast.makeText(ctx, "التسجيل المباشر قريباً: اختر فيديو من المعرض", Toast.LENGTH_SHORT).show(); pickMedia() }
-                    else if (mode == 2) Toast.makeText(ctx, "القوالب قريباً", Toast.LENGTH_SHORT).show()
+                    else if (mode == 3) Toast.makeText(ctx, "القوالب قريباً", Toast.LENGTH_SHORT).show()
                     else capture?.let { cap ->
                         val f = Repo.newMediaFile("jpg")
                         cap.takePicture(androidx.camera.core.ImageCapture.OutputFileOptions.Builder(f).build(), androidx.core.content.ContextCompat.getMainExecutor(ctx),
                             object : androidx.camera.core.ImageCapture.OnImageSavedCallback {
-                                override fun onImageSaved(r: androidx.camera.core.ImageCapture.OutputFileResults) { path = f.absolutePath; isVideo = false }
+                                override fun onImageSaved(r: androidx.camera.core.ImageCapture.OutputFileResults) { path = f.absolutePath; isVideo = false; target = if (mode == 2) 1 else 0 }
                                 override fun onError(e: androidx.camera.core.ImageCaptureException) { Toast.makeText(ctx, "تعذر التقاط الصورة", Toast.LENGTH_SHORT).show() }
                             })
                     }
@@ -493,8 +517,8 @@ fun CreatePostScreen(onBack: () -> Unit) {
                 Spacer(Modifier.size(52.dp))
             }
             Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
-                listOf("ريلز" to 0, "قصة" to 1, "القوالب" to 2).forEach { (t, i) ->
+            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                listOf("ريلز" to 0, "منشور" to 1, "قصة" to 2, "القوالب" to 3).forEach { (t, i) ->
                     Text(t, style = MaterialTheme.typography.titleMedium, color = if (mode == i) Color.White else Color(0x99FFFFFF), modifier = Modifier.bounceClick { mode = i })
                 }
             }

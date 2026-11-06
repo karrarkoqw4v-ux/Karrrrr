@@ -289,3 +289,14 @@ fun UserListSheet(title: String, users: List<User>, onUser: (Int) -> Unit, onDis
         }
     }
 }
+
+/** نص بوسوم (#) ملونة */
+fun hashtagText(prefix: String, caption: String, tag: Color): androidx.compose.ui.text.AnnotatedString =
+    androidx.compose.ui.text.buildAnnotatedString {
+        if (prefix.isNotEmpty()) {
+            pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)); append(prefix); pop(); append("  ")
+        }
+        Regex("(#[\\p{L}\\p{N}_]+|@[A-Za-z0-9_.]+)|[^#@]+|[#@]").findAll(caption).forEach { m ->
+            if (m.groups[1] != null) { pushStyle(androidx.compose.ui.text.SpanStyle(color = tag)); append(m.value); pop() } else append(m.value)
+        }
+    }

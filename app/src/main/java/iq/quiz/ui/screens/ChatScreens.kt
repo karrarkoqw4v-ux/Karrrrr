@@ -60,25 +60,42 @@ fun InboxScreen(onBack: (() -> Unit)?, onChat: (Int) -> Unit) {
             BasicTextField(q, { q = it }, Modifier.weight(1f), singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = p.ink), cursorBrush = androidx.compose.ui.graphics.SolidColor(Primary),
                 decorationBox = { inner -> if (q.isEmpty()) Text("بحث", style = MaterialTheme.typography.bodyLarge, color = p.muted); inner() })
         }
-        // الملاحظات: بدون أصدقاء ناشرين تظهر الخريطة فقط
+        // الملاحظات: ملاحظتك + الخريطة (وملاحظات الأصدقاء إن وجدوا)
+        var noteDlg by remember { mutableStateOf(false) }
+        var noteText by remember { mutableStateOf(Repo.note) }
         androidx.compose.foundation.lazy.LazyRow(Modifier.fillMaxWidth().padding(vertical = 10.dp), contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
-                Column(Modifier.bounceClick { Toast.makeText(ctx, "الخريطة تحتاج خدمة مواقع الأصدقاء (قريباً)", Toast.LENGTH_SHORT).show() }, horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.width(76.dp).bounceClick { noteText = Repo.note; noteDlg = true }, horizontalAlignment = Alignment.CenterHorizontally) {
+                    NoteBubble(Repo.note.ifBlank { "اكتب ملاحظة..." }, Repo.note.isBlank())
+                    Avatar(Repo.me.name, Repo.me.idx, 62.dp)
+                    Text("ملاحظتك", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+            item {
+                Column(Modifier.width(76.dp).bounceClick { Toast.makeText(ctx, "الخريطة تحتاج مشاركة مواقع الأصدقاء (قريباً)", Toast.LENGTH_SHORT).show() }, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(Modifier.height(30.dp))
                     Box(Modifier.size(68.dp).clip(CircleShape).background(p.bg2).border(1.dp, p.line, CircleShape), contentAlignment = Alignment.Center) {
                         Icon(Icons.Outlined.Map, null, tint = Primary, modifier = Modifier.size(34.dp))
                     }
                     Text("خريطة", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(top = 4.dp))
                 }
             }
-            if (Repo.demo) Repo.users.take(5).forEach { u ->
+            if (Repo.demo) Repo.users.take(5).forEachIndexed { k, u ->
                 item(key = u.id) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Avatar(u.name, u.idx, 62.dp, ring = Ring.New)
+                    Column(Modifier.width(76.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        NoteBubble(listOf("🎵 أسمع أغاني", "في الجامعة", "صباح الخير", "تعبان اليوم", "مين يطلع؟")[k], false)
+                        Avatar(u.name, u.idx, 62.dp)
                         Text(u.name.substringBefore(" "), style = MaterialTheme.typography.labelMedium, color = p.ink, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }
         }
+        if (noteDlg) AlertDialog(
+            onDismissRequest = { noteDlg = false }, title = { Text("ملاحظتك (60 حرف، تختفي بعد 24 ساعة)") },
+            text = { OutlinedTextField(noteText, { noteText = it.take(60) }, placeholder = { Text("شنو تفكر؟") }) },
+            confirmButton = { TextButton({ Repo.setNote(noteText.trim()); noteDlg = false }) { Text("مشاركة") } },
+            dismissButton = { TextButton({ Repo.setNote(""); noteDlg = false }) { Text("حذف") } },
+        )
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("الرسائل", style = MaterialTheme.typography.titleMedium, color = if (!requests) p.ink else p.muted, modifier = Modifier.weight(1f).bounceClick { requests = false })
             Text("الطلبات", style = MaterialTheme.typography.titleMedium, color = if (requests) Primary else p.muted, modifier = Modifier.bounceClick { requests = true })
@@ -240,4 +257,13 @@ private fun CallBtn(icon: androidx.compose.ui.graphics.vector.ImageVector, label
         }
         Text(label, style = MaterialTheme.typography.labelSmall, color = Color(0xFFE3F8F5), modifier = Modifier.padding(top = 6.dp))
     }
+}
+
+@Composable
+private fun NoteBubble(text: String, hint: Boolean) {
+    val p = pal
+    Box(Modifier.widthIn(max = 76.dp).clip(RoundedCornerShape(14.dp)).background(p.bg2).border(1.dp, p.line, RoundedCornerShape(14.dp)).padding(horizontal = 8.dp, vertical = 5.dp).padding(bottom = 0.dp)) {
+        Text(text, style = MaterialTheme.typography.labelSmall, color = if (hint) p.faint else p.ink, maxLines = 2, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+    }
+    Spacer(Modifier.height(2.dp))
 }

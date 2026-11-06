@@ -22,6 +22,7 @@ fun AppNav() {
         story = { nav.navigate("story/$it") }, chat = { nav.navigate("chat/$it") }, user = { nav.navigate("user/$it") },
         create = { nav.navigate("create") }, notifs = { nav.navigate("notifs") }, inbox = { nav.navigate("inbox") },
         settings = { nav.navigate("settings") }, edit = { nav.navigate("edit") },
+        myStory = { nav.navigate("mystory") }, archive = { nav.navigate("archive") },
     )
     NavHost(
         nav, startDestination = start,
@@ -62,9 +63,13 @@ fun AppNav() {
         composable("user/{id}", arguments = listOf(navArgument("id") { type = NavType.IntType })) { e ->
             ProfileScreen(e.arguments?.getInt("id") ?: 1, actions, onBack = { nav.popBackStack() })
         }
+        composable("mystory") { MyStoryScreen(onClose = { nav.popBackStack() }, onAdd = { nav.popBackStack(); nav.navigate("create") }) }
+        composable("archive") { ArchiveScreen { nav.popBackStack() } }
+        composable("saved") { SavedScreen(actions) }
+        composable("activity") { NotificationsScreen { nav.popBackStack() } }
         composable("edit") { EditProfileScreen { nav.popBackStack() } }
         composable("settings") {
-            SettingsScreen(onBack = { nav.popBackStack() }, onLogout = { nav.navigate("login") { popUpTo(0) { inclusive = true } } })
+            SettingsScreen(onBack = { nav.popBackStack() }, onLogout = { nav.navigate("login") { popUpTo(0) { inclusive = true } } }, onOpen = { r -> nav.navigate(r) })
         }
     }
 }

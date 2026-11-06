@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,6 +35,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -53,30 +55,38 @@ class Nav(
 @Composable
 fun MainScreen(nav: Nav) {
     val p = pal
+    val ctx = LocalContext.current
     var tab by remember { mutableIntStateOf(0) }
-    Column(Modifier.fillMaxSize().background(p.bg)) {
+    val askNotif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) askNotif.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+    val dark = tab == 1
+    Column(Modifier.fillMaxSize().background(if (dark) Color.Black else p.bg)) {
         Box(Modifier.weight(1f)) {
             when (tab) {
                 0 -> FeedScreen(nav)
-                1 -> ExploreScreen(nav)
-                3 -> SavedScreen(nav)
+                1 -> ReelsScreen(nav)
+                2 -> InboxScreen(onBack = null, onChat = { nav.chat(it) })
+                3 -> ExploreScreen(nav)
                 else -> ProfileScreen(0, nav, onBack = null)
             }
         }
-        HorizontalDivider(color = p.line)
-        val labels = listOf("الرئيسية", "استكشاف", "نشر", "المحفوظات", "حسابي")
-        Row(Modifier.fillMaxWidth().navigationBarsPadding().height(68.dp), verticalAlignment = Alignment.CenterVertically) {
-            listOf(Icons.Outlined.Home, Icons.Outlined.Search, Icons.Outlined.Add, Icons.Outlined.BookmarkBorder, Icons.Outlined.Person).forEachIndexed { i, ic ->
-                Box(Modifier.weight(1f).fillMaxHeight().bounceClick { if (i == 2) nav.create() else tab = i }, contentAlignment = Alignment.Center) {
-                    val c by animateColorAsState(if (tab == i) PrimaryDark else p.faint, label = "tab")
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (i == 2) {
-                            Box(Modifier.size(width = 44.dp, height = 32.dp).clip(RoundedCornerShape(11.dp)).background(Brush.horizontalGradient(listOf(Primary, PrimaryDark))), contentAlignment = Alignment.Center) {
-                                Icon(ic, null, tint = Color.White)
-                            }
-                        } else Icon(ic, null, tint = c, modifier = Modifier.size(if (tab == i) 29.dp else 27.dp))
-                        Spacer(Modifier.height(3.dp))
-                        Text(labels[i], style = MaterialTheme.typography.labelSmall, color = if (i == 2) p.muted else c)
+        Row(Modifier.fillMaxWidth().background(if (dark) Color.Black else p.bg).navigationBarsPadding().height(62.dp), verticalAlignment = Alignment.CenterVertically) {
+            val icons = listOf(Icons.Outlined.Home, Icons.Outlined.Movie, Icons.Outlined.Send, Icons.Outlined.Search)
+            (0..4).forEach { i ->
+                Box(Modifier.weight(1f).fillMaxHeight().bounceClick { tab = i }, contentAlignment = Alignment.Center) {
+                    val sel = tab == i
+                    val c by animateColorAsState(if (sel) (if (dark) Color.White else p.ink) else (if (dark) Color(0xFFB0B0B8) else p.muted), label = "tab")
+                    if (i == 4) {
+                        Box {
+                            Box(Modifier.border(if (sel) 2.dp else 0.dp, if (dark) Color.White else p.ink, CircleShape).padding(if (sel) 2.dp else 0.dp)) { Avatar(Repo.me.name, Repo.me.idx, 30.dp) }
+                            if (Repo.chats.any { it.unread > 0 }) Box(Modifier.align(Alignment.TopEnd).size(11.dp).clip(CircleShape).background(Color(0xFFFF3040)))
+                        }
+                    } else Box {
+                        Icon(icons[i], null, tint = c, modifier = Modifier.size(if (sel) 31.dp else 29.dp))
                     }
                 }
             }
@@ -93,8 +103,8 @@ fun FeedScreen(nav: Nav) {
         item {
             Row(Modifier.fillMaxWidth().statusBarsPadding().height(56.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("كويز تواصلكم", style = MaterialTheme.typography.titleLarge.copy(brush = BrandBrush), modifier = Modifier.weight(1f))
-                IconBtn(Icons.Outlined.FavoriteBorder, "النشاط") { nav.notifs() }
-                IconBtn(Icons.Outlined.Send, "الرسائل") { nav.inbox() }
+                IconBtn(Icons.Outlined.AddBox, "نشر", size = 29.dp) { nav.create() }
+                IconBtn(Icons.Outlined.FavoriteBorder, "النشاط", size = 29.dp) { nav.notifs() }
             }
             HorizontalDivider(color = p.line)
         }
@@ -116,7 +126,7 @@ fun FeedScreen(nav: Nav) {
             }
             HorizontalDivider(color = p.line)
         }
-        if (Repo.posts.isEmpty()) item(key = "empty") {
+        if (Repo.posts.none { it.videoPath == null }) item(key = "empty") {
             Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Outlined.Image, null, tint = p.faint, modifier = Modifier.size(64.dp))
                 Spacer(Modifier.height(12.dp))
@@ -126,7 +136,7 @@ fun FeedScreen(nav: Nav) {
                 GradButton("انشر الآن", { nav.create() }, icon = Icons.Outlined.Add)
             }
         }
-        Repo.posts.forEachIndexed { i, post ->
+        Repo.posts.filter { it.videoPath == null }.forEachIndexed { i, post ->
             item(key = post.id) { PostCard(post, nav, onComments = { commentsFor = post }, onLikes = { likesFor = post }) }
             if (i == 1 && Repo.demo) item(key = "suggestions") { Suggestions(nav) }
         }
@@ -139,24 +149,25 @@ fun FeedScreen(nav: Nav) {
 @Composable
 private fun Suggestions(nav: Nav) {
     val p = pal
-    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp).background(p.bg2).padding(vertical = 12.dp)) {
+    val hidden = remember { mutableStateListOf<Int>() }
+    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("اقتراحات لك", style = MaterialTheme.typography.bodyLarge, color = p.ink, modifier = Modifier.weight(1f))
+            Text("اقتراحات قد تعجبك", style = MaterialTheme.typography.titleMedium, color = p.ink, modifier = Modifier.weight(1f))
             Text("عرض الكل", style = MaterialTheme.typography.labelMedium, color = Primary)
         }
         Spacer(Modifier.height(10.dp))
         LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(Repo.users.drop(2).take(6)) { u ->
-                Column(
-                    Modifier.width(150.dp).clip(RoundedCornerShape(16.dp)).background(p.bg).border(1.dp, p.line, RoundedCornerShape(16.dp)).padding(14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Avatar(u.name, u.idx, 66.dp, Modifier.bounceClick { nav.user(u.id) }, Ring.New)
-                    Spacer(Modifier.height(8.dp))
-                    Text(u.name, style = MaterialTheme.typography.bodyLarge, color = p.ink, maxLines = 1)
-                    Text("يتابعه ${u.followers / 100} من أصدقائك", style = MaterialTheme.typography.labelSmall, color = p.muted, maxLines = 1)
-                    Spacer(Modifier.height(10.dp))
-                    FollowPill(u.id, Modifier.fillMaxWidth())
+            items(Repo.users.drop(2).take(6).filter { it.id !in hidden }, key = { it.id }) { u ->
+                Box(Modifier.width(170.dp).clip(RoundedCornerShape(16.dp)).background(p.bg2).border(1.dp, p.line, RoundedCornerShape(16.dp))) {
+                    Column(Modifier.fillMaxWidth().padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Avatar(u.name, u.idx, 76.dp, Modifier.bounceClick { nav.user(u.id) })
+                        Spacer(Modifier.height(10.dp))
+                        Text(u.name, style = MaterialTheme.typography.bodyLarge, color = p.ink, maxLines = 1)
+                        Text("صديق واحد مشترك", style = MaterialTheme.typography.labelMedium, color = p.muted, maxLines = 1)
+                        Spacer(Modifier.height(12.dp))
+                        FollowPill(u.id, Modifier.fillMaxWidth(), big = true)
+                    }
+                    Icon(Icons.Outlined.Close, "إخفاء", tint = p.muted, modifier = Modifier.align(Alignment.TopStart).padding(6.dp).size(30.dp).bounceClick { hidden.add(u.id) }.padding(5.dp))
                 }
             }
         }
@@ -176,10 +187,13 @@ fun PostCard(post: Post, nav: Nav, onComments: () -> Unit, onLikes: () -> Unit) 
             Avatar(u.name, u.idx, 36.dp, Modifier.bounceClick { nav.user(u.id) }, if (u.id % 2 == 0) Ring.New else Ring.None)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Text(if (u.id == 0) Repo.me.name else u.name, style = MaterialTheme.typography.bodyLarge, color = p.ink)
-                Text("بغداد - " + post.time, style = MaterialTheme.typography.labelSmall, color = p.muted)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (u.id == 0) Repo.me.name else u.name, style = MaterialTheme.typography.bodyLarge, color = p.ink)
+                    if (u.id % 3 == 0) { Spacer(Modifier.width(4.dp)); Icon(Icons.Filled.Verified, null, tint = Primary, modifier = Modifier.size(16.dp)) }
+                }
+                Text(if (u.id != 0 && !Repo.isFollowing(u.id)) "مقترح لك" else post.time, style = MaterialTheme.typography.labelMedium, color = p.muted)
             }
-            if (u.id != 0) { FollowPill(u.id); Spacer(Modifier.width(6.dp)); Icon(Icons.Outlined.MoreHoriz, null, tint = p.ink) }
+            if (u.id != 0) { FollowPill(u.id, outlined = true); Spacer(Modifier.width(4.dp)); Icon(Icons.Outlined.MoreVert, null, tint = p.ink, modifier = Modifier.size(24.dp)) }
             else IconBtn(Icons.Outlined.DeleteOutline, "حذف المنشور", Danger) { Repo.deletePost(post) }
         }
         Box(
@@ -254,10 +268,15 @@ fun CommentsSheet(post: Post, onDismiss: () -> Unit) {
                 }
             }
             HorizontalDivider(color = p.line)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf("❤", "🙌", "🔥", "👏", "😢", "😍", "😮", "😂").forEach { e ->
+                    Text(e, fontSize = androidx.compose.ui.unit.TextUnit(27f, androidx.compose.ui.unit.TextUnitType.Sp), modifier = Modifier.bounceClick { text += e }.padding(4.dp))
+                }
+            }
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Avatar(Repo.me.name, Repo.me.idx, 36.dp)
                 Spacer(Modifier.width(10.dp))
-                HalaField(text, { text = it }, "أضف تعليقاً...", modifier = Modifier.weight(1f))
+                HalaField(text, { text = it }, "ما رأيك في هذا؟", modifier = Modifier.weight(1f))
                 IconBtn(Icons.Outlined.Send, "نشر", Primary) { if (text.isNotBlank()) { Repo.addComment(post, text.trim()); text = "" } }
             }
         }
@@ -378,34 +397,133 @@ fun CreatePostScreen(onBack: () -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var path by remember { mutableStateOf<String?>(null) }
+    var isVideo by remember { mutableStateOf(false) }
     var caption by remember { mutableStateOf("") }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) scope.launch { runCatching { Repo.importImage(ctx, uri) }.onSuccess { path = it }.onFailure { Toast.makeText(ctx, "تعذر فتح الصورة", Toast.LENGTH_SHORT).show() } }
+    var mode by remember { mutableIntStateOf(1) } // 0 ريلز، 1 قصة/منشور، 2 قوالب
+    val imgPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) scope.launch { runCatching { Repo.importImage(ctx, uri) }.onSuccess { path = it; isVideo = false }.onFailure { Toast.makeText(ctx, "تعذر فتح الصورة", Toast.LENGTH_SHORT).show() } }
     }
-    Column(Modifier.fillMaxSize().background(p.bg).imePadding()) {
-        TopBack("منشور جديد", onBack) {
-            Text("نشر", style = MaterialTheme.typography.labelLarge, color = if (path != null) PrimaryDark else p.faint,
-                modifier = Modifier.bounceClick(enabled = path != null) { Repo.addPost(path!!, caption.trim()); onBack() }.padding(12.dp))
-        }
-        Column(Modifier.weight(1f).padding(16.dp).navigationBarsPadding()) {
-            Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(20.dp)).background(p.bg2).bounceClick { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
-                if (path != null) AsyncImage(File(path!!), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                else Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Outlined.Image, null, tint = Primary, modifier = Modifier.size(54.dp))
-                    Spacer(Modifier.height(8.dp))
-                    Text("اضغط لاختيار صورة من المعرض", style = MaterialTheme.typography.bodyLarge, color = p.muted)
+    val vidPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) scope.launch { runCatching { Repo.importVideo(ctx, uri) }.onSuccess { path = it; isVideo = true }.onFailure { Toast.makeText(ctx, "تعذر فتح الفيديو", Toast.LENGTH_SHORT).show() } }
+    }
+    fun pickMedia() = if (mode == 0) vidPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+    else imgPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+
+    if (path != null) {
+        // خطوة الوصف والنشر
+        Column(Modifier.fillMaxSize().background(p.bg).imePadding()) {
+            TopBack(if (isVideo) "ريل جديد" else "منشور جديد", { path = null }) {
+                Text("نشر", style = MaterialTheme.typography.labelLarge, color = PrimaryDark,
+                    modifier = Modifier.bounceClick { if (isVideo) Repo.addReel(path!!, caption.trim()) else Repo.addPost(path!!, caption.trim()); onBack() }.padding(12.dp))
+            }
+            Column(Modifier.weight(1f).padding(16.dp).navigationBarsPadding()) {
+                Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(20.dp)).background(p.bg2), contentAlignment = Alignment.Center) {
+                    if (!isVideo) AsyncImage(File(path!!), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Outlined.Movie, null, tint = Primary, modifier = Modifier.size(64.dp))
+                        Text("الفيديو جاهز للنشر", style = MaterialTheme.typography.bodyLarge, color = p.muted)
+                    }
                 }
+                Spacer(Modifier.height(14.dp))
+                HalaField(caption, { caption = it }, "اكتب وصفاً...", singleLine = false)
+                Spacer(Modifier.weight(1f))
+                GradButton("نشر الآن", {
+                    if (isVideo) Repo.addReel(path!!, caption.trim()) else Repo.addPost(path!!, caption.trim())
+                    Toast.makeText(ctx, "تم النشر", Toast.LENGTH_SHORT).show(); onBack()
+                }, icon = Icons.Outlined.Send)
+            }
+        }
+        return
+    }
+
+    // شاشة الكاميرا
+    var granted by remember { mutableStateOf(androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) }
+    val askCam = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
+    LaunchedEffect(Unit) { if (!granted) askCam.launch(android.Manifest.permission.CAMERA) }
+    var front by remember { mutableStateOf(false) }
+    var flash by remember { mutableStateOf(false) }
+    var capture by remember { mutableStateOf<androidx.camera.core.ImageCapture?>(null) }
+
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        if (granted) CameraView(front, flash, Modifier.fillMaxSize()) { capture = it }
+        else Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(Icons.Outlined.CameraAlt, null, tint = Color(0xFFB0B0B8), modifier = Modifier.size(60.dp))
+            Text("نحتاج إذن الكاميرا", style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.padding(top = 10.dp))
+            Spacer(Modifier.height(14.dp))
+            GradButton("السماح", { askCam.launch(android.Manifest.permission.CAMERA) })
+        }
+        // أعلى
+        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconBtn(Icons.Outlined.Close, "إغلاق", Color.White, 30.dp) { onBack() }
+            Spacer(Modifier.weight(1f))
+            Row(Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x66000000)).bounceClick { Toast.makeText(ctx, "إضافة صوت قريباً", Toast.LENGTH_SHORT).show() }.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.MusicNote, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("إضافة صوت", style = MaterialTheme.typography.labelMedium, color = Color.White)
+            }
+            Spacer(Modifier.weight(1f))
+            IconBtn(if (flash) Icons.Outlined.FlashOn else Icons.Outlined.FlashOff, "فلاش", Color.White, 28.dp) { flash = !flash }
+        }
+        // أدوات جانبية
+        Column(Modifier.align(Alignment.CenterEnd).padding(end = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            IconBtn(Icons.Outlined.FlipCameraAndroid, "قلب الكاميرا", Color.White, 28.dp) { front = !front }
+            IconBtn(Icons.Outlined.MusicNote, "موسيقى", Color.White, 28.dp) { Toast.makeText(ctx, "قريباً", Toast.LENGTH_SHORT).show() }
+            IconBtn(Icons.Outlined.AutoAwesome, "مؤثرات", Color.White, 28.dp) { Toast.makeText(ctx, "قريباً", Toast.LENGTH_SHORT).show() }
+            IconBtn(Icons.Outlined.GridView, "قوالب", Color.White, 28.dp) { Toast.makeText(ctx, "قريباً", Toast.LENGTH_SHORT).show() }
+            IconBtn(Icons.Outlined.Timer, "مؤقت", Color.White, 28.dp) { Toast.makeText(ctx, "قريباً", Toast.LENGTH_SHORT).show() }
+        }
+        // أسفل
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 28.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Box(Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(Color(0x55FFFFFF)).border(2.dp, Color.White, RoundedCornerShape(12.dp)).bounceClick { pickMedia() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.PhotoLibrary, null, tint = Color.White)
+                }
+                Box(Modifier.size(82.dp).border(5.dp, Color.White, CircleShape).padding(8.dp).clip(CircleShape).background(Color.White).bounceClick {
+                    if (mode == 0) { Toast.makeText(ctx, "التسجيل المباشر قريباً: اختر فيديو من المعرض", Toast.LENGTH_SHORT).show(); pickMedia() }
+                    else if (mode == 2) Toast.makeText(ctx, "القوالب قريباً", Toast.LENGTH_SHORT).show()
+                    else capture?.let { cap ->
+                        val f = Repo.newMediaFile("jpg")
+                        cap.takePicture(androidx.camera.core.ImageCapture.OutputFileOptions.Builder(f).build(), androidx.core.content.ContextCompat.getMainExecutor(ctx),
+                            object : androidx.camera.core.ImageCapture.OnImageSavedCallback {
+                                override fun onImageSaved(r: androidx.camera.core.ImageCapture.OutputFileResults) { path = f.absolutePath; isVideo = false }
+                                override fun onError(e: androidx.camera.core.ImageCaptureException) { Toast.makeText(ctx, "تعذر التقاط الصورة", Toast.LENGTH_SHORT).show() }
+                            })
+                    }
+                })
+                Spacer(Modifier.size(52.dp))
             }
             Spacer(Modifier.height(14.dp))
-            HalaField(caption, { caption = it }, "اكتب وصفاً...", singleLine = false)
-            Spacer(Modifier.weight(1f))
-            GradButton("نشر الآن", {
-                val img = path
-                if (img == null) Toast.makeText(ctx, "اختر صورة أول", Toast.LENGTH_SHORT).show()
-                else { Repo.addPost(img, caption.trim()); Toast.makeText(ctx, "تم النشر", Toast.LENGTH_SHORT).show(); onBack() }
-            }, enabled = path != null, icon = Icons.Outlined.Send)
+            Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+                listOf("ريلز" to 0, "قصة" to 1, "القوالب" to 2).forEach { (t, i) ->
+                    Text(t, style = MaterialTheme.typography.titleMedium, color = if (mode == i) Color.White else Color(0x99FFFFFF), modifier = Modifier.bounceClick { mode = i })
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun CameraView(front: Boolean, flash: Boolean, modifier: Modifier, onCapture: (androidx.camera.core.ImageCapture) -> Unit) {
+    val ctx = LocalContext.current
+    val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    val view = remember { androidx.camera.view.PreviewView(ctx) }
+    val cap = remember { androidx.camera.core.ImageCapture.Builder().build() }
+    cap.flashMode = if (flash) androidx.camera.core.ImageCapture.FLASH_MODE_ON else androidx.camera.core.ImageCapture.FLASH_MODE_OFF
+    DisposableEffect(front) {
+        val fut = androidx.camera.lifecycle.ProcessCameraProvider.getInstance(ctx)
+        fut.addListener({
+            runCatching {
+                val prov = fut.get()
+                val prev = androidx.camera.core.Preview.Builder().build().also { it.setSurfaceProvider(view.surfaceProvider) }
+                val sel = if (front) androidx.camera.core.CameraSelector.DEFAULT_FRONT_CAMERA else androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
+                prov.unbindAll()
+                prov.bindToLifecycle(owner, sel, prev, cap)
+                onCapture(cap)
+            }
+        }, androidx.core.content.ContextCompat.getMainExecutor(ctx))
+        onDispose { runCatching { fut.get().unbindAll() } }
+    }
+    AndroidView({ view }, modifier)
 }
 
 @Composable

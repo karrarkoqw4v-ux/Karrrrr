@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.sp
 import iq.quiz.R
 
 /** الأزرار والروابط: أزرق واضح */
-val Primary = Color(0xFF2F8CFF)
-val PrimaryDark = Color(0xFF1B6FE0)
+val Primary = Color(0xFF4A5CE0)
+val PrimaryDark = Color(0xFF3948C8)
 
 /** تدرج الهوية (حلقات القصص والشعار): بنفسجي - وردي - كهرماني */
 val Brand1 = Color(0xFF7C3AED)
@@ -40,7 +40,7 @@ val Success = Color(0xFF34C759)
 data class Palette(val bg: Color, val bg2: Color, val ink: Color, val muted: Color, val faint: Color, val line: Color, val soft: Color, val dark: Boolean)
 
 val LightPalette = Palette(Color.White, Color(0xFFF2F2F7), Color(0xFF111114), Color(0xFF65656F), Color(0xFF9A9AA4), Color(0xFFE5E5EA), Color(0xFFE6F0FF), false)
-val DarkPalette = Palette(Color(0xFF000000), Color(0xFF1C1C1E), Color(0xFFF5F5F7), Color(0xFFA1A1AA), Color(0xFF6B6B73), Color(0xFF2C2C2E), Color(0xFF0F2A4A), true)
+val DarkPalette = Palette(Color(0xFF0B0D12), Color(0xFF171A21), Color(0xFFF5F6F8), Color(0xFFA3A8B3), Color(0xFF6F7580), Color(0xFF262A33), Color(0xFF1B2250), true)
 
 val LocalPalette = staticCompositionLocalOf { DarkPalette }
 val pal: Palette @Composable get() = LocalPalette.current

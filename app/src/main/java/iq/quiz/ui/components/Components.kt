@@ -247,17 +247,19 @@ fun SettingRow(icon: ImageVector, title: String, sub: String? = null, tint: Colo
 }
 
 
-/** زر متابعة / متابَع بحركة لون */
+/** زر متابعة / متابَع. outlined=true: إطار فقط (رأس المنشور والريلز) */
 @Composable
-fun FollowPill(userId: Int, modifier: Modifier = Modifier, big: Boolean = false) {
+fun FollowPill(userId: Int, modifier: Modifier = Modifier, big: Boolean = false, outlined: Boolean = false) {
     val p = pal
     val on = Repo.isFollowing(userId)
-    val bg by animateColorAsState(if (on) p.bg2 else Primary, label = "follow")
+    val filled = !outlined && !on
+    val bg by animateColorAsState(if (filled) Primary else if (outlined) Color.Transparent else p.bg2, label = "follow")
+    val shape = RoundedCornerShape(if (outlined) 10.dp else 12.dp)
     Box(
-        modifier.height(if (big) 40.dp else 32.dp).bounceClick { Repo.toggleFollow(userId) }.clip(RoundedCornerShape(10.dp)).background(bg)
-            .then(if (on) Modifier.border(1.dp, p.line, RoundedCornerShape(10.dp)) else Modifier).padding(horizontal = if (big) 22.dp else 14.dp),
+        modifier.height(if (big) 42.dp else 34.dp).bounceClick { Repo.toggleFollow(userId) }.clip(shape).background(bg)
+            .then(if (!filled) Modifier.border(1.dp, if (outlined) p.faint else p.line, shape) else Modifier).padding(horizontal = if (big) 22.dp else 16.dp),
         contentAlignment = Alignment.Center,
-    ) { Text(if (on) "متابَع" else "متابعة", style = MaterialTheme.typography.labelMedium, color = if (on) p.ink else Color.White) }
+    ) { Text(if (on) "متابَع" else "متابعة", style = MaterialTheme.typography.labelMedium, color = if (filled) Color.White else p.ink) }
 }
 
 /** نافذة قائمة أشخاص (المعجبون / المتابعون) مع زر متابعة لكل شخص */

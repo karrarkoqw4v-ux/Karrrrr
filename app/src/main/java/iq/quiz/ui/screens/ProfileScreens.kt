@@ -140,6 +140,9 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit) {
             SettingRow(Icons.Outlined.FavoriteBorder, "الإعجابات والتعليقات", null, Like, toggle = nLikes, onToggle = { nLikes = it; Repo.setFlag("n_likes", it) })
             SettingRow(Icons.Outlined.ChatBubbleOutline, "الرسائل", null, Primary, toggle = nMsgs, onToggle = { nMsgs = it; Repo.setFlag("n_msgs", it) })
             SettingRow(Icons.Outlined.Call, "المكالمات", null, Success, toggle = nCalls, onToggle = { nCalls = it; Repo.setFlag("n_calls", it) })
+            SettingRow(Icons.Outlined.NotificationsNone, "جرّب إشعار رسالة", "يظهر مثل واتساب: صورة واسم المرسل والنص", Primary) { iq.quiz.data.Notifier.message(Repo.appCtx, "سارة أحمد", 1, "هلا! شلونك اليوم؟") }
+            SettingRow(Icons.Outlined.Image, "جرّب إشعار منشور", "منشور جديد من صديق", Color(0xFFEC4899)) { iq.quiz.data.Notifier.friendPost(Repo.appCtx, "علي حسن", 2, "غروب الشمس على دجلة") }
+            SettingRow(Icons.Outlined.Call, "جرّب إشعار مكالمة", "مكالمة فيديو فائتة", Success) { iq.quiz.data.Notifier.call(Repo.appCtx, "زينب كريم", 3, true) }
             Text("المحتوى", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
             SettingRow(Icons.Outlined.Science, "محتوى تجريبي", "أشخاص ومنشورات ورسائل وهمية لتجربة التطبيق", Color(0xFFF59E0B), toggle = Repo.demo, onToggle = { Repo.setDemo(it) })
             Text("الحساب", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))

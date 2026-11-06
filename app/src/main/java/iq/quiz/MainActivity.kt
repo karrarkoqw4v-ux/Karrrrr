@@ -17,4 +17,7 @@ class MainActivity : ComponentActivity() {
             AppTheme(dark = Repo.dark) { AppNav() }
         }
     }
+
+    override fun onStart() { super.onStart(); Repo.foreground = true }
+    override fun onStop() { super.onStop(); Repo.foreground = false }
 }

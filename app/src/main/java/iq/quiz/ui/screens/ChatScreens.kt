@@ -39,34 +39,70 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
-fun InboxScreen(onBack: () -> Unit, onChat: (Int) -> Unit) {
+fun InboxScreen(onBack: (() -> Unit)?, onChat: (Int) -> Unit) {
     val p = pal
     var q by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().background(p.bg)) {
-        TopBack("الرسائل", onBack)
-        HalaField(q, { q = it }, "بحث", Icons.Outlined.Search, modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp))
-        if (!Repo.demo) Row(Modifier.fillMaxWidth().padding(14.dp).clip(RoundedCornerShape(14.dp)).background(p.bg2).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.Info, null, tint = Primary, modifier = Modifier.size(22.dp))
+    var requests by remember { mutableStateOf(false) }
+    val ctx = LocalContext.current
+    Column(Modifier.fillMaxSize().background(p.bg).statusBarsPadding()) {
+        Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (onBack != null) IconBtn(Icons.AutoMirrored.Outlined.ArrowBack, "رجوع") { onBack() }
+            else Spacer(Modifier.width(8.dp))
+            Text(Repo.me.username.ifBlank { "me" }, style = MaterialTheme.typography.titleLarge, color = p.ink)
+            Icon(Icons.Outlined.KeyboardArrowDown, null, tint = p.ink, modifier = Modifier.size(26.dp))
+            if (Repo.chats.any { it.unread > 0 }) Box(Modifier.padding(start = 4.dp).size(9.dp).clip(CircleShape).background(Color(0xFFFF3040)))
+            Spacer(Modifier.weight(1f))
+            IconBtn(Icons.Outlined.Edit, "رسالة جديدة", size = 26.dp) { onChat(0) }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp).height(48.dp).clip(RoundedCornerShape(24.dp)).background(p.bg2).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Search, null, tint = p.muted, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(10.dp))
-            Text("المراسلة بين الحسابات تحتاج سيرفر. حالياً تقدر تكتب رسائل لنفسك وتنحفظ بجهازك.", style = MaterialTheme.typography.labelMedium, color = p.muted)
+            BasicTextField(q, { q = it }, Modifier.weight(1f), singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = p.ink), cursorBrush = androidx.compose.ui.graphics.SolidColor(Primary),
+                decorationBox = { inner -> if (q.isEmpty()) Text("بحث", style = MaterialTheme.typography.bodyLarge, color = p.muted); inner() })
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
-            Text("الرسائل", style = MaterialTheme.typography.bodyLarge, color = p.ink, modifier = Modifier.weight(1f))
+        // الملاحظات: بدون أصدقاء ناشرين تظهر الخريطة فقط
+        androidx.compose.foundation.lazy.LazyRow(Modifier.fillMaxWidth().padding(vertical = 10.dp), contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            item {
+                Column(Modifier.bounceClick { Toast.makeText(ctx, "الخريطة تحتاج خدمة مواقع الأصدقاء (قريباً)", Toast.LENGTH_SHORT).show() }, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.size(68.dp).clip(CircleShape).background(p.bg2).border(1.dp, p.line, CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Map, null, tint = Primary, modifier = Modifier.size(34.dp))
+                    }
+                    Text("خريطة", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+            if (Repo.demo) androidx.compose.foundation.lazy.itemsIndexed(Repo.users.take(5)) { _, u ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Avatar(u.name, u.idx, 62.dp, ring = Ring.New)
+                    Text(u.name.substringBefore(" "), style = MaterialTheme.typography.labelMedium, color = p.ink, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
         }
-        LazyColumn {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("الرسائل", style = MaterialTheme.typography.titleMedium, color = if (!requests) p.ink else p.muted, modifier = Modifier.weight(1f).bounceClick { requests = false })
+            Text("الطلبات", style = MaterialTheme.typography.titleMedium, color = if (requests) Primary else p.muted, modifier = Modifier.bounceClick { requests = true })
+        }
+        if (requests) Text("ما في طلبات رسائل", Modifier.fillMaxWidth().padding(40.dp), color = p.muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+        else LazyColumn {
             val shown = Repo.chats.filter { q.isBlank() || it.title.contains(q) }
             itemsIndexed(shown, key = { _, c -> c.id }) { i, c ->
                 Entrance(i) {
                     val last = c.msgs.lastOrNull()
-                    Row(Modifier.fillMaxWidth().bounceClick { c.unread = 0; onChat(c.id) }.padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().bounceClick { c.unread = 0; onChat(c.id) }.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         val u = Repo.user(c.userId)
-                        Avatar(c.title, u.idx, 54.dp, online = Repo.demo && !c.group && i % 2 == 0)
+                        Avatar(c.title, u.idx, 58.dp, online = Repo.demo && !c.group && i % 2 == 0)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(c.title, style = MaterialTheme.typography.bodyLarge, color = p.ink)
-                            Text(if (last?.imagePath != null) "أرسلت صورة" else last?.text ?: "", style = MaterialTheme.typography.bodyMedium, color = if (c.unread > 0) p.ink else p.muted, maxLines = 1)
+                            Text(c.title, style = MaterialTheme.typography.bodyLarge, color = p.ink, maxLines = 1)
+                            val sub = when {
+                                last == null -> "ابدأ المحادثة"
+                                last.mine -> (if (c.id == 0) "تم الحفظ" else "تم الإرسال") + " · " + last.time
+                                last.imagePath != null -> "أرسل صورة"
+                                else -> last.text
+                            }
+                            Text(sub, style = MaterialTheme.typography.bodyMedium, color = if (c.unread > 0) p.ink else p.muted, maxLines = 1)
                         }
-                        if (c.unread > 0) Box(Modifier.size(22.dp).clip(CircleShape).background(Primary), contentAlignment = Alignment.Center) { Text("${c.unread}", color = Color.White, style = MaterialTheme.typography.labelSmall) }
+                        if (c.unread > 0) Box(Modifier.size(11.dp).clip(CircleShape).background(Primary))
+                        else if (c.id != 0) Icon(Icons.Outlined.CameraAlt, null, tint = p.muted, modifier = Modifier.padding(start = 8.dp).size(28.dp))
                     }
                 }
             }

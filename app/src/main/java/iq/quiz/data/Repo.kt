@@ -22,7 +22,7 @@ class Comment(val userId: Int, val text: String, val time: String) {
     var liked by mutableStateOf(false)
     var likes by mutableStateOf(0)
 }
-class Post(val id: Long, val userId: Int, val kind: Int, val imagePath: String?, val caption: String, likes: Int, val time: String, val comments: MutableList<Comment> = mutableListOf()) {
+class Post(val id: Long, val userId: Int, val kind: Int, val imagePath: String?, val caption: String, likes: Int, val time: String, val comments: MutableList<Comment> = mutableListOf(), val videoPath: String? = null) {
     var likes by mutableStateOf(likes)
     var liked by mutableStateOf(false)
     var saved by mutableStateOf(false)
@@ -60,6 +60,8 @@ object Repo {
     var dark by mutableStateOf(true)
     /** محتوى تجريبي (أشخاص ومنشورات ورسائل وهمية): مغلق افتراضياً */
     var demo by mutableStateOf(false)
+    var foreground = false
+    lateinit var appCtx: Context
 
     // ---------- المتابعة ----------
     val following = mutableStateListOf<Int>()
@@ -75,6 +77,7 @@ object Repo {
     fun user(id: Int) = if (id == 0) me else users.firstOrNull { it.id == id } ?: users[0]
 
     fun init(ctx: Context) {
+        appCtx = ctx.applicationContext
         sp = ctx.applicationContext.getSharedPreferences("hala", Context.MODE_PRIVATE)
         media = File(ctx.filesDir, "media").apply { mkdirs() }
         dark = sp.getBoolean("dark", true)
@@ -203,7 +206,28 @@ object Repo {
         sp.edit().putString("my_posts", arr.toString()).apply()
     }
 
+    fun newMediaFile(ext: String) = File(media, "m_${System.currentTimeMillis()}.$ext")
+
+    suspend fun importVideo(ctx: Context, uri: Uri): String = withContext(Dispatchers.IO) {
+        val f = newMediaFile("mp4")
+        ctx.contentResolver.openInputStream(uri)!!.use { i -> f.outputStream().use { o -> i.copyTo(o) } }
+        f.absolutePath
+    }
+
+    fun addReel(videoPath: String, caption: String) {
+        val p = Post(System.currentTimeMillis(), 0, 0, null, caption, 0, "الآن", videoPath = videoPath)
+        posts.add(0, p)
+        val arr = JSONArray(sp.getString("my_reels", "[]"))
+        arr.put(JSONObject().put("id", p.id).put("vid", videoPath).put("cap", caption))
+        sp.edit().putString("my_reels", arr.toString()).apply()
+    }
+
     private fun loadUserPosts() {
+        val rs = JSONArray(sp.getString("my_reels", "[]"))
+        for (i in 0 until rs.length()) {
+            val o = rs.getJSONObject(i)
+            if (File(o.getString("vid")).exists()) posts.add(0, Post(o.getLong("id"), 0, 0, null, o.getString("cap"), 0, "قبل قليل", videoPath = o.getString("vid")))
+        }
         val arr = JSONArray(sp.getString("my_posts", "[]"))
         for (i in 0 until arr.length()) {
             val o = arr.getJSONObject(i)
@@ -228,8 +252,11 @@ object Repo {
         chat.typing = true
         kotlinx.coroutines.delay(1400)
         chat.typing = false
-        chat.msgs.add(Msg(System.currentTimeMillis(), false, replies[(chat.msgs.size * 7 + chat.id) % replies.size]))
+        val reply = replies[(chat.msgs.size * 7 + chat.id) % replies.size]
+        chat.msgs.add(Msg(System.currentTimeMillis(), false, reply))
+        chat.unread += 0
         saveMessages()
+        if (!foreground && flag("n_msgs", true)) Notifier.message(appCtx, chat.title, user(chat.userId).idx, reply, chat.id)
     }
 
     private fun saveMessages() {

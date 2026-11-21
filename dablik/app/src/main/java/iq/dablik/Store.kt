@@ -32,7 +32,28 @@ object Store {
         sp.edit().putString("recent", a.toString()).apply()
     }
 
-    fun add(b: Built) { items.removeAll { it.path == b.path }; items.add(0, b); save() }
+    fun add(b: Built) {
+        items.filter { it.pkg == b.pkg && it.path != b.path }.forEach { File(it.path).delete() }
+        items.removeAll { it.pkg == b.pkg || it.path == b.path }; items.add(0, b); save()
+    }
+
+    /** يحفظ مشروع التطبيق (الملفات + كل الإعدادات) ليُعدَّل لاحقاً */
+    fun saveProject(c: Context, f: FormState) {
+        val d = File(c.filesDir, "projects/${f.pkg.trim()}"); d.deleteRecursively(); File(d, "www").mkdirs()
+        Project.dir(c).copyRecursively(File(d, "www"), true)
+        f.iconPath?.let { p -> runCatching { File(p).copyTo(File(d, "icon.png"), true) } }
+        File(d, "form.json").writeText(f.toJson().toString())
+    }
+
+    /** يحمّل مشروعاً محفوظاً إلى النموذج ومجلد الملفات الحالي */
+    fun loadProject(c: Context, pkg: String, f: FormState) {
+        val d = File(c.filesDir, "projects/$pkg")
+        val j = runCatching { org.json.JSONObject(File(d, "form.json").readText()) }.getOrNull() ?: return
+        Project.clear(c)
+        File(d, "www").copyRecursively(Project.dir(c), true)
+        val icon = File(d, "icon.png").takeIf { it.exists() }?.let { src -> File(c.filesDir, "icons").apply { mkdirs() }.let { dir -> File(dir, "icon_edit_${System.currentTimeMillis()}.png").also { src.copyTo(it, true) }.absolutePath } }
+        f.fromJson(j, icon)
+    }
     fun remove(b: Built) { items.remove(b); File(b.path).delete(); save() }
 
     fun install(c: Context, f: File) {

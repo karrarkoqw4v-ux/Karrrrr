@@ -47,7 +47,7 @@ import java.io.File
 @Composable
 fun OneTopBar(title: String, onBack: (() -> Unit)?, actions: @Composable RowScope.() -> Unit = {}) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().height(64.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (onBack != null) Box(Modifier.size(46.dp).oneClick { onBack() }.glass(CircleShape), contentAlignment = Alignment.Center) {
+        if (onBack != null) Box(Modifier.size(46.dp).waterClick(CircleShape) { onBack() }.glass(CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.AutoMirrored.Outlined.ArrowBack, "رجوع", tint = OneUi.Ink, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.width(12.dp))
@@ -71,12 +71,14 @@ private fun BigTile(title: String, sub: String, icon: androidx.compose.ui.graphi
 }
 
 @Composable
-fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit) {
+fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit, onEditApp: (Built) -> Unit) {
     val ctx = LocalContext.current
     val ls = rememberLazyListState()
     val headerPx = with(LocalDensity.current) { 190.dp.toPx() }
+    var selected by remember { mutableStateOf<Built?>(null) }
     val collapse = if (ls.firstVisibleItemIndex > 0) 1f else (ls.firstVisibleItemScrollOffset / headerPx).coerceIn(0f, 1f)
     Box(Modifier.fillMaxSize().background(OneUi.Bg)) {
+        AuroraBackground(Modifier.fillMaxWidth().height(440.dp).graphicsLayer { alpha = 1f - collapse * 0.8f })
         LazyColumn(Modifier.fillMaxSize(), state = ls, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 90.dp)) {
             // منطقة العنوان الكبيرة (كما في One UI): العنوان بالأسفل ويصغر عند التمرير
             item {
@@ -106,7 +108,7 @@ fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit) {
               Entrance(Store.items.indexOf(b) + 2) {
                 val icon = remember(b.icon) { if (b.icon.isNotBlank() && File(b.icon).exists()) BitmapFactory.decodeFile(b.icon)?.asImageBitmap() else null }
                 Row(
-                    Modifier.fillMaxWidth().padding(bottom = 10.dp).oneClick { Store.install(ctx, File(b.path)) }.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(14.dp),
+                    Modifier.fillMaxWidth().padding(bottom = 10.dp).oneClick { selected = b }.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(OneUi.Card2), contentAlignment = Alignment.Center) {
@@ -117,8 +119,7 @@ fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit) {
                         Text(b.name, style = MaterialTheme.typography.bodyLarge, color = OneUi.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("${b.pkg} · ${b.version}", style = MaterialTheme.typography.labelSmall, color = OneUi.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Box(Modifier.size(42.dp).oneClick { Store.share(ctx, File(b.path)) }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Share, "مشاركة", tint = OneUi.Muted) }
-                    Box(Modifier.size(42.dp).oneClick { Store.remove(b) }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.DeleteOutline, "حذف", tint = OneUi.Danger) }
+                    Icon(Icons.Outlined.MoreVert, "خيارات", tint = OneUi.Muted, modifier = Modifier.size(26.dp))
                 }
               }
             }
@@ -128,8 +129,20 @@ fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit) {
             Text("دبليك", style = MaterialTheme.typography.titleLarge, color = OneUi.Ink, modifier = Modifier.padding(start = 24.dp))
         }
         EdgeShade(top = 100.dp, bottom = 70.dp)
+        selected?.let { b ->
+            androidx.compose.ui.window.Dialog(onDismissRequest = { selected = null }) {
+                Column(Modifier.clip(RoundedCornerShape(OneUi.RCard)).background(Color(0xF01C1C1E)).padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(b.name, style = MaterialTheme.typography.titleLarge, color = OneUi.Ink)
+                    Text("${b.pkg} · ${b.version}", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted, modifier = Modifier.padding(bottom = 6.dp))
+                    OneButton("تثبيت", { Store.install(ctx, File(b.path)); selected = null }, icon = Icons.Outlined.InstallMobile)
+                    OneButton("تعديل التطبيق", { onEditApp(b); selected = null }, primary = false, icon = Icons.Outlined.Edit)
+                    OneButton("مشاركة", { Store.share(ctx, File(b.path)); selected = null }, primary = false, icon = Icons.Outlined.Share)
+                    OneButton("حذف", { Store.remove(b); selected = null }, primary = false, icon = Icons.Outlined.DeleteOutline)
+                }
+            }
+        }
         Row(Modifier.align(Alignment.TopEnd).statusBarsPadding().height(56.dp).padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).oneClick { onAbout() }.glass(CircleShape), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(44.dp).waterClick(CircleShape) { onAbout() }.glass(CircleShape), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.Info, "عن التطبيق", tint = OneUi.Ink, modifier = Modifier.size(24.dp))
             }
         }

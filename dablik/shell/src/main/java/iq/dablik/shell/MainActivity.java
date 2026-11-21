@@ -99,6 +99,7 @@ public class MainActivity extends Activity {
 
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
+        root.setFitsSystemWindows(true);
         setContentView(root);
 
         final Runnable next = new Runnable() {
@@ -230,6 +231,85 @@ public class MainActivity extends Activity {
         web.loadUrl(localUrl());
         if (cfg.optBoolean("askPerms", true)) askAllPermissions();
         checkUpdate();
+        showAds();
+    }
+
+    // ---------------- الإعلانات (تجربة تنتهي بعد 30 يوماً من البناء) ----------------
+    private org.json.JSONArray currentAds() {
+        try {
+            String remote = sp.getString("ads_json", "");
+            if (!remote.isEmpty()) return new org.json.JSONArray(remote);
+        } catch (Exception ignored) { }
+        org.json.JSONArray a = cfg.optJSONArray("ads");
+        return a == null ? new org.json.JSONArray() : a;
+    }
+
+    private void openAd(String url) {
+        if (url == null || url.isEmpty()) return;
+        try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); } catch (Exception ignored) { }
+    }
+
+    private void showAds() {
+        if (!cfg.optBoolean("adsEnabled", false)) return;
+        if (System.currentTimeMillis() > cfg.optLong("adsUntil", 0)) return;
+        final org.json.JSONArray ads = currentAds();
+        if (ads.length() == 0) return;
+        final List<JSONObject> banners = new ArrayList<>();
+        JSONObject popup = null;
+        for (int i = 0; i < ads.length(); i++) {
+            JSONObject o = ads.optJSONObject(i);
+            if (o == null) continue;
+            if (o.optBoolean("popup") && popup == null) popup = o; else if (!o.optBoolean("popup")) banners.add(o);
+        }
+        if (popup != null) {
+            final String url = popup.optString("url");
+            android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(this)
+                    .setTitle(popup.optString("title")).setMessage(popup.optString("text"))
+                    .setNegativeButton("إغلاق", null);
+            if (!url.isEmpty()) b.setPositiveButton("فتح", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) { openAd(url); }
+            });
+            b.show();
+        }
+        if (!banners.isEmpty()) {
+            final LinearLayout bar = new LinearLayout(this);
+            bar.setOrientation(LinearLayout.HORIZONTAL);
+            bar.setGravity(Gravity.CENTER_VERTICAL);
+            bar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            bar.setBackground(bg(0xF01C1C1E, 18));
+            bar.setPadding(dp(14), dp(10), dp(6), dp(10));
+            final TextView tv = new TextView(this);
+            tv.setTextColor(Color.WHITE);
+            tv.setTextSize(14);
+            bar.addView(tv, new LinearLayout.LayoutParams(0, -2, 1f));
+            TextView x = new TextView(this);
+            x.setText("✕");
+            x.setTextColor(0xFFA0A0A5);
+            x.setTextSize(18);
+            x.setPadding(dp(12), dp(4), dp(12), dp(4));
+            bar.addView(x);
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-1, -2);
+            lp.gravity = Gravity.BOTTOM;
+            lp.setMargins(dp(10), dp(10), dp(10), dp(10));
+            root.addView(bar, lp);
+            final int[] idx = {0};
+            final Runnable[] rot = new Runnable[1];
+            final Runnable show = new Runnable() {
+                @Override public void run() {
+                    final JSONObject o = banners.get(idx[0] % banners.size());
+                    tv.setText(o.optString("title") + (o.optString("text").isEmpty() ? "" : " — " + o.optString("text")));
+                    final String url = o.optString("url");
+                    tv.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { openAd(url); } });
+                    idx[0]++;
+                    bar.postDelayed(rot[0], 6000);
+                }
+            };
+            rot[0] = show;
+            x.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { bar.removeCallbacks(rot[0]); bar.setVisibility(View.GONE); }
+            });
+            show.run();
+        }
     }
 
     private String localUrl() {
@@ -302,6 +382,7 @@ public class MainActivity extends Activity {
                         }
                     } else {
                         JSONObject j = new JSONObject(new String(readAll(c.getInputStream()), "UTF-8"));
+                        if (j.has("ads")) sp.edit().putString("ads_json", j.optJSONArray("ads").toString()).apply();
                         int v = j.optInt("version", 0);
                         String zip = j.optString("zip", "");
                         if (v > sp.getInt("upd_ver", 0) && !zip.isEmpty()) {
@@ -469,6 +550,7 @@ public class MainActivity extends Activity {
                 try {
                     if (name.length() < 3) { err.setText("اسم المستخدم 3 أحرف على الأقل"); return; }
                     if (pass.length() < 6) { err.setText("كلمة المرور 6 أحرف على الأقل"); return; }
+                    if (cfg.optInt("loginMode", 0) != 0) { authRemote(signup[0], name, pass, err, go); return; }
                     String key = "acc_" + name;
                     if (signup[0]) {
                         if (sp.contains(key)) { err.setText("اسم المستخدم مستخدم"); return; }
@@ -488,6 +570,55 @@ public class MainActivity extends Activity {
         });
         root.removeAllViews();
         root.addView(l, new FrameLayout.LayoutParams(-1, -1));
+    }
+
+    /** تسجيل دخول متصل: Firebase Authentication (REST) أو API خاص */
+    private void authRemote(final boolean signup, final String user, final String pass, final TextView err, final Button go) {
+        go.setEnabled(false);
+        err.setText("جارٍ الاتصال...");
+        new Thread(new Runnable() {
+            @Override public void run() {
+                String error = null;
+                String token = "";
+                try {
+                    int mode = cfg.optInt("loginMode", 0);
+                    String url;
+                    JSONObject body = new JSONObject();
+                    if (mode == 1) {
+                        url = "https://identitytoolkit.googleapis.com/v1/accounts:" + (signup ? "signUp" : "signInWithPassword") + "?key=" + cfg.optString("fbKey");
+                        body.put("email", user).put("password", pass).put("returnSecureToken", true);
+                    } else {
+                        url = cfg.optString(signup ? "registerUrl" : "loginUrl");
+                        body.put("username", user).put("email", user).put("password", pass);
+                    }
+                    if (url.isEmpty()) throw new Exception("رابط الاتصال غير مضبوط");
+                    HttpURLConnection c = open(url);
+                    c.setRequestMethod("POST");
+                    c.setDoOutput(true);
+                    c.setRequestProperty("Content-Type", "application/json");
+                    c.getOutputStream().write(body.toString().getBytes("UTF-8"));
+                    int code = c.getResponseCode();
+                    InputStream in = code < 400 ? c.getInputStream() : c.getErrorStream();
+                    String resp = in == null ? "" : new String(readAll(in), "UTF-8");
+                    JSONObject j;
+                    try { j = new JSONObject(resp); } catch (Exception e) { j = new JSONObject(); }
+                    if (code >= 400) {
+                        if (mode == 1 && j.optJSONObject("error") != null) error = j.optJSONObject("error").optString("message", "HTTP " + code);
+                        else error = j.optString("message", "HTTP " + code);
+                    } else token = mode == 1 ? j.optString("idToken") : j.optString("token", j.optString("access_token", ""));
+                } catch (Exception e) { error = e.getMessage() == null ? "تعذر الاتصال" : e.getMessage(); }
+                final String fe = error;
+                final String ft = token;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        go.setEnabled(true);
+                        if (fe != null) { err.setText(fe); return; }
+                        sp.edit().putString("user", user).putString("token", ft).apply();
+                        startWeb();
+                    }
+                });
+            }
+        }).start();
     }
 
     // ---------------- أدوات يستدعيها موقعك: Dablik.toast("..") ----------------
@@ -530,8 +661,9 @@ public class MainActivity extends Activity {
             } catch (Exception e) { return "{}"; }
         }
         @JavascriptInterface public String user() { return sp.getString("user", ""); }
+        @JavascriptInterface public String token() { return sp.getString("token", ""); }
         @JavascriptInterface public void logout() {
-            sp.edit().remove("user").apply();
+            sp.edit().remove("user").remove("token").apply();
             runOnUiThread(new Runnable() { @Override public void run() { if (cfg.optBoolean("login")) showLogin(); } });
         }
         @JavascriptInterface public void openSettings() {

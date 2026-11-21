@@ -12,6 +12,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.*
 
+data class Ad(val title: String, val text: String, val url: String, val popup: Boolean)
+
 /** حالة نموذج الإنشاء، محفوظة أثناء التنقل بين الشاشات */
 class FormState {
     var name by mutableStateOf("")
@@ -38,12 +40,49 @@ class FormState {
     var external by mutableStateOf(false)
     var splash by mutableStateOf(false)
     var statusColor by mutableStateOf("")     // "" تلقائي
+    // تسجيل الدخول المتصل
+    var loginMode by mutableIntStateOf(0)     // 0 محلي، 1 Firebase، 2 API خاص
+    var fbKey by mutableStateOf("")
+    var loginUrl by mutableStateOf("")
+    var registerUrl by mutableStateOf("")
+    // الإعلانات (تجربة 30 يوماً)
+    var adsOn by mutableStateOf(false)
+    val ads = mutableStateListOf<Ad>()
+    // النشر عن بعد عبر GitHub
+    var remoteVer by mutableIntStateOf(0)
+    var ghRepo by mutableStateOf("")
+    var ghBranch by mutableStateOf("main")
+
+    fun toJson(): org.json.JSONObject = org.json.JSONObject()
+        .put("name", name).put("pkg", pkg).put("version", version).put("perms", org.json.JSONArray(perms.toList()))
+        .put("update", update).put("updateUrl", updateUrl).put("login", login).put("bridge", bridge).put("askPerms", askPerms)
+        .put("fullscreen", fullscreen).put("keepAwake", keepAwake).put("orientation", orientation).put("autoFit", autoFit).put("fixText", fixText)
+        .put("zoom", zoom).put("doubleBack", doubleBack).put("offline", offline).put("debug", debug).put("external", external).put("splash", splash)
+        .put("statusColor", statusColor).put("loginMode", loginMode).put("fbKey", fbKey).put("loginUrl", loginUrl).put("registerUrl", registerUrl)
+        .put("adsOn", adsOn).put("remoteVer", remoteVer).put("ghRepo", ghRepo).put("ghBranch", ghBranch)
+        .put("ads", org.json.JSONArray().also { arr -> ads.forEach { arr.put(org.json.JSONObject().put("title", it.title).put("text", it.text).put("url", it.url).put("popup", it.popup)) } })
+
+    fun fromJson(j: org.json.JSONObject, icon: String?) {
+        name = j.optString("name"); pkg = j.optString("pkg", pkg); version = j.optString("version", version); iconPath = icon
+        perms.clear(); j.optJSONArray("perms")?.let { for (i in 0 until it.length()) perms.add(it.getString(i)) }
+        update = j.optBoolean("update"); updateUrl = j.optString("updateUrl"); login = j.optBoolean("login"); bridge = j.optBoolean("bridge", true)
+        askPerms = j.optBoolean("askPerms", true); fullscreen = j.optBoolean("fullscreen"); keepAwake = j.optBoolean("keepAwake"); orientation = j.optInt("orientation")
+        autoFit = j.optBoolean("autoFit", true); fixText = j.optBoolean("fixText", true); zoom = j.optBoolean("zoom"); doubleBack = j.optBoolean("doubleBack")
+        offline = j.optBoolean("offline", true); debug = j.optBoolean("debug"); external = j.optBoolean("external"); splash = j.optBoolean("splash")
+        statusColor = j.optString("statusColor"); loginMode = j.optInt("loginMode"); fbKey = j.optString("fbKey"); loginUrl = j.optString("loginUrl"); registerUrl = j.optString("registerUrl")
+        adsOn = j.optBoolean("adsOn"); remoteVer = j.optInt("remoteVer"); ghRepo = j.optString("ghRepo"); ghBranch = j.optString("ghBranch", "main")
+        ads.clear(); j.optJSONArray("ads")?.let { for (i in 0 until it.length()) { val o = it.getJSONObject(i); ads.add(Ad(o.optString("title"), o.optString("text"), o.optString("url"), o.optBoolean("popup"))) } }
+        rev++
+    }
 
     fun configJson(): String = org.json.JSONObject()
         .put("name", name).put("login", login).put("update", update).put("updateUrl", updateUrl.trim())
         .put("bridge", bridge).put("askPerms", askPerms).put("fullscreen", fullscreen).put("keepAwake", keepAwake)
         .put("orientation", orientation).put("textZoom", fixText).put("zoom", zoom).put("doubleBack", doubleBack)
         .put("offlinePage", offline).put("debug", debug).put("external", external)
+        .put("loginMode", loginMode).put("fbKey", fbKey.trim()).put("loginUrl", loginUrl.trim()).put("registerUrl", registerUrl.trim())
+        .put("adsEnabled", adsOn).put("adsUntil", System.currentTimeMillis() + 30L * 24 * 3600 * 1000)
+        .put("ads", org.json.JSONArray().also { arr -> ads.forEach { arr.put(org.json.JSONObject().put("title", it.title).put("text", it.text).put("url", it.url).put("popup", it.popup)) } })
         .put("statusBar", statusColor).put("navBar", statusColor).put("splash", splash).put("splashColor", statusColor).put("splashMs", 1200)
         .toString()
 }
@@ -63,6 +102,7 @@ sealed class Screen(val depth: Int) {
 
 @Composable
 fun DablikApp() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     val form = remember { FormState() }
     BackHandler(screen !is Screen.Home) {
@@ -85,7 +125,8 @@ fun DablikApp() {
         label = "nav",
     ) { s ->
         when (s) {
-            Screen.Home -> HomeScreen(onApk = { screen = Screen.Form }, onZip = { screen = Screen.Assets }, onAbout = { screen = Screen.About })
+            Screen.Home -> HomeScreen(onApk = { screen = Screen.Form }, onZip = { screen = Screen.Assets }, onAbout = { screen = Screen.About },
+                onEditApp = { b -> Store.loadProject(ctx, b.pkg, form); screen = Screen.Form })
             Screen.About -> AboutScreen(onBack = { screen = Screen.Home })
             Screen.Form -> FormScreen(form, onBack = { screen = Screen.Home }, onEdit = { screen = Screen.Editor(it) }, onAssets = { screen = Screen.Assets }, onBuild = { screen = Screen.Console })
             Screen.Assets -> AssetsScreen(form, onBack = { screen = Screen.Form }, onPerms = { screen = Screen.Perms }, onFiles = { screen = Screen.Files })

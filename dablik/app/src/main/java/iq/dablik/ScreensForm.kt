@@ -127,6 +127,7 @@ fun ConsoleScreen(f: FormState, onBack: () -> Unit, onHome: () -> Unit) {
         val icon = f.iconPath?.let { p -> runCatching { File(p).readBytes() }.getOrNull() }
         val req = BuildRequest(f.name.trim(), f.pkg.trim(), f.version.trim(), icon, Project.dir(ctx), f.perms.toList(), f.configJson(), f.autoFit)
         logs.add("$ dablik build --name \"${req.name}\" --package ${req.pkg} --version ${req.version}")
+        logs.add("[INFO] login=${if (f.login) listOf("local", "firebase", "api")[f.loginMode.coerceIn(0, 2)] else "off"}  ads=${if (f.adsOn) "${f.ads.size} (30-day trial)" else "off"}  remote-update=${if (f.update) f.updateUrl.take(60) else "off"}")
         try {
             val out = withContext(Dispatchers.Default) {
                 ApkBuilder.buildSuspend(ctx, req) { line ->
@@ -139,6 +140,7 @@ fun ConsoleScreen(f: FormState, onBack: () -> Unit, onHome: () -> Unit) {
             }
             result = out
             Store.add(Built(req.name, req.pkg, req.version, out.absolutePath, f.iconPath ?: "", System.currentTimeMillis()))
+            runCatching { Store.saveProject(ctx, f) }
             logs.add("[ OK ] created ${out.name}")
             state = 1
         } catch (e: Throwable) {

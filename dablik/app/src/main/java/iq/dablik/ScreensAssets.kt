@@ -48,6 +48,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -109,6 +111,12 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
     var codeDlg by remember { mutableStateOf(false) }
     var code by remember { mutableStateOf("") }
     var clearDlg by remember { mutableStateOf(false) }
+    var adDlg by remember { mutableStateOf(false) }
+    var ghToken by remember { mutableStateOf(Publisher.token(ctx)) }
+    val pubLog = remember { mutableStateListOf<String>() }
+    var publishing by remember { mutableStateOf(false) }
+    // رابط التحديث يُملأ تلقائياً عند ربط مستودع GitHub
+    LaunchedEffect(f.ghRepo, f.ghBranch, f.pkg) { if (Publisher.validRepo(f.ghRepo) && ApkBuilder.validPackage(f.pkg.trim())) f.updateUrl = Publisher.rawBase(f.ghRepo, f.ghBranch, f.pkg.trim()) + "/update.json" }
 
     val pickZip = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
@@ -166,7 +174,7 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
                                 Text(if (hasSizes) "وُجد ملف ${Responsive.FILE} داخل ملفاتك وسيُستخدم" else "لا يوجد ملف قياسات: يحدد دبليك القياسات تلقائياً حسب الجهاز", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Box(Modifier.oneClick { pickSizes.launch(arrayOf("*/*")) }.glass(RoundedCornerShape(18.dp), OneUi.Blue, 0.28f, 0.14f).padding(horizontal = 16.dp, vertical = 10.dp)) { Text("رفع ملف القياسات", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue) }
+                                Box(Modifier.waterClick(RoundedCornerShape(18.dp)) { pickSizes.launch(arrayOf("*/*")) }.glass(RoundedCornerShape(18.dp), OneUi.Blue, 0.28f, 0.14f).padding(horizontal = 16.dp, vertical = 10.dp)) { Text("رفع ملف القياسات", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue) }
                                 Box(Modifier.oneClick { File(Project.dir(ctx), Responsive.FILE).writeText(Responsive.templateText()); f.rev++; Toast.makeText(ctx, "تم إنشاء ${Responsive.FILE}، عدّله من «تعديل الملفات»", Toast.LENGTH_LONG).show() }.glass(RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 10.dp)) { Text("إنشاء ملف جاهز", style = MaterialTheme.typography.labelMedium, color = OneUi.Ink) }
                             }
                             Text("الملف اختياري: إذا كتبته أو رفعته يُستخدم، وإذا لم يوجد يطبّق دبليك قيماً افتراضية.", style = MaterialTheme.typography.labelSmall, color = OneUi.Faint)
@@ -193,10 +201,80 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
                         }
                     }
                 }
-                Entrance(6) { SectionTitle("تسجيل الدخول", "شاشة حساب قبل فتح التطبيق") }
+                Entrance(5) { SectionTitle("نشر التحديثات للجميع", "ارفع ملفاتك الجديدة وتصل لكل من ثبّت تطبيقك") }
+                Entrance(6) {
+                    Column(Modifier.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("يرفع دبليك ملفات المشروع الحالية إلى مستودع GitHub عام تملكه، والتطبيقات المثبتة تفحص التحديث عند كل تشغيل وتحمّله تلقائياً. أنشئ مستودعاً عاماً وتوكن بصلاحية Contents (قراءة وكتابة).", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
+                        OneField(f.ghRepo, { f.ghRepo = it.trim() }, "المستودع (owner/name)", hint = "karrar/my-apps", keyboard = androidx.compose.ui.text.input.KeyboardType.Uri)
+                        OneField(f.ghBranch, { f.ghBranch = it.trim() }, "الفرع", hint = "main")
+                        OneField(ghToken, { ghToken = it.trim(); Publisher.saveToken(ctx, it) }, "GitHub Token", hint = "github_pat_...", keyboard = androidx.compose.ui.text.input.KeyboardType.Password)
+                        Text("آخر إصدار منشور: ${if (f.remoteVer == 0) "لم يُنشر بعد" else "v${f.remoteVer}"}", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue)
+                        OneButton(if (publishing) "جارٍ النشر..." else "نشر الملفات كتحديث للجميع", {
+                            if (!publishing) { publishing = true; pubLog.clear()
+                                scope.launch {
+                                    runCatching { withContext(Dispatchers.IO) { Publisher.publish(ctx, f) { l -> pubLog.add(l) } } }
+                                        .onSuccess { try { Store.saveProject(ctx, f) } catch (_: Exception) {} }
+                                        .onFailure { e -> pubLog.add("[ERR ] ${e.message}") }
+                                    publishing = false
+                                }
+                            }
+                        }, enabled = !publishing, icon = Icons.Outlined.CloudUpload)
+                        if (pubLog.isNotEmpty()) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF050505)).padding(12.dp)) {
+                            pubLog.forEach { l -> Text(l, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = if (l.startsWith("[ERR")) OneUi.Danger else if (l.startsWith("[ OK")) OneUi.Green else Color(0xFFD0D0D0)) }
+                        }
+                        Text("أول مرة: فعّل «التحديث عن بعد» وابنِ التطبيق مرة واحدة، ثم انشر التحديثات متى شئت بدون إعادة بناء.", style = MaterialTheme.typography.labelSmall, color = OneUi.Faint)
+                    }
+                }
+                Entrance(7) { SectionTitle("تسجيل الدخول", "حسابات محلية أو ربط مباشر مع خدمة اتصال") }
                 Entrance(7) {
                     Column(Modifier.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card)) {
-                        ToggleRow(Icons.Outlined.Lock, Color(0xFFAF52DE), "إضافة تسجيل دخول وحساب جديد", "حسابات تُحفظ على جهاز المستخدم بتشفير. يقرأ موقعك الاسم عبر Dablik.user()", f.login) { f.login = it }
+                        ToggleRow(Icons.Outlined.Lock, Color(0xFFAF52DE), "إضافة تسجيل دخول وحساب جديد", "شاشة حساب قبل فتح التطبيق. يقرأ موقعك الاسم عبر Dablik.user() والتوكن عبر Dablik.token()", f.login) { f.login = it }
+                        AnimatedVisibility(f.login, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+                            Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf("محلي على الجهاز", "Firebase مباشر", "API خاص").forEachIndexed { i, t ->
+                                        Box(Modifier.waterClick(RoundedCornerShape(18.dp)) { f.loginMode = i }.glass(RoundedCornerShape(18.dp), if (f.loginMode == i) OneUi.Blue else Color.White, if (f.loginMode == i) 0.32f else 0.12f, if (f.loginMode == i) 0.18f else 0.06f).padding(horizontal = 16.dp, vertical = 10.dp)) {
+                                            Text(t, style = MaterialTheme.typography.labelMedium, color = if (f.loginMode == i) OneUi.Blue else OneUi.Ink)
+                                        }
+                                    }
+                                }
+                                when (f.loginMode) {
+                                    1 -> {
+                                        OneField(f.fbKey, { f.fbKey = it.trim() }, "Firebase Web API Key", hint = "AIza...", keyboard = androidx.compose.ui.text.input.KeyboardType.Uri)
+                                        Text("اتصال مباشر مع Firebase Authentication (بريد وكلمة مرور). فعّل Email/Password من لوحة Firebase.", style = MaterialTheme.typography.labelSmall, color = OneUi.Muted)
+                                    }
+                                    2 -> {
+                                        OneField(f.loginUrl, { f.loginUrl = it.trim() }, "رابط تسجيل الدخول (POST)", hint = "https://api.example.com/login", keyboard = androidx.compose.ui.text.input.KeyboardType.Uri)
+                                        OneField(f.registerUrl, { f.registerUrl = it.trim() }, "رابط إنشاء حساب (POST)", hint = "https://api.example.com/register", keyboard = androidx.compose.ui.text.input.KeyboardType.Uri)
+                                        Text("يرسل {\"username\",\"email\",\"password\"} بصيغة JSON، وينجح إذا رجع الخادم 200 (ويقرأ token إن وُجد).", style = MaterialTheme.typography.labelSmall, color = OneUi.Muted)
+                                    }
+                                    else -> Text("حسابات تُحفظ بتشفير على جهاز المستخدم فقط.", style = MaterialTheme.typography.labelSmall, color = OneUi.Muted)
+                                }
+                            }
+                        }
+                    }
+                }
+                Entrance(7) { SectionTitle("الإعلانات (تجربة شهر)", "إعلانات خاصة بك داخل التطبيق: شريط أو نافذة") }
+                Entrance(8) {
+                    Column(Modifier.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card)) {
+                        ToggleRow(Icons.Outlined.Campaign, Color(0xFFFF6BAA), "تفعيل نظام الإعلانات", "يعمل 30 يوماً من لحظة البناء ثم يتوقف تلقائياً", f.adsOn) { f.adsOn = it }
+                        AnimatedVisibility(f.adsOn, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+                            Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                f.ads.forEachIndexed { i, ad ->
+                                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(OneUi.Card2).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(if (ad.popup) Icons.Outlined.WebAsset else Icons.Outlined.ViewAgenda, null, tint = OneUi.Blue, modifier = Modifier.size(24.dp))
+                                        Spacer(Modifier.width(10.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(ad.title, style = MaterialTheme.typography.bodyLarge, color = OneUi.Ink, maxLines = 1)
+                                            Text((if (ad.popup) "نافذة" else "شريط") + " · " + ad.text, style = MaterialTheme.typography.labelSmall, color = OneUi.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        }
+                                        Box(Modifier.size(36.dp).oneClick { f.ads.removeAt(i) }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.DeleteOutline, "حذف", tint = OneUi.Danger) }
+                                    }
+                                }
+                                Box(Modifier.waterClick(RoundedCornerShape(18.dp)) { adDlg = true }.glass(RoundedCornerShape(18.dp), OneUi.Blue, 0.30f, 0.16f).padding(horizontal = 16.dp, vertical = 10.dp)) { Text("إضافة إعلان", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue) }
+                                Text("يمكن تغيير الإعلانات عن بعد: تُرسَل مع كل «نشر تحديث». هذه إعلانات ترويجية خاصة بك، وليست شبكة إعلانات مدفوعة مثل AdMob.", style = MaterialTheme.typography.labelSmall, color = OneUi.Faint)
+                            }
+                        }
                     }
                 }
                 Entrance(8) { SectionTitle("أدوات التطبيق", "ما يحتاجه تطبيقك ليعمل كتطبيق حقيقي") }
@@ -245,6 +323,23 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
         Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp)) { OneButton("تم", onBack, icon = Icons.Outlined.Done) }
     }
 
+    if (adDlg) {
+        var t by remember { mutableStateOf("") }; var tx by remember { mutableStateOf("") }; var u by remember { mutableStateOf("") }; var pop by remember { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { adDlg = false }, containerColor = OneUi.Card,
+            title = { Text("إعلان جديد", color = OneUi.Ink) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(t, { t = it }, singleLine = true, label = { Text("العنوان") })
+                    OutlinedTextField(tx, { tx = it }, label = { Text("النص") })
+                    OutlinedTextField(u, { u = it.trim() }, singleLine = true, label = { Text("رابط عند الضغط (اختياري)") })
+                    Row(verticalAlignment = Alignment.CenterVertically) { Text("نافذة منبثقة بدل الشريط", color = OneUi.Ink, modifier = Modifier.weight(1f)); OneSwitch(pop) { pop = it } }
+                }
+            },
+            confirmButton = { TextButton({ if (t.isNotBlank()) { f.ads.add(Ad(t.trim(), tx.trim(), u, pop)); adDlg = false } }) { Text("إضافة", color = OneUi.Blue) } },
+            dismissButton = { TextButton({ adDlg = false }) { Text("إلغاء", color = OneUi.Muted) } },
+        )
+    }
     if (htmlChoice) AlertDialog(
         onDismissRequest = { htmlChoice = false }, containerColor = OneUi.Card,
         title = { Text("ملفات - HTML", color = OneUi.Ink) },
@@ -325,10 +420,15 @@ fun PermsScreen(f: FormState, onBack: () -> Unit) {
 }
 
 private fun iconFor(file: File): Pair<ImageVector, Color> = when (file.extension.lowercase()) {
-    "html", "htm" -> Icons.Outlined.Html to OneUi.Blue
-    "css" -> Icons.Outlined.Css to Color(0xFFAF52DE)
-    "js" -> Icons.Outlined.Javascript to Color(0xFFFFD60A)
-    "json" -> Icons.Outlined.DataObject to OneUi.Green
+    "html", "htm", "xhtml", "vue" -> Icons.Outlined.Html to OneUi.Blue
+    "css", "scss", "less" -> Icons.Outlined.Css to Color(0xFFAF52DE)
+    "js", "mjs", "jsx", "ts", "tsx" -> Icons.Outlined.Javascript to Color(0xFFFFD60A)
+    "json", "webmanifest", "yml", "yaml", "toml", "xml" -> Icons.Outlined.DataObject to OneUi.Green
+    "py" -> Icons.Outlined.Code to Color(0xFF4B8BBE)
+    "kt", "kts", "java", "swift", "dart", "go", "rs", "c", "h", "cpp", "hpp", "cc", "cs", "php", "rb", "lua", "r" -> Icons.Outlined.Code to Color(0xFFFF9F1C)
+    "sh", "bash", "zsh", "bat", "ps1" -> Icons.Outlined.Terminal to OneUi.Green
+    "sql" -> Icons.Outlined.Storage to Color(0xFF64D2FF)
+    "md", "markdown", "txt", "log" -> Icons.Outlined.Description to OneUi.Muted
     "png", "jpg", "jpeg", "webp", "gif", "bmp", "ico", "svg" -> Icons.Outlined.Image to Color(0xFFFF6BAA)
     else -> Icons.Outlined.Description to OneUi.Muted
 }
@@ -401,18 +501,41 @@ fun FileEditScreen(f: FormState, relPath: String, onBack: () -> Unit, onRun: () 
     val file = remember(relPath) { Project.safe(ctx, relPath) }
     if (file == null || !file.exists()) { LaunchedEffect(Unit) { onBack() }; return }
     val isText = remember(file) { Project.isText(file) }
-    var text by remember(file) { mutableStateOf(if (isText) runCatching { file.readText() }.getOrDefault("") else "") }
-    var saved by remember(file) { mutableStateOf(text) }
+    val ext = remember(file) { file.extension.lowercase() }
+    var tf by remember(file) { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(if (isText) runCatching { file.readText() }.getOrDefault("") else "")) }
+    var saved by remember(file) { mutableStateOf(tf.text) }
     var renameDlg by remember { mutableStateOf(false) }
     var deleteDlg by remember { mutableStateOf(false) }
-    val dirty = isText && text != saved
-    fun save() { if (isText) { file.writeText(text); saved = text; f.rev++; Toast.makeText(ctx, "تم الحفظ", Toast.LENGTH_SHORT).show() } }
+    val dirty = isText && tf.text != saved
+    val transform = remember(ext) { SyntaxTransformation(ext) }
+    fun save() { if (isText) { file.writeText(tf.text); saved = tf.text; f.rev++; Toast.makeText(ctx, "تم الحفظ", Toast.LENGTH_SHORT).show() } }
     val pickReplace = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
             withContext(Dispatchers.IO) { ctx.contentResolver.openInputStream(uri)?.use { i -> file.outputStream().use { o -> i.copyTo(o) } } }
             f.rev++; Toast.makeText(ctx, "تم استبدال الملف", Toast.LENGTH_SHORT).show()
         }
     }
+    // إدخال رمز عند المؤشر. back = كم حرفاً نرجع المؤشر (لوضعه بين القوسين)
+    fun insert(sn: String, back: Int = 0) {
+        val st = tf.selection.min; val en = tf.selection.max
+        val t = tf.text.substring(0, st) + sn + tf.text.substring(en)
+        val pos = st + sn.length - back
+        tf = androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(pos))
+    }
+    // ترتيب تلقائي: عند الضغط على Enter يحافظ على إزاحة السطر السابق (ويزيد بعد { أو :)
+    fun onEdit(nv: androidx.compose.ui.text.input.TextFieldValue) {
+        val old = tf.text
+        if (nv.text.length == old.length + 1 && nv.selection.collapsed && nv.selection.start > 0 && nv.text[nv.selection.start - 1] == '\n') {
+            val pos = nv.selection.start
+            val prevLineStart = nv.text.lastIndexOf('\n', pos - 2) + 1
+            val prev = nv.text.substring(prevLineStart, pos - 1)
+            var indent = prev.takeWhile { it == ' ' || it == '\t' }
+            if (prev.trimEnd().let { it.endsWith("{") || it.endsWith(":") || it.endsWith("(") || it.endsWith("[") }) indent += "  "
+            val t = nv.text.substring(0, pos) + indent + nv.text.substring(pos)
+            tf = androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(pos + indent.length))
+        } else tf = nv
+    }
+    val lines = tf.text.count { it == '\n' } + 1
 
     Box(Modifier.fillMaxSize().background(OneUi.Bg)) {
         Column(Modifier.fillMaxSize().imePadding()) {
@@ -421,14 +544,34 @@ fun FileEditScreen(f: FormState, relPath: String, onBack: () -> Unit, onRun: () 
                 Box(Modifier.size(44.dp).oneClick { if (dirty) save() }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Save, "حفظ", tint = if (dirty) OneUi.Blue else OneUi.Faint) }
                 Box(Modifier.size(44.dp).oneClick { if (dirty) save(); onRun() }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.PlayArrow, "تشغيل", tint = OneUi.Green, modifier = Modifier.size(28.dp)) }
             }
-            Text(relPath, style = MaterialTheme.typography.labelSmall, color = OneUi.Muted, modifier = Modifier.padding(horizontal = 24.dp), fontFamily = FontFamily.Monospace)
+            Row(Modifier.padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(relPath, style = MaterialTheme.typography.labelSmall, color = OneUi.Muted, fontFamily = FontFamily.Monospace, modifier = Modifier.weight(1f))
+                if (isText) Box(Modifier.glass(RoundedCornerShape(12.dp), OneUi.Blue, 0.28f, 0.14f).padding(horizontal = 10.dp, vertical = 3.dp)) { Text(Syntax.name(ext) + " · $lines سطر", style = MaterialTheme.typography.labelSmall, color = OneUi.Blue) }
+            }
             if (isText) {
-                Box(Modifier.weight(1f).fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(OneUi.RCard)).background(Color(0xFF050505)).border(1.dp, OneUi.Line, RoundedCornerShape(OneUi.RCard))) {
-                    BasicTextField(
-                        text, { text = it }, Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFFE8E8E8), fontFamily = FontFamily.Monospace, fontSize = 13.5.sp, lineHeight = 21.sp, textDirection = androidx.compose.ui.text.style.TextDirection.Ltr),
-                        cursorBrush = SolidColor(OneUi.Blue),
-                    )
+                Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).clip(RoundedCornerShape(OneUi.RCard)).background(Color(0xFF1E1E1E)).border(1.dp, OneUi.Line, RoundedCornerShape(OneUi.RCard))) {
+                    Row(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 14.dp)) {
+                        // أرقام الأسطر
+                        Column(Modifier.background(Color(0xFF252526)).padding(start = 12.dp, end = 10.dp), horizontalAlignment = Alignment.End) {
+                            for (i in 1..lines) Text("$i", fontFamily = FontFamily.Monospace, fontSize = 13.sp, lineHeight = 21.sp, color = Color(0xFF6E7681))
+                        }
+                        Box(Modifier.weight(1f).horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
+                            BasicTextField(
+                                tf, { onEdit(it) }, Modifier.widthIn(min = 300.dp),
+                                textStyle = TextStyle(color = Color(0xFFD4D4D4), fontFamily = FontFamily.Monospace, fontSize = 13.sp, lineHeight = 21.sp, textDirection = TextDirection.Ltr),
+                                cursorBrush = SolidColor(Color.White), visualTransformation = transform,
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(autoCorrect = false, keyboardType = androidx.compose.ui.text.input.KeyboardType.Ascii),
+                            )
+                        }
+                    }
+                }
+                // رموز سريعة للكتابة من الجوال
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("Tab" to "  ", "{ }" to "{}", "( )" to "()", "[ ]" to "[]", "< >" to "<>", "\" \"" to "\"\"", "' '" to "''", ";" to ";", ":" to ":", "=" to "=", "/" to "/", "#" to "#", "$" to "$", "!" to "!", "_" to "_", "-" to "-").forEach { (label, ins) ->
+                        Box(Modifier.waterClick(RoundedCornerShape(12.dp)) { insert(ins, if (ins.length == 2 && label != "Tab") 1 else 0) }.glass(RoundedCornerShape(12.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                            Text(label, fontFamily = FontFamily.Monospace, fontSize = 14.sp, color = OneUi.Ink)
+                        }
+                    }
                 }
             } else {
                 Column(Modifier.weight(1f).fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {

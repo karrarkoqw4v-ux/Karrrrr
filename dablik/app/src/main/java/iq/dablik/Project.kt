@@ -88,7 +88,17 @@ object Project {
         return if (fs.isEmpty()) "لا توجد ملفات" else "${fs.size} ملف · ${fs.sumOf { it.length() } / 1024} KB"
     }
 
-    val textExt = setOf("html", "htm", "css", "js", "json", "txt", "xml", "svg", "md", "csv", "map", "webmanifest", "ts", "yml", "yaml")
-    fun isText(f: File) = f.extension.lowercase() in textExt && f.length() < 800_000
+    val textExt = setOf(
+        "html", "htm", "xhtml", "css", "scss", "less", "js", "mjs", "jsx", "ts", "tsx", "vue", "json", "webmanifest", "txt", "xml", "svg", "md", "markdown", "csv", "map",
+        "yml", "yaml", "toml", "ini", "env", "cfg", "properties", "py", "kt", "kts", "java", "php", "c", "h", "cpp", "hpp", "cc", "cs", "go", "rs", "rb", "swift", "dart",
+        "sh", "bash", "zsh", "bat", "ps1", "sql", "lua", "r", "gradle", "gitignore", "log", "htaccess",
+    )
+    fun isText(f: File): Boolean {
+        if (f.length() > 800_000) return false
+        if (f.extension.lowercase() in textExt) return true
+        if (isImage(f)) return false
+        // ملف بلا امتداد معروف: نفحص أول 2KB (لا يحتوي بايتات صفرية = نصي)
+        return runCatching { f.inputStream().use { i -> val b = ByteArray(2048); val n = i.read(b); n <= 0 || (0 until n).none { b[it].toInt() == 0 } } }.getOrDefault(false)
+    }
     fun isImage(f: File) = f.extension.lowercase() in setOf("png", "jpg", "jpeg", "webp", "gif", "bmp", "ico")
 }

@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 private fun InfoRow(icon: ImageVector, tint: Color, title: String, sub: String) {
@@ -39,6 +40,13 @@ private fun Section(title: String) {
 
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
+    val ctx = LocalContext.current
+    fun telegram(handle: String) {
+        val tg = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("tg://resolve?domain=$handle")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        try { ctx.startActivity(tg) } catch (e: Exception) {
+            runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://t.me/$handle")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        }
+    }
     Box(Modifier.fillMaxSize().background(OneUi.Bg)) {
         Column(Modifier.fillMaxSize()) {
             OneTopBar("عن التطبيق", onBack)
@@ -50,6 +58,22 @@ fun AboutScreen(onBack: () -> Unit) {
                     }
                     Text("دبليك", style = MaterialTheme.typography.headlineSmall, color = OneUi.Ink, modifier = Modifier.padding(top = 12.dp))
                     Text("الإصدار 1.0.0", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
+                }
+                Section("المسؤول عن التطبيق")
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(58.dp).clip(CircleShape).background(OneUi.Blue), contentAlignment = Alignment.Center) { Text("ك", style = MaterialTheme.typography.titleLarge, color = Color.White) }
+                    Spacer(Modifier.width(14.dp))
+                    Column { Text("كروري", style = MaterialTheme.typography.titleMedium, color = OneUi.Ink); Text("مطوّر ومسؤول تطبيق دبليك", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted) }
+                }
+                Section("قناة التليجرام")
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("تابع التحديثات والأخبار من القناة الرسمية.", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
+                    OneButton("فتح القناة  t.me/wewv6", { telegram("wewv6") }, icon = Icons.Outlined.Send)
+                }
+                Section("تواصل مع المطور")
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("للاستفسار أو الدعم أو طلب ميزة جديدة، راسله مباشرة.", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
+                    OneButton("مراسلة  @wewv4", { telegram("wewv4") }, primary = false, icon = Icons.Outlined.ChatBubbleOutline)
                 }
                 Section("ماذا يفعل")
                 OneCard {

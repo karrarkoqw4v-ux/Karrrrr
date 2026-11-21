@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +33,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.addOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.foundation.Canvas
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -118,7 +132,7 @@ fun OneButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
     val base = if (!enabled) Color(0xFF3A3A3D) else if (primary) OneUi.Blue else Color.White
     val a1 = if (!enabled) 0.6f else if (primary) 0.88f else 0.16f
     val a2 = if (!enabled) 0.5f else if (primary) 0.74f else 0.08f
-    Box(modifier.fillMaxWidth().height(58.dp).oneClick(enabled, onClick).glass(shape, base, a1, a2), contentAlignment = Alignment.Center) {
+    Box(modifier.fillMaxWidth().height(58.dp).waterClick(shape, enabled, onClick).glass(shape, base, a1, a2), contentAlignment = Alignment.Center) {
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.20f), Color.Transparent), endY = 90f)))
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) { Icon(icon, null, tint = if (enabled) Color.White else OneUi.Faint, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
@@ -200,5 +214,59 @@ fun ToggleRow(icon: ImageVector, tint: Color, title: String, sub: String, checke
         }
         Spacer(Modifier.width(10.dp))
         OneSwitch(checked, onChange)
+    }
+}
+
+
+/** ضغطة مائية بأسلوب الزجاج السائل: تموّج دوائر يخرج من مكان اللمس مع انضغاط مطاطي */
+fun Modifier.waterClick(shape: Shape, enabled: Boolean = true, onClick: () -> Unit): Modifier = composed {
+    var down by remember { mutableStateOf(false) }
+    var pos by remember { mutableStateOf(Offset.Zero) }
+    val prog = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    val sq by animateFloatAsState(if (down) 1f else 0f, spring(0.32f, 420f), label = "sq")
+    this.graphicsLayer { scaleX = 1f + 0.04f * sq; scaleY = 1f - 0.07f * sq }
+        .drawWithContent {
+            drawContent()
+            val p = prog.value
+            if (p > 0f && p < 1f) {
+                val path = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawWithContent)) }
+                clipPath(path) {
+                    val r = (size.maxDimension * 1.25f * p).coerceAtLeast(1f)
+                    val a = 1f - p
+                    drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.45f * a), Color.White.copy(alpha = 0.16f * a), Color.Transparent), center = pos, radius = r), radius = r, center = pos)
+                    drawCircle(Color.White.copy(alpha = 0.55f * a), radius = r * 0.78f, center = pos, style = Stroke(2.5f * density))
+                    drawCircle(Color.White.copy(alpha = 0.30f * a), radius = r * 0.5f, center = pos, style = Stroke(2f * density))
+                }
+            }
+        }
+        .pointerInput(enabled) {
+            if (enabled) detectTapGestures(
+                onPress = { o ->
+                    pos = o; down = true
+                    scope.launch { prog.snapTo(0f); prog.animateTo(1f, tween(760, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))) }
+                    tryAwaitRelease(); down = false
+                },
+                onTap = { onClick() },
+            )
+        }
+}
+
+/** خلفية متحركة بألوان جوجل (أزرق، أحمر، أصفر، أخضر) تتحرك ببطء */
+@Composable
+fun AuroraBackground(modifier: Modifier = Modifier) {
+    val tr = rememberInfiniteTransition(label = "aurora")
+    val a by tr.animateFloat(0f, 6.2831855f, infiniteRepeatable(tween(15000, easing = LinearEasing)), label = "a")
+    val b by tr.animateFloat(0f, 6.2831855f, infiniteRepeatable(tween(21000, easing = LinearEasing)), label = "b")
+    Canvas(modifier) {
+        val w = size.width; val h = size.height
+        fun blob(c: Color, cx: Float, cy: Float, r: Float) {
+            drawCircle(Brush.radialGradient(listOf(c.copy(alpha = 0.55f), c.copy(alpha = 0.18f), Color.Transparent), center = Offset(cx, cy), radius = r), radius = r, center = Offset(cx, cy))
+        }
+        blob(Color(0xFF4285F4), w * (0.20f + 0.16f * sin(a)), h * (0.30f + 0.12f * cos(b)), w * 0.60f)
+        blob(Color(0xFFEA4335), w * (0.82f + 0.12f * cos(a)), h * (0.22f + 0.15f * sin(b)), w * 0.52f)
+        blob(Color(0xFFFBBC05), w * (0.58f + 0.20f * sin(b)), h * (0.52f + 0.10f * cos(a)), w * 0.46f)
+        blob(Color(0xFF34A853), w * (0.28f + 0.18f * cos(b)), h * (0.66f + 0.10f * sin(a)), w * 0.52f)
+        drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black), startY = h * 0.45f, endY = h))
     }
 }

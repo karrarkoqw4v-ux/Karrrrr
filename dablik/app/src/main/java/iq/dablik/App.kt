@@ -31,6 +31,7 @@ sealed class Screen(val depth: Int) {
     data object Form : Screen(1)
     class Editor(val uri: Uri) : Screen(2)
     data object Console : Screen(2)
+    data object About : Screen(1)
 }
 
 @Composable
@@ -51,7 +52,8 @@ fun DablikApp() {
         label = "nav",
     ) { s ->
         when (s) {
-            Screen.Home -> HomeScreen(onApk = { form.mode = 0; screen = Screen.Form }, onZip = { form.mode = 1; screen = Screen.Form })
+            Screen.Home -> HomeScreen(onApk = { form.mode = 0; screen = Screen.Form }, onZip = { form.mode = 1; screen = Screen.Form }, onAbout = { screen = Screen.About })
+            Screen.About -> AboutScreen(onBack = { screen = Screen.Home })
             Screen.Form -> FormScreen(form, onBack = { screen = Screen.Home }, onEdit = { screen = Screen.Editor(it) }, onBuild = { screen = Screen.Console })
             is Screen.Editor -> IconEditorScreen(s.uri, onClose = { screen = Screen.Form }, onSaved = { form.iconPath = it; screen = Screen.Form })
             Screen.Console -> ConsoleScreen(form, onBack = { screen = Screen.Form }, onHome = { screen = Screen.Home })

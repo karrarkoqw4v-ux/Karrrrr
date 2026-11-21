@@ -71,7 +71,7 @@ private fun BigTile(title: String, sub: String, icon: androidx.compose.ui.graphi
 }
 
 @Composable
-fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit) {
+fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit) {
     val ctx = LocalContext.current
     val ls = rememberLazyListState()
     val headerPx = with(LocalDensity.current) { 190.dp.toPx() }
@@ -126,6 +126,11 @@ fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit) {
             Text("دبليك", style = MaterialTheme.typography.titleLarge, color = OneUi.Ink, modifier = Modifier.padding(start = 24.dp))
         }
         EdgeShade(top = 100.dp, bottom = 70.dp)
+        Row(Modifier.align(Alignment.TopEnd).statusBarsPadding().height(56.dp).padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(44.dp).oneClick { onAbout() }.clip(CircleShape).background(OneUi.Card), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.Info, "عن التطبيق", tint = OneUi.Ink, modifier = Modifier.size(24.dp))
+            }
+        }
     }
 }
 
@@ -222,10 +227,10 @@ fun ConsoleScreen(f: FormState, onBack: () -> Unit, onHome: () -> Unit) {
             }
             result = out
             Store.add(Built(req.name, req.pkg, req.version, out.absolutePath, f.iconPath ?: "", System.currentTimeMillis()))
-            logs.add("✔ تم إنشاء ${out.name}")
+            logs.add("تم إنشاء ${out.name}")
             state = 1
         } catch (e: Throwable) {
-            logs.add("✘ فشل: ${e.message ?: e.javaClass.simpleName}")
+            logs.add("فشل: ${e.message ?: e.javaClass.simpleName}")
             state = 2
         }
     }
@@ -247,9 +252,9 @@ fun ConsoleScreen(f: FormState, onBack: () -> Unit, onHome: () -> Unit) {
                 Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(18.dp)) {
                     logs.forEach { l ->
                         Text(l, fontFamily = FontFamily.Monospace, fontSize = 13.5.sp, lineHeight = 21.sp,
-                            color = if (l.startsWith("✘") || l.contains("تحذير")) OneUi.Danger else if (l.startsWith("✔")) OneUi.Green else if (l.startsWith("$")) OneUi.Blue else Color(0xFFD0D0D0))
+                            color = if (l.startsWith("فشل") || l.contains("تحذير")) OneUi.Danger else if (l.startsWith("تم إنشاء")) OneUi.Green else if (l.startsWith("$")) OneUi.Blue else Color(0xFFD0D0D0))
                     }
-                    if (state == 0) Text("▌", fontFamily = FontFamily.Monospace, color = OneUi.Green)
+                    if (state == 0) Text("_", fontFamily = FontFamily.Monospace, color = OneUi.Green)
                 }
             }
             Column(Modifier.navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

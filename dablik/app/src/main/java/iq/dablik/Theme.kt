@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -104,16 +105,25 @@ fun Modifier.oneClick(enabled: Boolean = true, onClick: () -> Unit): Modifier = 
     }
 }
 
-/** زر One UI: كبسولة كبيرة. primary = أزرق، غير ذلك رمادي داكن */
+/** سطح زجاجي: شفافية خفيفة مع تدرج لامع وحد مضيء */
+fun Modifier.glass(shape: Shape, tint: Color = Color.White, a1: Float = 0.14f, a2: Float = 0.07f): Modifier =
+    this.clip(shape)
+        .background(Brush.verticalGradient(listOf(tint.copy(alpha = a1), tint.copy(alpha = a2))))
+        .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.38f), Color.White.copy(alpha = 0.05f))), shape)
+
+/** زر One UI زجاجي: كبسولة كبيرة شفافة قليلاً. primary = أزرق، غير ذلك رمادي زجاجي */
 @Composable
 fun OneButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, primary: Boolean = true, enabled: Boolean = true, icon: ImageVector? = null) {
-    val bg = if (!enabled) OneUi.Card2 else if (primary) OneUi.Blue else OneUi.Card2
-    Row(
-        modifier.fillMaxWidth().height(58.dp).oneClick(enabled, onClick).clip(RoundedCornerShape(OneUi.RButton)).background(bg),
-        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (icon != null) { Icon(icon, null, tint = if (enabled) Color.White else OneUi.Faint, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
-        Text(text, style = MaterialTheme.typography.labelLarge, color = if (enabled) Color.White else OneUi.Faint)
+    val shape = RoundedCornerShape(OneUi.RButton)
+    val base = if (!enabled) Color(0xFF3A3A3D) else if (primary) OneUi.Blue else Color.White
+    val a1 = if (!enabled) 0.6f else if (primary) 0.88f else 0.16f
+    val a2 = if (!enabled) 0.5f else if (primary) 0.74f else 0.08f
+    Box(modifier.fillMaxWidth().height(58.dp).oneClick(enabled, onClick).glass(shape, base, a1, a2), contentAlignment = Alignment.Center) {
+        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.20f), Color.Transparent), endY = 90f)))
+        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) { Icon(icon, null, tint = if (enabled) Color.White else OneUi.Faint, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
+            Text(text, style = MaterialTheme.typography.labelLarge, color = if (enabled) Color.White else OneUi.Faint)
+        }
     }
 }
 
@@ -153,8 +163,8 @@ private fun Modifier.onFocusChangedCompat(cb: (Boolean) -> Unit): Modifier = thi
 /** تظليل (تغويش) أعلى وأسفل الشاشة عند تمرير المحتوى تحتها */
 @Composable
 fun BoxScope.EdgeShade(top: androidx.compose.ui.unit.Dp, bottom: androidx.compose.ui.unit.Dp) {
-    Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(top).background(Brush.verticalGradient(listOf(Color(0xF2000000), Color(0xCC000000), Color.Transparent))))
-    Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(bottom).background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000), Color(0xF2000000)))))
+    Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(top).background(Brush.verticalGradient(listOf(Color(0xB3000000), Color(0x66000000), Color.Transparent))))
+    Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(bottom).background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x80000000), Color(0xB8000000)))))
 }
 
 

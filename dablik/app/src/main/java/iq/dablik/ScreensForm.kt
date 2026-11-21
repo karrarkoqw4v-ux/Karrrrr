@@ -32,6 +32,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
@@ -121,24 +125,24 @@ fun ConsoleScreen(f: FormState, onBack: () -> Unit, onHome: () -> Unit) {
     val prog by animateFloatAsState(if (state == 1) 1f else step / 7f, tween(500), label = "prog")
     LaunchedEffect(Unit) {
         val icon = f.iconPath?.let { p -> runCatching { File(p).readBytes() }.getOrNull() }
-        val req = BuildRequest(f.name.trim(), f.pkg.trim(), f.version.trim(), icon, Project.dir(ctx), f.perms.toList(), f.configJson())
+        val req = BuildRequest(f.name.trim(), f.pkg.trim(), f.version.trim(), icon, Project.dir(ctx), f.perms.toList(), f.configJson(), f.autoFit)
         logs.add("$ dablik build --name \"${req.name}\" --package ${req.pkg} --version ${req.version}")
         try {
             val out = withContext(Dispatchers.Default) {
                 ApkBuilder.buildSuspend(ctx, req) { line ->
                     withContext(Dispatchers.Main) {
                         logs.add(line)
-                        Regex("^\\[(\\d)/7\\]").find(line)?.let { step = it.groupValues[1].toInt() }
+                        Regex("^== \\[(\\d)/7\\]").find(line)?.let { step = it.groupValues[1].toInt() }
                     }
-                    delay(350)
+                    delay(if (line.startsWith("==")) 520L else 28L)
                 }
             }
             result = out
             Store.add(Built(req.name, req.pkg, req.version, out.absolutePath, f.iconPath ?: "", System.currentTimeMillis()))
-            logs.add("تم إنشاء ${out.name}")
+            logs.add("[ OK ] created ${out.name}")
             state = 1
         } catch (e: Throwable) {
-            logs.add("فشل: ${e.message ?: e.javaClass.simpleName}")
+            logs.add("[ERR ] build failed: ${e.message ?: e.javaClass.simpleName}")
             state = 2
         }
     }
@@ -161,10 +165,7 @@ fun ConsoleScreen(f: FormState, onBack: () -> Unit, onHome: () -> Unit) {
                     .border(1.dp, OneUi.Line, RoundedCornerShape(OneUi.RCard)),
             ) {
                 Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(18.dp)) {
-                    logs.forEach { l ->
-                        Text(l, fontFamily = FontFamily.Monospace, fontSize = 13.5.sp, lineHeight = 21.sp,
-                            color = if (l.startsWith("فشل") || l.contains("تحذير")) OneUi.Danger else if (l.startsWith("تم إنشاء")) OneUi.Green else if (l.startsWith("$")) OneUi.Blue else Color(0xFFD0D0D0))
-                    }
+                    logs.forEach { l -> Text(colorize(l), fontFamily = FontFamily.Monospace, fontSize = 12.5.sp, lineHeight = 19.sp, color = Color(0xFFD8D8D8)) }
                     if (state == 0) Text("_", fontFamily = FontFamily.Monospace, color = OneUi.Green)
                 }
             }
@@ -179,4 +180,34 @@ fun ConsoleScreen(f: FormState, onBack: () -> Unit, onHome: () -> Unit) {
             }
         }
     }
+}
+
+private val tagColors = mapOf(
+    "INFO" to Color(0xFF5AC8FA), " OK " to Color(0xFF3DDC84), "WARN" to Color(0xFFFFB020), "SCAN" to Color(0xFF8E8E93),
+    "TOOL" to Color(0xFFBF5AF2), "KEY " to Color(0xFFFFD60A), "COPY" to Color(0xFF64D2FF), " FIT" to Color(0xFF30D158),
+    "AXML" to Color(0xFFFF9F0A), "PERM" to Color(0xFFFF6BAA), "SIGN" to Color(0xFF0A84FF), "VERF" to Color(0xFF32D74B),
+    "DONE" to Color(0xFF3DDC84), "ERR " to Color(0xFFFF5A5A),
+)
+private val tokenRe = Regex("([0-9a-f]{20,})|(android\\.permission\\.\\w+|com\\.[A-Za-z0-9_.]+)|([\\w./-]+\\.(?:html|css|js|png|xml|dex|arsc|json|apk|jpg))|(\\b\\d+(?:\\.\\d+)?\\s?(?:KB|ms|B)\\b)")
+
+private fun AnnotatedString.Builder.highlight(s: String) {
+    var last = 0
+    for (m in tokenRe.findAll(s)) {
+        append(s.substring(last, m.range.first))
+        val c = when { m.groups[1] != null -> Color(0xFFBF5AF2); m.groups[2] != null -> Color(0xFFFF6BAA); m.groups[3] != null -> Color(0xFF64D2FF); else -> Color(0xFFFFD60A) }
+        pushStyle(SpanStyle(color = c)); append(m.value); pop()
+        last = m.range.last + 1
+    }
+    append(s.substring(last))
+}
+
+/** تلوين أسطر لوحة التحكم: الوسم، المسارات، الأرقام، الهاشات، الصلاحيات */
+private fun colorize(line: String): AnnotatedString = buildAnnotatedString {
+    if (line.startsWith("==")) { pushStyle(SpanStyle(color = OneUi.Blue, fontWeight = FontWeight.Bold)); append(line); pop(); return@buildAnnotatedString }
+    if (line.startsWith("$")) { pushStyle(SpanStyle(color = Color(0xFF8E8E93))); append(line); pop(); return@buildAnnotatedString }
+    val m = Regex("^\\[(.{4})\\]\\s*(.*)$").find(line)
+    if (m != null) {
+        pushStyle(SpanStyle(color = tagColors[m.groupValues[1]] ?: Color(0xFFD8D8D8), fontWeight = FontWeight.Bold)); append("[" + m.groupValues[1] + "] "); pop()
+        highlight(m.groupValues[2])
+    } else highlight(line)
 }

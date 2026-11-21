@@ -28,11 +28,24 @@ class FormState {
     var keepAwake by mutableStateOf(false)
     var orientation by mutableIntStateOf(0)   // 0 تلقائي، 1 عمودي، 2 أفقي
     var rev by mutableIntStateOf(0)           // يزيد عند تغيير ملفات المشروع
+    // قياسات الأجهزة وخيارات المطور
+    var autoFit by mutableStateOf(true)
+    var fixText by mutableStateOf(true)
+    var zoom by mutableStateOf(false)
+    var doubleBack by mutableStateOf(false)
+    var offline by mutableStateOf(true)
+    var debug by mutableStateOf(false)
+    var external by mutableStateOf(false)
+    var splash by mutableStateOf(false)
+    var statusColor by mutableStateOf("")     // "" تلقائي
 
     fun configJson(): String = org.json.JSONObject()
         .put("name", name).put("login", login).put("update", update).put("updateUrl", updateUrl.trim())
         .put("bridge", bridge).put("askPerms", askPerms).put("fullscreen", fullscreen).put("keepAwake", keepAwake)
-        .put("orientation", orientation).toString()
+        .put("orientation", orientation).put("textZoom", fixText).put("zoom", zoom).put("doubleBack", doubleBack)
+        .put("offlinePage", offline).put("debug", debug).put("external", external)
+        .put("statusBar", statusColor).put("navBar", statusColor).put("splash", splash).put("splashColor", statusColor).put("splashMs", 1200)
+        .toString()
 }
 
 sealed class Screen(val depth: Int) {

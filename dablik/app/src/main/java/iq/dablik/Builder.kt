@@ -20,7 +20,7 @@ import java.util.zip.ZipOutputStream
 /** طلب بناء: مجلد الموقع + الصلاحيات + إعدادات الأدوات */
 class BuildRequest(
     val name: String, val pkg: String, val version: String, val iconPng: ByteArray?,
-    val siteDir: File, val perms: List<String>, val config: String,
+    val siteDir: File, val perms: List<String>, val config: String, val autoFit: Boolean = true,
 )
 
 /**
@@ -40,25 +40,66 @@ object ApkBuilder {
 
     fun validPackage(p: String) = Regex("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$").matches(p)
 
+    private fun kb(n: Long) = if (n < 1024) "$n B" else String.format("%.1f KB", n / 1024.0)
+    private fun hex(b: ByteArray) = b.joinToString("") { "%02x".format(it) }
+
     suspend fun buildSuspend(ctx: Context, req: BuildRequest, log: suspend (String) -> Unit): File {
+        val t0 = System.currentTimeMillis()
         val outDir = File(ctx.filesDir, "builds").apply { mkdirs() }
         val work = File(ctx.cacheDir, "work").apply { deleteRecursively(); mkdirs() }
 
-        log("[1/7] تهيئة مجلد العمل ... تم")
+        log("== [1/7] PREPARE WORKSPACE")
+        log("[INFO] app name      = ${req.name}")
+        log("[INFO] package       = ${req.pkg}")
+        log("[INFO] version       = ${req.version} (code ${versionCode(req.version)})")
+        log("[INFO] permissions   = ${req.perms.size}")
+        log("[INFO] work dir      = ${work.absolutePath}")
+        log("[ OK ] workspace ready")
+
+        log("== [2/7] LOAD TEMPLATE")
         val shell = File(work, "shell.apk")
         try { ctx.assets.open("shell.apk").use { i -> shell.outputStream().use { o -> i.copyTo(o) } } }
-        catch (e: Exception) { throw IllegalStateException("قالب التطبيق (shell.apk) غير موجود داخل دبليك") }
-        log("[2/7] استخراج قالب التطبيق: ${shell.length() / 1024} KB")
+        catch (e: Exception) { throw IllegalStateException("template shell.apk is missing inside Dablik") }
+        log("[ OK ] template shell.apk  ${kb(shell.length())}  sha256=${hex(MessageDigest.getInstance("SHA-256").digest(shell.readBytes())).take(32)}")
+        ZipFile(shell).use { zf ->
+            for (e in zf.entries()) if (!e.isDirectory) log("[SCAN] ${e.name.padEnd(34)} ${kb(e.size).padStart(9)}  ${if (e.method == ZipEntry.STORED) "STORED  " else "DEFLATED"} crc=${"%08x".format(e.crc)}")
+        }
 
+        log("== [3/7] LOAD TOOLS")
         val signerCfg = loadSigner(ctx)
-        log("[3/7] تحميل مكتبة التوقيع apksig وشهادة التوقيع ... تم")
+        val cert = signerCfg.certificates[0]
+        log("[TOOL] apksig ApkSigner      loaded")
+        log("[TOOL] apksig ApkVerifier    loaded")
+        log("[TOOL] AXML manifest patcher ready (UTF-16 string pool)")
+        log("[TOOL] ZIP writer            ready")
+        log("[ OK ] keystore PKCS12  alias=dablik")
+        log("[KEY ] algorithm  ${cert.publicKey.algorithm}  ${cert.sigAlgName}")
+        log("[KEY ] subject    ${cert.subjectX500Principal.name}")
+        log("[KEY ] valid to   ${cert.notAfter}")
+        log("[KEY ] sha256     ${hex(MessageDigest.getInstance("SHA-256").digest(cert.encoded)).take(40)}")
 
-        val www = collectSite(req.siteDir)
-        log("[4/7] تجهيز ملفات الموقع: ${www.size} ملف، ${www.values.sumOf { it.size } / 1024} KB")
+        log("== [4/7] PREPARE SITE FILES")
+        val raw = collectSite(req.siteDir)
+        val (sizes, custom) = Responsive.read(req.siteDir)
+        if (req.autoFit) log(if (custom) "[ FIT] custom ${Responsive.FILE} found and will be used" else "[ FIT] no ${Responsive.FILE}: automatic device sizing enabled")
+        else log("[ FIT] automatic sizing is disabled")
+        val www = LinkedHashMap<String, ByteArray>()
+        for ((path, data) in raw) {
+            var out = data
+            if (req.autoFit && (path.endsWith(".html", true) || path.endsWith(".htm", true))) {
+                val inj = Responsive.inject(String(data, Charsets.UTF_8), sizes)
+                if (inj != null) { out = inj.toByteArray(Charsets.UTF_8); log("[ FIT] responsive layer injected -> $path  (mode=${sizes.optString("mode")}, base=${sizes.optInt("baseWidth")}px, font ${sizes.optInt("minFont")}-${sizes.optInt("maxFont")}px)") }
+            }
+            www[path] = out
+            log("[COPY] assets/www/${path.padEnd(28)} ${kb(out.size.toLong()).padStart(9)}  crc=${"%08x".format(java.util.zip.CRC32().also { it.update(out) }.value)}")
+        }
+        log("[ OK ] ${www.size} site files, ${kb(www.values.sumOf { it.size.toLong() })} total")
 
+        log("== [5/7] PATCH ANDROIDMANIFEST")
         val placeholderHash = sha(ctx.assets.open("icon_placeholder.png").readBytes())
         val unsigned = File(work, "unsigned.apk")
         var iconDone = false
+        val info = ArrayList<String>()
         ZipFile(shell).use { zf ->
             ZipOutputStream(unsigned.outputStream().buffered()).use { zo ->
                 for (e in zf.entries()) {
@@ -66,7 +107,7 @@ object ApkBuilder {
                     val bytes = zf.getInputStream(e).readBytes()
                     when {
                         e.name == "AndroidManifest.xml" -> {
-                            val patched = patchManifest(bytes, mapOf(PH_PKG to req.pkg, PH_LABEL to req.name, PH_VER to req.version), versionCode(req.version), req.perms)
+                            val patched = patchManifest(bytes, mapOf(PH_PKG to req.pkg, PH_LABEL to req.name, PH_VER to req.version), versionCode(req.version), req.perms, info)
                             put(zo, e.name, patched, null)
                         }
                         req.iconPng != null && e.name.startsWith("res/") && e.name.endsWith(".png") && sha(bytes) == placeholderHash -> {
@@ -79,19 +120,33 @@ object ApkBuilder {
                 put(zo, "assets/wbl_config.json", req.config.toByteArray(), null)
             }
         }
-        log("[5/7] تعديل AndroidManifest: الاسم «${req.name}» · الحزمة ${req.pkg} · الإصدار ${req.version} (${versionCode(req.version)}) · ${req.perms.size} صلاحية")
-        log(if (req.iconPng == null) "[6/7] لم تُحدد أيقونة: تُستخدم الأيقونة الافتراضية" else if (iconDone) "[6/7] حقن الأيقونة المخصصة ... تم" else "[6/7] تحذير: لم أجد موضع الأيقونة في القالب، بقيت الافتراضية")
+        for (l in info) log(l)
+        log("[ OK ] manifest patched")
 
-        val safe = req.name.replace(Regex("[^A-Za-z0-9\\u0600-\\u06FF_-]"), "_").ifBlank { "app" }
+        log("== [6/7] INJECT ICON")
+        log(if (req.iconPng == null) "[WARN] no custom icon selected: default icon kept"
+            else if (iconDone) "[ OK ] custom icon written  ${kb(req.iconPng.size.toLong())}  (replaced template placeholder)"
+            else "[WARN] icon slot not found in template: default icon kept")
+        log("[ OK ] wbl_config.json written  ${kb(req.config.length.toLong())}")
+
+        log("== [7/7] SIGN AND VERIFY")
+        val safe = req.name.replace(Regex("[^A-Za-z0-9_-]"), "_").trim('_').ifBlank { "app" }
         val out = File(outDir, "${safe}_${req.version}.apk")
+        log("[SIGN] scheme v1 (JAR)  min sdk 21")
+        log("[SIGN] scheme v2 (APK Signature Scheme)")
         ApkSigner.Builder(listOf(signerCfg)).setInputApk(unsigned).setOutputApk(out).setMinSdkVersion(21)
             .setV1SigningEnabled(true).setV2SigningEnabled(true).build().sign()
-        log("[7/7] التجميع والتوقيع (v1 + v2) ... تم")
-
+        log("[ OK ] signed -> ${out.name}")
         val res = ApkVerifier.Builder(out).build().verify()
-        if (!res.isVerified) throw IllegalStateException("فشل التحقق من التوقيع: " + res.errors.joinToString { it.toString() })
-        log("التحقق من الحزمة: ناجح (v1=${res.isVerifiedUsingV1Scheme}, v2=${res.isVerifiedUsingV2Scheme})")
-        log("الحجم النهائي: ${out.length() / 1024} KB")
+        if (!res.isVerified) throw IllegalStateException("signature verification failed: " + res.errors.joinToString { it.toString() })
+        log("[VERF] verified  v1=${res.isVerifiedUsingV1Scheme}  v2=${res.isVerifiedUsingV2Scheme}  v3=${res.isVerifiedUsingV3Scheme}")
+        for (c in res.signerCertificates) log("[VERF] signer  ${c.subjectX500Principal.name}")
+        for (w in res.warnings) log("[WARN] ${w}")
+        val bytes = out.readBytes()
+        log("[ OK ] size    ${kb(out.length())}")
+        log("[ OK ] sha256  ${hex(MessageDigest.getInstance("SHA-256").digest(bytes))}")
+        log("[ OK ] md5     ${hex(MessageDigest.getInstance("MD5").digest(bytes))}")
+        log("[DONE] build finished in ${System.currentTimeMillis() - t0} ms")
         work.deleteRecursively()
         return out
     }
@@ -135,7 +190,7 @@ object ApkBuilder {
 
     private fun putInt(b: ByteArray, o: Int, v: Int) { ByteBuffer.wrap(b, o, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(v) }
 
-    fun patchManifest(src: ByteArray, repl: Map<String, String>, versionCode: Int, perms: List<String> = emptyList()): ByteArray {
+    fun patchManifest(src: ByteArray, repl: Map<String, String>, versionCode: Int, perms: List<String> = emptyList(), info: MutableList<String>? = null): ByteArray {
         require(u16(src, 0) == 0x0003) { "AndroidManifest غير صالح" }
         val poolStart = 8
         require(u16(src, poolStart) == 0x0001) { "لم أجد جدول النصوص" }
@@ -160,6 +215,9 @@ object ApkBuilder {
             }
         }
         val patched = ArrayList(strings.map { s -> var r = s; for ((k, v) in repl) r = r.replace(k, v); r })
+        info?.add("[AXML] string pool: $count entries (${if (utf8) "UTF-8" else "UTF-16"})")
+        strings.forEachIndexed { i, o -> if (o != patched[i]) info?.add("[AXML] #$i  ${o.take(40)}  ->  ${patched[i].take(60)}") }
+        info?.add("[AXML] versionCode  $PH_CODE  ->  $versionCode")
         val rest = src.copyOfRange(poolStart + poolSize, src.size)
         // رقم الإصدار (Int) داخل بقية الملف
         val pat = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(PH_CODE).array()
@@ -191,14 +249,16 @@ object ApkBuilder {
             for (p in perms.distinct()) {
                 var idx = patched.indexOf(p)
                 if (idx < 0) { patched.add(p); idx = patched.size - 1 }
-                if (idx in existing) continue
+                if (idx in existing) { info?.add("[PERM] = $p (already declared)"); continue }
                 existing.add(idx)
+                info?.add("[PERM] + $p")
                 val st = template.copyOf(); putInt(st, 44, idx); putInt(st, 52, idx)
                 added.add(Chunk(0x0102, st)); added.add(Chunk(0x0103, endTemplate.copyOf()))
             }
             chunks.addAll(insertAt, added)
         }
         val newRest = ByteArrayOutputStream(); for (c in chunks) newRest.write(c.bytes)
+        info?.add("[AXML] added ${added.size / 2} uses-permission elements, string pool now ${patched.size} entries (UTF-16)")
 
         // إعادة بناء جدول النصوص بترميز UTF-16
         val n = patched.size

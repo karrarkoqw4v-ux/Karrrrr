@@ -85,12 +85,51 @@ public class MainActivity extends Activity {
         if (o == 1) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         else if (o == 2) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
+        String sb = cfg.optString("statusBar", "");
+        if (!sb.isEmpty() && Build.VERSION.SDK_INT >= 21) {
+            try {
+                int c = Color.parseColor(sb);
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                getWindow().setStatusBarColor(c);
+                getWindow().setNavigationBarColor(c);
+                double lum = 0.299 * Color.red(c) + 0.587 * Color.green(c) + 0.114 * Color.blue(c);
+                if (lum > 186 && Build.VERSION.SDK_INT >= 23) getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            } catch (Exception ignored) { }
+        }
+
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
         setContentView(root);
 
-        if (cfg.optBoolean("login") && sp.getString("user", "").isEmpty()) showLogin(); else startWeb();
+        final Runnable next = new Runnable() {
+            @Override public void run() {
+                if (cfg.optBoolean("login") && sp.getString("user", "").isEmpty()) showLogin(); else startWeb();
+            }
+        };
+        if (cfg.optBoolean("splash")) {
+            showSplash();
+            root.postDelayed(next, cfg.optInt("splashMs", 1200));
+        } else next.run();
     }
+
+    private void showSplash() {
+        int bgc = Color.BLACK;
+        try { String c = cfg.optString("splashColor", ""); if (!c.isEmpty()) bgc = Color.parseColor(c); } catch (Exception ignored) { }
+        double lum = 0.299 * Color.red(bgc) + 0.587 * Color.green(bgc) + 0.114 * Color.blue(bgc);
+        FrameLayout f = new FrameLayout(this);
+        f.setBackgroundColor(bgc);
+        TextView t = new TextView(this);
+        t.setText(cfg.optString("name", ""));
+        t.setTextColor(lum > 186 ? Color.BLACK : Color.WHITE);
+        t.setTextSize(34);
+        t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        t.setGravity(Gravity.CENTER);
+        f.addView(t, new FrameLayout.LayoutParams(-1, -1));
+        root.removeAllViews();
+        root.addView(f, new FrameLayout.LayoutParams(-1, -1));
+    }
+
+    private long lastBack = 0;
 
     // ---------------- الويب ----------------
     private void startWeb() {
@@ -107,11 +146,32 @@ public class MainActivity extends Activity {
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         s.setGeolocationEnabled(true);
         s.setDatabaseEnabled(true);
+        if (cfg.optBoolean("textZoom", true)) s.setTextZoom(100);
+        s.setSupportZoom(cfg.optBoolean("zoom", false));
+        s.setBuiltInZoomControls(false);
+        if (cfg.optBoolean("debug", false)) WebView.setWebContentsDebuggingEnabled(true);
         if (cfg.optBoolean("bridge", true)) web.addJavascriptInterface(new Bridge(), "Dablik");
 
         web.setWebViewClient(new WebViewClient() {
             @Override
+            public void onReceivedError(WebView v, int code, String desc, String failingUrl) {
+                if (cfg.optBoolean("offlinePage", true) && failingUrl != null && failingUrl.startsWith("http")
+                        && (code == ERROR_HOST_LOOKUP || code == ERROR_CONNECT || code == ERROR_TIMEOUT || code == ERROR_IO)) {
+                    String u = JSONObject.quote(failingUrl.replace("'", "%27"));
+                    v.loadDataWithBaseURL(null, "<html dir='rtl'><head><meta name='viewport' content='width=device-width,initial-scale=1'></head>"
+                            + "<body style='background:#000;color:#fff;font-family:sans-serif;text-align:center;padding-top:28vh'>"
+                            + "<h2>لا يوجد اتصال بالإنترنت</h2><p style='color:#999'>تحقق من الشبكة ثم حاول مجدداً</p>"
+                            + "<button style='background:#3e91ff;color:#fff;border:0;border-radius:26px;padding:14px 34px;font-size:17px' onclick='location.href=" + u + "'>إعادة المحاولة</button>"
+                            + "</body></html>", "text/html", "UTF-8", null);
+                }
+            }
+
+            @Override
             public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                if (url.startsWith("http") && cfg.optBoolean("external", false)) {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception ignored) { }
+                    return true;
+                }
                 if (url.startsWith("http") || url.startsWith("file")) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception ignored) { }
                 return true;
@@ -482,7 +542,13 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (web != null && web.canGoBack()) web.goBack(); else super.onBackPressed();
+        if (web != null && web.canGoBack()) { web.goBack(); return; }
+        if (cfg.optBoolean("doubleBack", false) && System.currentTimeMillis() - lastBack > 2000) {
+            lastBack = System.currentTimeMillis();
+            Toast.makeText(this, "اضغط مرة أخرى للخروج", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        super.onBackPressed();
     }
 
     @Override protected void onPause() { super.onPause(); if (web != null) web.onPause(); }

@@ -203,7 +203,7 @@ fun IconEditorScreen(uri: Uri, onClose: () -> Unit, onSaved: (String) -> Unit) {
                         }
                         onSaved(path)
                     }
-                }.clip(RoundedCornerShape(22.dp)).background(OneUi.Blue).padding(horizontal = 22.dp, vertical = 10.dp)) {
+                }.glass(RoundedCornerShape(22.dp), OneUi.Blue, 0.9f, 0.75f).padding(horizontal = 22.dp, vertical = 10.dp)) {
                     Text(if (saving) "..." else "حفظ", style = MaterialTheme.typography.labelLarge, color = CColor.White)
                 }
             }

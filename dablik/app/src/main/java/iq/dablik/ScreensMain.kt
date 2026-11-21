@@ -47,7 +47,7 @@ import java.io.File
 @Composable
 fun OneTopBar(title: String, onBack: (() -> Unit)?, actions: @Composable RowScope.() -> Unit = {}) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().height(64.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (onBack != null) Box(Modifier.size(46.dp).oneClick { onBack() }.clip(CircleShape).background(OneUi.Card), contentAlignment = Alignment.Center) {
+        if (onBack != null) Box(Modifier.size(46.dp).oneClick { onBack() }.glass(CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.AutoMirrored.Outlined.ArrowBack, "رجوع", tint = OneUi.Ink, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.width(12.dp))
@@ -129,7 +129,7 @@ fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit) {
         }
         EdgeShade(top = 100.dp, bottom = 70.dp)
         Row(Modifier.align(Alignment.TopEnd).statusBarsPadding().height(56.dp).padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).oneClick { onAbout() }.clip(CircleShape).background(OneUi.Card), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(44.dp).oneClick { onAbout() }.glass(CircleShape), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.Info, "عن التطبيق", tint = OneUi.Ink, modifier = Modifier.size(24.dp))
             }
         }

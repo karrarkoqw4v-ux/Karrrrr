@@ -30,21 +30,30 @@ object Project {
     fun displayName(ctx: Context, uri: Uri): String =
         runCatching { ctx.contentResolver.query(uri, null, null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(c.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)) else null } }.getOrNull() ?: "ملف"
 
-    /** يفك ZIP داخل مجلد المشروع (يستبدل الموجود). يعيد عدد الملفات */
+    /** يفك ZIP داخل مجلد المشروع (يستبدل الموجود). يعيد عدد الملفات. يتحمل أسماء عربية وملفات من تطبيقات المحادثة */
     fun importZip(ctx: Context, uri: Uri): Int {
-        val all = LinkedHashMap<String, ByteArray>()
-        ctx.contentResolver.openInputStream(uri)?.use { ins ->
-            ZipInputStream(ins).use { zi ->
-                var e = zi.nextEntry
-                while (e != null) {
-                    val n = e.name.replace('\\', '/')
-                    if (!e.isDirectory && !n.contains("..") && !n.startsWith("__MACOSX/") && !n.substringAfterLast('/').startsWith("._")) {
-                        val bo = ByteArrayOutputStream(); zi.copyTo(bo); all[n.trimStart('/')] = bo.toByteArray()
-                    }
-                    e = zi.nextEntry
-                }
+        val tmp = File(ctx.cacheDir, "import.zip")
+        ctx.contentResolver.openInputStream(uri)?.use { i -> tmp.outputStream().use { o -> i.copyTo(o) } } ?: throw IllegalStateException("تعذر فتح الملف")
+        var last: Exception? = null
+        try {
+            for (cs in listOf(Charsets.UTF_8, java.nio.charset.Charset.forName("windows-1256"), Charsets.ISO_8859_1)) {
+                try { return extractZip(ctx, tmp, cs) }
+                catch (e: IllegalArgumentException) { last = e }
+                catch (e: java.util.zip.ZipException) { if (e.message?.contains("END header", true) == true) throw IllegalStateException("الملف ليس ZIP صالحاً"); last = e }
             }
-        } ?: throw IllegalStateException("تعذر فتح ملف ZIP")
+        } finally { tmp.delete() }
+        throw IllegalStateException("تعذر قراءة الـ ZIP: " + (last?.message ?: ""))
+    }
+
+    private fun extractZip(ctx: Context, file: File, cs: java.nio.charset.Charset): Int {
+        val all = LinkedHashMap<String, ByteArray>()
+        java.util.zip.ZipFile(file, cs).use { zf ->
+            for (e in zf.entries()) {
+                val n = e.name.replace('\\', '/')
+                if (e.isDirectory || n.contains("..") || n.startsWith("__MACOSX/") || n.substringAfterLast('/').startsWith("._")) continue
+                all[n.trimStart('/')] = zf.getInputStream(e).readBytes()
+            }
+        }
         val idx = all.keys.filter { it.substringAfterLast('/').equals("index.html", true) }.minByOrNull { it.count { c -> c == '/' } }
         val prefix = idx?.substringBeforeLast('/', "")?.let { if (it.isEmpty()) "" else "$it/" } ?: ""
         clear(ctx)

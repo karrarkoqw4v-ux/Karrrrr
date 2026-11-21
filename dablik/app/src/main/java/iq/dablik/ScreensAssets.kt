@@ -114,7 +114,7 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
         if (uri != null) scope.launch {
             runCatching { withContext(Dispatchers.IO) { Project.importZip(ctx, uri) } }
                 .onSuccess { n -> f.rev++; Toast.makeText(ctx, if (n == 0) "الـ ZIP فارغ" else "تم فك $n ملف", Toast.LENGTH_SHORT).show() }
-                .onFailure { Toast.makeText(ctx, "تعذر فتح الـ ZIP", Toast.LENGTH_SHORT).show() }
+                .onFailure { e -> Toast.makeText(ctx, e.message ?: "تعذر فتح الـ ZIP", Toast.LENGTH_LONG).show() }
         }
     }
     val pickFiles = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -124,6 +124,14 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
         }
     }
 
+    val hasSizes = remember(f.rev) { File(Project.dir(ctx), Responsive.FILE).exists() }
+    val pickSizes = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            val txt = withContext(Dispatchers.IO) { runCatching { ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) } }.getOrNull() }
+            if (txt != null && Responsive.isValid(txt)) { File(Project.dir(ctx), Responsive.FILE).writeText(txt); f.rev++; Toast.makeText(ctx, "تم رفع ملف القياسات", Toast.LENGTH_SHORT).show() }
+            else Toast.makeText(ctx, "الملف ليس JSON صالحاً", Toast.LENGTH_LONG).show()
+        }
+    }
     Box(Modifier.fillMaxSize().background(OneUi.Bg)) {
         Column(Modifier.fillMaxSize()) {
             OneTopBar("ملفات التطبيق والصلاحيات", onBack)
@@ -131,7 +139,7 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
                 Entrance(0) { SectionTitle("ملفات التطبيق", "اختر نوع الملفات التي تريد رفعها") }
                 Entrance(1) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TypeTile("ملفات - ZIP", "موقع كامل مضغوط", Icons.Outlined.FolderZip, OneUi.Green, Modifier.weight(1f)) { pickZip.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }
+                        TypeTile("ملفات - ZIP", "موقع كامل مضغوط", Icons.Outlined.FolderZip, OneUi.Green, Modifier.weight(1f)) { pickZip.launch(arrayOf("*/*")) }
                         TypeTile("ملفات - HTML", "صفحات وCSS وJS وصور", Icons.Outlined.Html, OneUi.Blue, Modifier.weight(1f)) { htmlChoice = true }
                     }
                 }
@@ -145,6 +153,25 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
                 Entrance(3) {
                     val on = f.perms.mapNotNull { id -> Perms.groups.flatMap { it.items }.firstOrNull { it.id == id }?.title }
                     NavCard(Icons.Outlined.Shield, OneUi.Blue, "صلاحيات التطبيق", "${f.perms.size} مفعّلة من ${Perms.total} · " + on.take(3).joinToString("، ")) { onPerms() }
+                }
+                Entrance(3) { SectionTitle("قياسات الأجهزة", "يطابق النصوص والأحجام على كل الجوالات والتابلت") }
+                Entrance(4) {
+                    Column(Modifier.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card)) {
+                        ToggleRow(Icons.Outlined.PhoneAndroid, OneUi.Blue, "ضبط القياسات تلقائياً", "يضيف viewport وحجم خط يتدرج مع الشاشة", f.autoFit) { f.autoFit = it }
+                        ToggleRow(Icons.Outlined.TextFields, Color(0xFFFF9F1C), "ثبات حجم الخط", "يتجاهل تكبير الخط في إعدادات الجهاز", f.fixText) { f.fixText = it }
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(if (hasSizes) Icons.Outlined.CheckCircle else Icons.Outlined.AutoFixHigh, null, tint = if (hasSizes) OneUi.Green else OneUi.Blue, modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Text(if (hasSizes) "وُجد ملف ${Responsive.FILE} داخل ملفاتك وسيُستخدم" else "لا يوجد ملف قياسات: يحدد دبليك القياسات تلقائياً حسب الجهاز", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Box(Modifier.oneClick { pickSizes.launch(arrayOf("*/*")) }.glass(RoundedCornerShape(18.dp), OneUi.Blue, 0.28f, 0.14f).padding(horizontal = 16.dp, vertical = 10.dp)) { Text("رفع ملف القياسات", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue) }
+                                Box(Modifier.oneClick { File(Project.dir(ctx), Responsive.FILE).writeText(Responsive.templateText()); f.rev++; Toast.makeText(ctx, "تم إنشاء ${Responsive.FILE}، عدّله من «تعديل الملفات»", Toast.LENGTH_LONG).show() }.glass(RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 10.dp)) { Text("إنشاء ملف جاهز", style = MaterialTheme.typography.labelMedium, color = OneUi.Ink) }
+                            }
+                            Text("الملف اختياري: إذا كتبته أو رفعته يُستخدم، وإذا لم يوجد يطبّق دبليك قيماً افتراضية.", style = MaterialTheme.typography.labelSmall, color = OneUi.Faint)
+                        }
+                    }
                 }
                 Entrance(4) { SectionTitle("التحديث عن بعد", "يحدّث التطبيق محتواه من رابط دون إعادة تثبيت") }
                 Entrance(5) {
@@ -161,7 +188,7 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
                                 Box(Modifier.oneClick {
                                     (ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("update", "{\"version\": 2, \"zip\": \"https://example.com/site.zip\"}"))
                                     Toast.makeText(ctx, "تم نسخ المثال", Toast.LENGTH_SHORT).show()
-                                }.clip(RoundedCornerShape(18.dp)).background(OneUi.Card2).padding(horizontal = 16.dp, vertical = 10.dp)) { Text("نسخ المثال", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue) }
+                                }.glass(RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 10.dp)) { Text("نسخ المثال", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue) }
                             }
                         }
                     }
@@ -184,8 +211,29 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
                             Spacer(Modifier.width(14.dp))
                             Text("اتجاه الشاشة", style = MaterialTheme.typography.bodyLarge, color = OneUi.Ink, modifier = Modifier.weight(1f))
                             listOf("تلقائي", "عمودي", "أفقي").forEachIndexed { i, t ->
-                                Box(Modifier.padding(start = 6.dp).oneClick { f.orientation = i }.clip(RoundedCornerShape(16.dp)).background(if (f.orientation == i) OneUi.BlueSoft else OneUi.Card2).padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Box(Modifier.padding(start = 6.dp).oneClick { f.orientation = i }.glass(RoundedCornerShape(16.dp), if (f.orientation == i) OneUi.Blue else Color.White, if (f.orientation == i) 0.30f else 0.12f, if (f.orientation == i) 0.16f else 0.06f).padding(horizontal = 12.dp, vertical = 8.dp)) {
                                     Text(t, style = MaterialTheme.typography.labelMedium, color = if (f.orientation == i) OneUi.Blue else OneUi.Muted)
+                                }
+                            }
+                        }
+                    }
+                }
+                Entrance(10) { SectionTitle("خيارات المطور", "إعدادات إضافية يحتاجها التطبيق") }
+                Entrance(11) {
+                    Column(Modifier.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card)) {
+                        ToggleRow(Icons.Outlined.RocketLaunch, Color(0xFFFF6BAA), "شاشة بداية باسم التطبيق", "تظهر ثانية ونصف عند الفتح", f.splash) { f.splash = it }
+                        ToggleRow(Icons.Outlined.ExitToApp, OneUi.Muted, "الضغط مرتين للخروج", "يمنع الخروج بالخطأ", f.doubleBack) { f.doubleBack = it }
+                        ToggleRow(Icons.Outlined.WifiOff, OneUi.Blue, "صفحة عند انقطاع الإنترنت", "رسالة وزر إعادة المحاولة", f.offline) { f.offline = it }
+                        ToggleRow(Icons.Outlined.ZoomIn, OneUi.Green, "السماح بالتكبير بالأصابع", "", f.zoom) { f.zoom = it }
+                        ToggleRow(Icons.Outlined.OpenInBrowser, Color(0xFFFF9F1C), "فتح الروابط الخارجية بالمتصفح", "روابط http تفتح خارج التطبيق", f.external) { f.external = it }
+                        ToggleRow(Icons.Outlined.BugReport, Color(0xFFAF52DE), "وضع المطور", "فحص الصفحة من Chrome على الكمبيوتر", f.debug) { f.debug = it }
+                        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            Text("لون شريط الحالة وشاشة البداية", style = MaterialTheme.typography.bodyLarge, color = OneUi.Ink)
+                            Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                listOf("" to Color(0xFF2A2A2D), "#000000" to Color.Black, "#3E91FF" to OneUi.Blue, "#AF52DE" to Color(0xFFAF52DE), "#30D158" to Color(0xFF30D158), "#FF5A5A" to Color(0xFFFF5A5A), "#FF9F1C" to Color(0xFFFF9F1C), "#FFFFFF" to Color.White).forEach { (hex, col) ->
+                                    Box(Modifier.size(40.dp).oneClick { f.statusColor = hex }.clip(CircleShape).background(col).border(if (f.statusColor == hex) 3.dp else 1.dp, if (f.statusColor == hex) OneUi.Blue else OneUi.Line, CircleShape), contentAlignment = Alignment.Center) {
+                                        if (hex.isEmpty()) Text("تلقائي", style = MaterialTheme.typography.labelSmall, color = OneUi.Muted)
+                                    }
                                 }
                             }
                         }
@@ -241,8 +289,8 @@ fun PermsScreen(f: FormState, onBack: () -> Unit) {
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("${f.perms.size} مفعّلة من ${Perms.total}", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted, modifier = Modifier.weight(1f))
-                    Box(Modifier.oneClick { f.perms.clear(); f.perms.addAll(Perms.groups.flatMap { g -> g.items.map { it.id } }) }.clip(RoundedCornerShape(16.dp)).background(OneUi.BlueSoft).padding(horizontal = 14.dp, vertical = 8.dp)) { Text("تفعيل الكل", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue) }
-                    Box(Modifier.oneClick { f.perms.clear(); f.perms.addAll(Perms.defaults) }.clip(RoundedCornerShape(16.dp)).background(OneUi.Card2).padding(horizontal = 14.dp, vertical = 8.dp)) { Text("الأساسية فقط", style = MaterialTheme.typography.labelMedium, color = OneUi.Ink) }
+                    Box(Modifier.oneClick { f.perms.clear(); f.perms.addAll(Perms.groups.flatMap { g -> g.items.map { it.id } }) }.glass(RoundedCornerShape(16.dp), OneUi.Blue, 0.30f, 0.16f).padding(horizontal = 14.dp, vertical = 8.dp)) { Text("تفعيل الكل", style = MaterialTheme.typography.labelMedium, color = OneUi.Blue) }
+                    Box(Modifier.oneClick { f.perms.clear(); f.perms.addAll(Perms.defaults) }.glass(RoundedCornerShape(16.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) { Text("الأساسية فقط", style = MaterialTheme.typography.labelMedium, color = OneUi.Ink) }
                 }
             }
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 100.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -253,7 +301,7 @@ fun PermsScreen(f: FormState, onBack: () -> Unit) {
                             Text(g.title, style = MaterialTheme.typography.titleMedium, color = OneUi.Ink, modifier = Modifier.weight(1f))
                             Text("${g.items.count { it.id in f.perms }}/${g.items.size}", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
                             Spacer(Modifier.width(10.dp))
-                            Box(Modifier.oneClick { if (allOn) f.perms.removeAll(g.items.map { it.id }.toSet()) else g.items.forEach { if (it.id !in f.perms) f.perms.add(it.id) } }.clip(RoundedCornerShape(14.dp)).background(OneUi.Card2).padding(horizontal = 12.dp, vertical = 6.dp)) {
+                            Box(Modifier.oneClick { if (allOn) f.perms.removeAll(g.items.map { it.id }.toSet()) else g.items.forEach { if (it.id !in f.perms) f.perms.add(it.id) } }.glass(RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
                                 Text(if (allOn) "إلغاء المجموعة" else "تفعيل المجموعة", style = MaterialTheme.typography.labelSmall, color = OneUi.Blue)
                             }
                         }

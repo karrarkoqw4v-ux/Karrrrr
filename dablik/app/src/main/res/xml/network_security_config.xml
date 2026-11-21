@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- لوحات إدارة الراوترات المحلية غالباً بلا https صالح، فنسمح بـ http لكل الشبكة فقط ضمن هذا التطبيق -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

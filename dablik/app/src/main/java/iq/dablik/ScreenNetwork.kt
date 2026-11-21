@@ -1,5 +1,6 @@
 package iq.dablik
 
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
@@ -147,11 +148,40 @@ private fun RouterPanelScreen(gateway: String, onBack: () -> Unit) {
     val ctx = LocalContext.current
     val sp = remember { ctx.getSharedPreferences("dablik", android.content.Context.MODE_PRIVATE) }
     var progress by remember { mutableFloatStateOf(0f) }
+    var errorCode by remember { mutableIntStateOf(0) }
+    var currentUrl by remember { mutableStateOf("http://$gateway/") }
+    var webRef by remember { mutableStateOf<WebView?>(null) }
+    var reloadTick by remember { mutableIntStateOf(0) }
+
     Box(Modifier.fillMaxSize().background(OneUi.Bg)) {
         Column(Modifier.fillMaxSize()) {
-            OneTopBar("لوحة الراوتر  $gateway", onBack)
-            if (progress in 0f..0.999f) LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), color = OneUi.Blue, trackColor = OneUi.Card2)
-            AndroidView(factory = { c ->
+            OneTopBar("لوحة الراوتر  $gateway", onBack) {
+                Box(Modifier.size(44.dp).oneClick { webRef?.let { if (it.canGoBack()) it.goBack() } }, contentAlignment = Alignment.Center) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "السابق", tint = OneUi.Ink) }
+                Box(Modifier.size(44.dp).oneClick { errorCode = 0; reloadTick++; webRef?.reload() }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Refresh, "تحديث", tint = OneUi.Ink) }
+            }
+            // شريط العنوان: بتصميم التطبيق نفسه، لا شكل متصفح افتراضي
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).clip(RoundedCornerShape(16.dp)).background(OneUi.Card).padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Outlined.Lock, null, tint = OneUi.Faint, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(currentUrl, style = MaterialTheme.typography.labelMedium, color = OneUi.Muted, maxLines = 1)
+            }
+            if (progress in 0f..0.999f) LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(3.dp), color = OneUi.Green, trackColor = OneUi.Card2)
+
+            if (errorCode != 0) {
+                Column(Modifier.weight(1f).fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Outlined.WifiOff, null, tint = OneUi.Faint, modifier = Modifier.size(56.dp))
+                    Text("تعذّر فتح لوحة الراوتر", style = MaterialTheme.typography.titleMedium, color = OneUi.Ink, modifier = Modifier.padding(top = 12.dp))
+                    Text(
+                        if (errorCode == -11) "الراوتر لا يدعم اتصالاً آمناً لهذه الصفحة" else "تأكد أنك متصل بنفس الشبكة وأن عنوان الراوتر صحيح ($gateway)",
+                        style = MaterialTheme.typography.bodyMedium, color = OneUi.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp),
+                    )
+                    Spacer(Modifier.height(18.dp))
+                    OneButton("إعادة المحاولة", { errorCode = 0; reloadTick++ })
+                }
+            } else AndroidView(factory = { c ->
                 WebView(c).apply {
                     CookieManager.getInstance().setAcceptCookie(true)
                     CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
@@ -163,16 +193,23 @@ private fun RouterPanelScreen(gateway: String, onBack: () -> Unit) {
                     s.setSupportZoom(true)
                     s.builtInZoomControls = true
                     s.displayZoomControls = false
+                    s.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                     webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) { if (url != null) sp.edit().putString("last_gateway_$gateway", url).apply() }
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            if (url != null) { sp.edit().putString("last_gateway_$gateway", url).apply(); currentUrl = url }
+                        }
+                        override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
+                            if (request?.isForMainFrame != false) errorCode = error?.errorCode ?: -1
+                        }
                     }
                     webChromeClient = object : android.webkit.WebChromeClient() {
                         override fun onProgressChanged(view: WebView?, newProgress: Int) { progress = newProgress / 100f }
                     }
+                    webRef = this
                     val last = sp.getString("last_gateway_$gateway", null)
                     loadUrl(if (last != null && last.contains(gateway)) last else "http://$gateway/")
                 }
-            }, modifier = Modifier.weight(1f).fillMaxWidth())
+            }, update = { if (reloadTick > 0) it.reload() }, modifier = Modifier.weight(1f).fillMaxWidth())
         }
     }
 }

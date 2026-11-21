@@ -40,6 +40,7 @@ class FormState {
     var external by mutableStateOf(false)
     var splash by mutableStateOf(false)
     var statusColor by mutableStateOf("")     // "" تلقائي
+    var networkTool by mutableStateOf(false)  // قسم "التحكم في شبكتي"
     // تسجيل الدخول المتصل
     var loginMode by mutableIntStateOf(0)     // 0 محلي، 1 Firebase، 2 API خاص
     var fbKey by mutableStateOf("")
@@ -59,6 +60,7 @@ class FormState {
         .put("fullscreen", fullscreen).put("keepAwake", keepAwake).put("orientation", orientation).put("autoFit", autoFit).put("fixText", fixText)
         .put("zoom", zoom).put("doubleBack", doubleBack).put("offline", offline).put("debug", debug).put("external", external).put("splash", splash)
         .put("statusColor", statusColor).put("loginMode", loginMode).put("fbKey", fbKey).put("loginUrl", loginUrl).put("registerUrl", registerUrl)
+        .put("networkTool", networkTool)
         .put("adsOn", adsOn).put("remoteVer", remoteVer).put("ghRepo", ghRepo).put("ghBranch", ghBranch)
         .put("ads", org.json.JSONArray().also { arr -> ads.forEach { arr.put(org.json.JSONObject().put("title", it.title).put("text", it.text).put("url", it.url).put("popup", it.popup)) } })
 
@@ -70,6 +72,7 @@ class FormState {
         autoFit = j.optBoolean("autoFit", true); fixText = j.optBoolean("fixText", true); zoom = j.optBoolean("zoom"); doubleBack = j.optBoolean("doubleBack")
         offline = j.optBoolean("offline", true); debug = j.optBoolean("debug"); external = j.optBoolean("external"); splash = j.optBoolean("splash")
         statusColor = j.optString("statusColor"); loginMode = j.optInt("loginMode"); fbKey = j.optString("fbKey"); loginUrl = j.optString("loginUrl"); registerUrl = j.optString("registerUrl")
+        networkTool = j.optBoolean("networkTool")
         adsOn = j.optBoolean("adsOn"); remoteVer = j.optInt("remoteVer"); ghRepo = j.optString("ghRepo"); ghBranch = j.optString("ghBranch", "main")
         ads.clear(); j.optJSONArray("ads")?.let { for (i in 0 until it.length()) { val o = it.getJSONObject(i); ads.add(Ad(o.optString("title"), o.optString("text"), o.optString("url"), o.optBoolean("popup"))) } }
         rev++
@@ -83,6 +86,7 @@ class FormState {
         .put("loginMode", loginMode).put("fbKey", fbKey.trim()).put("loginUrl", loginUrl.trim()).put("registerUrl", registerUrl.trim())
         .put("adsEnabled", adsOn).put("adsUntil", System.currentTimeMillis() + 30L * 24 * 3600 * 1000)
         .put("ads", org.json.JSONArray().also { arr -> ads.forEach { arr.put(org.json.JSONObject().put("title", it.title).put("text", it.text).put("url", it.url).put("popup", it.popup)) } })
+        .put("networkTool", networkTool)
         .put("statusBar", statusColor).put("navBar", statusColor).put("splash", splash).put("splashColor", statusColor).put("splashMs", 1200)
         .toString()
 }

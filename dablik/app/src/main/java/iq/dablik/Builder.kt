@@ -17,14 +17,11 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
-/** مصدر محتوى التطبيق */
-sealed interface Source {
-    class Html(val code: String) : Source
-    class HtmlFile(val uri: Uri) : Source
-    class Zip(val uri: Uri) : Source
-}
-
-class BuildRequest(val name: String, val pkg: String, val version: String, val iconPng: ByteArray?, val source: Source)
+/** طلب بناء: مجلد الموقع + الصلاحيات + إعدادات الأدوات */
+class BuildRequest(
+    val name: String, val pkg: String, val version: String, val iconPng: ByteArray?,
+    val siteDir: File, val perms: List<String>, val config: String,
+)
 
 /**
  * يبني APK قابل للتثبيت من قالب جاهز (shell.apk): يعدّل الاسم والحزمة والإصدار في AndroidManifest الثنائي،
@@ -56,7 +53,7 @@ object ApkBuilder {
         val signerCfg = loadSigner(ctx)
         log("[3/7] تحميل مكتبة التوقيع apksig وشهادة التوقيع ... تم")
 
-        val www = collectSite(ctx, req.source)
+        val www = collectSite(req.siteDir)
         log("[4/7] تجهيز ملفات الموقع: ${www.size} ملف، ${www.values.sumOf { it.size } / 1024} KB")
 
         val placeholderHash = sha(ctx.assets.open("icon_placeholder.png").readBytes())
@@ -69,7 +66,7 @@ object ApkBuilder {
                     val bytes = zf.getInputStream(e).readBytes()
                     when {
                         e.name == "AndroidManifest.xml" -> {
-                            val patched = patchManifest(bytes, mapOf(PH_PKG to req.pkg, PH_LABEL to req.name, PH_VER to req.version), versionCode(req.version))
+                            val patched = patchManifest(bytes, mapOf(PH_PKG to req.pkg, PH_LABEL to req.name, PH_VER to req.version), versionCode(req.version), req.perms)
                             put(zo, e.name, patched, null)
                         }
                         req.iconPng != null && e.name.startsWith("res/") && e.name.endsWith(".png") && sha(bytes) == placeholderHash -> {
@@ -79,9 +76,10 @@ object ApkBuilder {
                     }
                 }
                 for ((path, data) in www) put(zo, "assets/www/$path", data, null)
+                put(zo, "assets/wbl_config.json", req.config.toByteArray(), null)
             }
         }
-        log("[5/7] تعديل AndroidManifest: الاسم «${req.name}» · الحزمة ${req.pkg} · الإصدار ${req.version} (${versionCode(req.version)})")
+        log("[5/7] تعديل AndroidManifest: الاسم «${req.name}» · الحزمة ${req.pkg} · الإصدار ${req.version} (${versionCode(req.version)}) · ${req.perms.size} صلاحية")
         log(if (req.iconPng == null) "[6/7] لم تُحدد أيقونة: تُستخدم الأيقونة الافتراضية" else if (iconDone) "[6/7] حقن الأيقونة المخصصة ... تم" else "[6/7] تحذير: لم أجد موضع الأيقونة في القالب، بقيت الافتراضية")
 
         val safe = req.name.replace(Regex("[^A-Za-z0-9\\u0600-\\u06FF_-]"), "_").ifBlank { "app" }
@@ -117,41 +115,27 @@ object ApkBuilder {
         return ApkSigner.SignerConfig.Builder("dablik", key, listOf(cert)).build()
     }
 
-    /** يجمع ملفات الموقع: المسار داخل www → المحتوى */
-    private fun collectSite(ctx: Context, s: Source): Map<String, ByteArray> {
-        when (s) {
-            is Source.Html -> return mapOf("index.html" to s.code.toByteArray())
-            is Source.HtmlFile -> return mapOf("index.html" to (ctx.contentResolver.openInputStream(s.uri)?.use { it.readBytes() } ?: throw IllegalStateException("تعذر قراءة ملف HTML")))
-            is Source.Zip -> {
-                val all = LinkedHashMap<String, ByteArray>()
-                ctx.contentResolver.openInputStream(s.uri)?.use { ins ->
-                    ZipInputStream(ins).use { zi ->
-                        var e = zi.nextEntry
-                        while (e != null) {
-                            val n = e.name.replace('\\', '/')
-                            if (!e.isDirectory && !n.contains("..") && !n.startsWith("__MACOSX/") && !n.substringAfterLast('/').startsWith("._")) {
-                                val bo = ByteArrayOutputStream(); zi.copyTo(bo); all[n.trimStart('/')] = bo.toByteArray()
-                            }
-                            e = zi.nextEntry
-                        }
-                    }
-                } ?: throw IllegalStateException("تعذر فتح ملف ZIP")
-                val idx = all.keys.filter { it.substringAfterLast('/').equals("index.html", true) }.minByOrNull { it.count { c -> c == '/' } }
-                    ?: throw IllegalStateException("لا يوجد index.html داخل الـ ZIP")
-                val prefix = idx.substringBeforeLast('/', "").let { if (it.isEmpty()) "" else "$it/" }
-                val out = LinkedHashMap<String, ByteArray>()
-                for ((k, v) in all) if (k.startsWith(prefix)) out[k.removePrefix(prefix)] = v
-                if (!out.containsKey("index.html")) out["index.html"] = all[idx]!!
-                return out
-            }
+    /** يجمع ملفات الموقع من المجلد: المسار النسبي → المحتوى */
+    private fun collectSite(dir: File): Map<String, ByteArray> {
+        val out = LinkedHashMap<String, ByteArray>()
+        val base = dir.canonicalPath + File.separator
+        dir.walkTopDown().filter { it.isFile }.forEach { f ->
+            val rel = f.canonicalPath.removePrefix(base).replace(File.separatorChar, '/')
+            if (!rel.startsWith(".")) out[rel] = f.readBytes()
         }
+        if (!out.containsKey("index.html")) throw IllegalStateException("لا يوجد ملف index.html في ملفات التطبيق")
+        return out
     }
 
     // ---------- تعديل AndroidManifest الثنائي (AXML) ----------
     private fun u32(b: ByteArray, o: Int) = ByteBuffer.wrap(b, o, 4).order(ByteOrder.LITTLE_ENDIAN).int
     private fun u16(b: ByteArray, o: Int) = ByteBuffer.wrap(b, o, 2).order(ByteOrder.LITTLE_ENDIAN).short.toInt() and 0xFFFF
 
-    fun patchManifest(src: ByteArray, repl: Map<String, String>, versionCode: Int): ByteArray {
+    private class Chunk(val type: Int, val bytes: ByteArray)
+
+    private fun putInt(b: ByteArray, o: Int, v: Int) { ByteBuffer.wrap(b, o, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(v) }
+
+    fun patchManifest(src: ByteArray, repl: Map<String, String>, versionCode: Int, perms: List<String> = emptyList()): ByteArray {
         require(u16(src, 0) == 0x0003) { "AndroidManifest غير صالح" }
         val poolStart = 8
         require(u16(src, poolStart) == 0x0001) { "لم أجد جدول النصوص" }
@@ -175,9 +159,50 @@ object ApkBuilder {
                 strings.add(String(src, p, l * 2, Charsets.UTF_16LE))
             }
         }
-        val patched = strings.map { s -> var r = s; for ((k, v) in repl) r = r.replace(k, v); r }
+        val patched = ArrayList(strings.map { s -> var r = s; for ((k, v) in repl) r = r.replace(k, v); r })
+        val rest = src.copyOfRange(poolStart + poolSize, src.size)
+        // رقم الإصدار (Int) داخل بقية الملف
+        val pat = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(PH_CODE).array()
+        val nv = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(versionCode).array()
+        var k = 0
+        while (k <= rest.size - 4) { if (rest[k] == pat[0] && rest[k + 1] == pat[1] && rest[k + 2] == pat[2] && rest[k + 3] == pat[3]) { System.arraycopy(nv, 0, rest, k, 4); break }; k++ }
+
+        // تقسيم بقية الملف إلى أجزاء لإضافة عناصر uses-permission
+        val chunks = ArrayList<Chunk>()
+        var q = 0
+        while (q < rest.size) { val sz = u32(rest, q + 4); chunks.add(Chunk(u16(rest, q), rest.copyOfRange(q, q + sz))); q += sz }
+        val permName = patched.indexOf("uses-permission")
+        var insertAt = -1; var template: ByteArray? = null
+        val existing = HashSet<Int>()
+        if (permName >= 0) {
+            for ((ci, c) in chunks.withIndex()) {
+                if (c.type == 0x0102 && u32(c.bytes, 20) == permName && u16(c.bytes, 28) >= 1) {
+                    existing.add(u32(c.bytes, 44))
+                    if (template == null) {
+                        template = c.bytes
+                        for (j in ci + 1 until chunks.size) if (chunks[j].type == 0x0103 && u32(chunks[j].bytes, 20) == permName) { insertAt = j + 1; break }
+                    }
+                }
+            }
+        }
+        val added = ArrayList<Chunk>()
+        if (template != null && insertAt > 0) {
+            val endTemplate = chunks[insertAt - 1].bytes
+            for (p in perms.distinct()) {
+                var idx = patched.indexOf(p)
+                if (idx < 0) { patched.add(p); idx = patched.size - 1 }
+                if (idx in existing) continue
+                existing.add(idx)
+                val st = template.copyOf(); putInt(st, 44, idx); putInt(st, 52, idx)
+                added.add(Chunk(0x0102, st)); added.add(Chunk(0x0103, endTemplate.copyOf()))
+            }
+            chunks.addAll(insertAt, added)
+        }
+        val newRest = ByteArrayOutputStream(); for (c in chunks) newRest.write(c.bytes)
+
         // إعادة بناء جدول النصوص بترميز UTF-16
-        val data = ByteArrayOutputStream(); val offs = IntArray(count)
+        val n = patched.size
+        val data = ByteArrayOutputStream(); val offs = IntArray(n)
         patched.forEachIndexed { i, s ->
             offs[i] = data.size()
             val bytes = s.toByteArray(Charsets.UTF_16LE)
@@ -187,21 +212,15 @@ object ApkBuilder {
             data.write(bytes); data.write(0); data.write(0)
         }
         while (data.size() % 4 != 0) data.write(0)
-        val newStringsStart = 28 + 4 * count
+        val newStringsStart = 28 + 4 * n
         val newPoolSize = newStringsStart + data.size()
         val head = ByteBuffer.allocate(newStringsStart).order(ByteOrder.LITTLE_ENDIAN)
-        head.putShort(1).putShort(28).putInt(newPoolSize).putInt(count).putInt(0).putInt(flags and 0x100.inv()).putInt(newStringsStart).putInt(0)
+        head.putShort(1).putShort(28).putInt(newPoolSize).putInt(n).putInt(0).putInt(flags and 0x100.inv()).putInt(newStringsStart).putInt(0)
         for (o in offs) head.putInt(o)
-        val rest = src.copyOfRange(poolStart + poolSize, src.size)
-        // رقم الإصدار (Int) داخل بقية الملف
-        val pat = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(PH_CODE).array()
-        val nv = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(versionCode).array()
-        var i = 0
-        while (i <= rest.size - 4) { if (rest[i] == pat[0] && rest[i + 1] == pat[1] && rest[i + 2] == pat[2] && rest[i + 3] == pat[3]) { System.arraycopy(nv, 0, rest, i, 4); break }; i++ }
         val out = ByteArrayOutputStream()
-        val total = 8 + newPoolSize + rest.size
+        val total = 8 + newPoolSize + newRest.size()
         out.write(src, 0, 4); out.write(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(total).array())
-        out.write(head.array()); out.write(data.toByteArray()); out.write(rest)
+        out.write(head.array()); out.write(data.toByteArray()); out.write(newRest.toByteArray())
         return out.toByteArray()
     }
 }

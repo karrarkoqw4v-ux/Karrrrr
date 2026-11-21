@@ -1,6 +1,12 @@
 package iq.dablik
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -149,4 +155,40 @@ private fun Modifier.onFocusChangedCompat(cb: (Boolean) -> Unit): Modifier = thi
 fun BoxScope.EdgeShade(top: androidx.compose.ui.unit.Dp, bottom: androidx.compose.ui.unit.Dp) {
     Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(top).background(Brush.verticalGradient(listOf(Color(0xF2000000), Color(0xCC000000), Color.Transparent))))
     Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(bottom).background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000), Color(0xF2000000)))))
+}
+
+
+/** ظهور متدرج: يتلاشى ويصعد من الأسفل بتأخير حسب الترتيب */
+@Composable
+fun Entrance(index: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { kotlinx.coroutines.delay(index * 55L); shown = true }
+    val a by animateFloatAsState(if (shown) 1f else 0f, tween(450), label = "a")
+    val dy by animateFloatAsState(if (shown) 0f else 28f, tween(480, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)), label = "dy")
+    Box(modifier.graphicsLayer { alpha = a; translationY = dy * density }) { content() }
+}
+
+/** مفتاح تبديل بأسلوب One UI مع نابض */
+@Composable
+fun OneSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
+    val x by animateDpAsState(if (checked) 24.dp else 3.dp, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium), label = "x")
+    val track by animateColorAsState(if (checked) OneUi.Blue else Color(0xFF3A3A3D), tween(220), label = "track")
+    Box(Modifier.size(width = 54.dp, height = 32.dp).clip(CircleShape).background(track).pointerInput(Unit) { detectTapGestures { onChange(!checked) } }) {
+        Box(Modifier.offset(x = x, y = 4.dp).size(24.dp).clip(CircleShape).background(Color.White))
+    }
+}
+
+/** صف إعداد: أيقونة + عنوان + شرح + مفتاح */
+@Composable
+fun ToggleRow(icon: ImageVector, tint: Color, title: String, sub: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(44.dp).clip(CircleShape).background(tint.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(24.dp)) }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = OneUi.Ink)
+            if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.labelSmall, color = OneUi.Muted)
+        }
+        Spacer(Modifier.width(10.dp))
+        OneSwitch(checked, onChange)
+    }
 }

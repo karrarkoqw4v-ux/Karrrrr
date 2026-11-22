@@ -41,4 +41,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     // توقيع حزم APK (v1 + v2) والتحقق منها
     implementation("com.android.tools.build:apksig:8.5.2")
+    // محرّك جافاسكربت نقي (جافا) لتنفيذ أكواد المستخدم داخل صندوق التطبيق
+    implementation("org.mozilla:rhino:1.7.14")
 }

@@ -72,7 +72,7 @@ private fun BigTile(title: String, sub: String, icon: androidx.compose.ui.graphi
 }
 
 @Composable
-fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit, onEditApp: (Built) -> Unit) {
+fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit, onEditApp: (Built) -> Unit, onConsole: () -> Unit) {
     val ctx = LocalContext.current
     val ls = rememberLazyListState()
     val headerPx = with(LocalDensity.current) { 190.dp.toPx() }
@@ -94,6 +94,18 @@ fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit, onEdit
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Entrance(0, Modifier.weight(1f)) { BigTile("إنشاء APK", "اسم وأيقونة وصلاحيات وملفات", Icons.Outlined.Android, OneUi.Blue, Modifier.fillMaxWidth(), onApk) }
                     Entrance(1, Modifier.weight(1f)) { BigTile("ZIP / HTML", "ارفع الملفات وعدّلها", Icons.Outlined.FolderZip, OneUi.Green, Modifier.fillMaxWidth(), onZip) }
+                }
+                Spacer(Modifier.height(12.dp))
+                Entrance(2) {
+                    Row(Modifier.fillMaxWidth().oneClick { onConsole() }.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(54.dp).clip(CircleShape).background(Color(0xFFAF52DE).copy(alpha = 0.18f)), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Terminal, null, tint = Color(0xFFAF52DE), modifier = Modifier.size(28.dp)) }
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("منفّذ الأوامر", style = MaterialTheme.typography.titleMedium, color = OneUi.Ink)
+                            Text("أوامر على ملفات مشروعك + تشغيل أكواد جافاسكربت", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
+                        }
+                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, null, tint = OneUi.Muted, modifier = Modifier.size(26.dp))
+                    }
                 }
                 Spacer(Modifier.height(28.dp))
                 Text("التطبيقات التي أنشأتها", style = MaterialTheme.typography.titleMedium, color = OneUi.Ink, modifier = Modifier.padding(start = 8.dp, bottom = 10.dp))

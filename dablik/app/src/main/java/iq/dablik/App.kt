@@ -92,7 +92,7 @@ sealed class Screen(val depth: Int) {
     data object Form : Screen(1)
     data object About : Screen(1)
     data object Assets : Screen(2)
-    data object Console : Screen(1)
+    data object Runner : Screen(1)
     class Editor(val uri: Uri) : Screen(2)
     data object Console : Screen(2)
     data object Perms : Screen(3)
@@ -127,8 +127,8 @@ fun DablikApp() {
     ) { s ->
         when (s) {
             Screen.Home -> HomeScreen(onApk = { screen = Screen.Form }, onZip = { screen = Screen.Assets }, onAbout = { screen = Screen.About },
-                onEditApp = { b -> Store.loadProject(ctx, b.pkg, form); screen = Screen.Form }, onConsole = { screen = Screen.Console })
-            Screen.Console -> ConsoleScreenHome(onBack = { screen = Screen.Home })
+                onEditApp = { b -> Store.loadProject(ctx, b.pkg, form); screen = Screen.Form }, onConsole = { screen = Screen.Runner })
+            Screen.Runner -> ConsoleScreenHome(onBack = { screen = Screen.Home })
             Screen.About -> AboutScreen(onBack = { screen = Screen.Home })
             Screen.Form -> FormScreen(form, onBack = { screen = Screen.Home }, onEdit = { screen = Screen.Editor(it) }, onAssets = { screen = Screen.Assets }, onBuild = { screen = Screen.Console })
             Screen.Assets -> AssetsScreen(form, onBack = { screen = Screen.Form }, onPerms = { screen = Screen.Perms }, onFiles = { screen = Screen.Files })

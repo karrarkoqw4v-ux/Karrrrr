@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -20,7 +21,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             DablikTheme {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    Box(Modifier.fillMaxSize().background(OneUi.Bg)) { DablikApp() }
+                    Box(Modifier.fillMaxSize().background(OneUi.Bg).imePadding()) { DablikApp() }
                 }
             }
         }

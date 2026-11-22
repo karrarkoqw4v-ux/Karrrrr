@@ -5,8 +5,10 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,7 +55,7 @@ private fun LogView(lines: List<String>, modifier: Modifier = Modifier) {
 fun ConsoleScreenHome(onBack: () -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
-    var tab by remember { mutableIntStateOf(0) } // 0 أوامر الملفات، 1 كود جافاسكربت
+    var tab by remember { mutableIntStateOf(0) } // 0 أوامر الملفات، 1 كود جافاسكربت، 2 بايثون عبر Termux
     var granted by remember {
         mutableStateOf(Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
     }
@@ -78,8 +80,8 @@ fun ConsoleScreenHome(onBack: () -> Unit) {
     Box(Modifier.fillMaxSize().background(OneUi.Bg)) {
         Column(Modifier.fillMaxSize()) {
             OneTopBar("منفّذ الأوامر", onBack)
-            Row(Modifier.padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("أوامر الملفات" to 0, "كود جافاسكربت" to 1).forEach { (t, i) ->
+            Row(Modifier.padding(horizontal = 16.dp, vertical = 6.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("أوامر الملفات" to 0, "كود جافاسكربت" to 1, "بايثون (عبر Termux)" to 2).forEach { (t, i) ->
                     Box(Modifier.oneClick { tab = i }.glass(RoundedCornerShape(18.dp), if (tab == i) OneUi.Blue else Color.White, if (tab == i) 0.30f else 0.12f, if (tab == i) 0.16f else 0.06f).padding(horizontal = 18.dp, vertical = 10.dp)) {
                         Text(t, style = MaterialTheme.typography.labelMedium, color = if (tab == i) OneUi.Blue else OneUi.Ink)
                     }
@@ -112,7 +114,7 @@ fun ConsoleScreenHome(onBack: () -> Unit) {
                         }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Send, "تنفيذ", tint = if (!running && cmd.isNotBlank()) OneUi.Blue else OneUi.Faint) }
                     }
                 }
-            } else {
+            } else if (tab == 1) {
                 Column(Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(Modifier.weight(0.42f).fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(Color(0xFF1E1E1E))) {
                         BasicTextField(
@@ -136,6 +138,50 @@ fun ConsoleScreenHome(onBack: () -> Unit) {
                         else OneButton("إيقاف الخلفية", { ScriptRunner.stop(ctx); bgRunning = false; codeLog.add("$ تم طلب الإيقاف") }, Modifier.weight(1f), primary = false, icon = Icons.Outlined.Stop)
                     }
                     if (bgRunning) Text("شغّال بالخلفية الآن — شوف الإشعار لإيقافه من هناك أيضاً.", style = MaterialTheme.typography.labelSmall, color = OneUi.Green, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                }
+            } else {
+                var tInstalled by remember { mutableStateOf(TermuxBridge.installed(ctx)) }
+                var tGranted by remember { mutableStateOf(TermuxBridge.granted(ctx)) }
+                val askTermux = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tGranted = it }
+                var libs by remember { mutableStateOf("") }
+                var pyCode by remember { mutableStateOf("print(\"أهلاً من بايثون\")") }
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (!tInstalled) {
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Outlined.Terminal, null, tint = OneUi.Faint, modifier = Modifier.size(40.dp))
+                            Text("تطبيق Termux غير مثبّت على جهازك", style = MaterialTheme.typography.bodyLarge, color = OneUi.Ink, modifier = Modifier.padding(top = 8.dp))
+                            Text("ثبّته أول مرة (من F-Droid أو GitHub الرسمي)، ثم ارجع هنا واضغط تحديث.", style = MaterialTheme.typography.labelMedium, color = OneUi.Muted, textAlign = TextAlign.Center)
+                            Spacer(Modifier.height(10.dp))
+                            OneButton("تحديث الحالة", { tInstalled = TermuxBridge.installed(ctx); tGranted = TermuxBridge.granted(ctx) }, primary = false, icon = Icons.Outlined.Refresh)
+                        }
+                    } else if (!tGranted) {
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Outlined.Lock, null, tint = OneUi.Faint, modifier = Modifier.size(40.dp))
+                            Text("نحتاج إذنك لإرسال أوامر إلى Termux", style = MaterialTheme.typography.bodyLarge, color = OneUi.Ink, modifier = Modifier.padding(top = 8.dp))
+                            Spacer(Modifier.height(10.dp))
+                            OneButton("السماح", { askTermux.launch(TermuxBridge.PERM) }, icon = Icons.Outlined.Login)
+                        }
+                    } else {
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("أول مرة فقط: ثبّت بايثون داخل Termux", style = MaterialTheme.typography.titleMedium, color = OneUi.Ink)
+                            OneButton("تثبيت بايثون", { TermuxBridge.installSystemTool(ctx, "python") }, primary = false, icon = Icons.Outlined.Download)
+                        }
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("تثبيت مكتبات بايثون (pip)", style = MaterialTheme.typography.titleMedium, color = OneUi.Ink)
+                            OneField(libs, { libs = it }, "أسماء المكتبات", hint = "requests flask numpy")
+                            OneButton("تثبيت المكتبات", { if (libs.isNotBlank()) TermuxBridge.installPackages(ctx, libs) }, icon = Icons.Outlined.Download)
+                        }
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("كود بايثون", style = MaterialTheme.typography.titleMedium, color = OneUi.Ink)
+                            Box(Modifier.fillMaxWidth().heightIn(min = 140.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF1E1E1E)).padding(12.dp)) {
+                                BasicTextField(pyCode, { pyCode = it }, Modifier.fillMaxSize(),
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFFD4D4D4), fontFamily = FontFamily.Monospace, fontSize = 13.sp),
+                                    cursorBrush = SolidColor(Color.White))
+                            }
+                            OneButton("تشغيل في Termux", { TermuxBridge.runPython(ctx, pyCode) }, icon = Icons.Outlined.PlayArrow)
+                            Text("سيفتح Termux ويشغّل الكود هناك فعلياً — شوف النتيجة بجلسته مباشرة.", style = MaterialTheme.typography.labelSmall, color = OneUi.Muted)
+                        }
+                    }
                 }
             }
         }

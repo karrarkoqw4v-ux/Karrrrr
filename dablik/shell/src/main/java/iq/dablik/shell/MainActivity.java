@@ -670,12 +670,6 @@ public class MainActivity extends Activity {
             startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         }
         @JavascriptInterface public void exit() { runOnUiThread(new Runnable() { @Override public void run() { finish(); } }); }
-        @JavascriptInterface public void network() {
-            if (!cfg.optBoolean("networkTool", false)) return;
-            runOnUiThread(new Runnable() {
-                @Override public void run() { startActivity(new Intent(MainActivity.this, NetworkActivity.class)); }
-            });
-        }
     }
 
     @Override

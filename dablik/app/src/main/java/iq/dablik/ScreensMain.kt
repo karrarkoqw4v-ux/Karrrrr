@@ -58,22 +58,6 @@ fun OneTopBar(title: String, onBack: (() -> Unit)?, actions: @Composable RowScop
 }
 
 @Composable
-private fun WideTile(title: String, sub: String, icon: androidx.compose.ui.graphics.vector.ImageVector, accent: Color, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().oneClick { onClick() }.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(18.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.size(54.dp).clip(CircleShape).background(accent.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = accent, modifier = Modifier.size(28.dp)) }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = OneUi.Ink)
-            Text(sub, style = MaterialTheme.typography.labelMedium, color = OneUi.Muted)
-        }
-        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, null, tint = OneUi.Muted, modifier = Modifier.size(26.dp))
-    }
-}
-
-@Composable
 private fun BigTile(title: String, sub: String, icon: androidx.compose.ui.graphics.vector.ImageVector, accent: Color, modifier: Modifier, onClick: () -> Unit) {
     Column(
         modifier.aspectRatio(0.92f).oneClick { onClick() }.clip(RoundedCornerShape(OneUi.RCard)).background(OneUi.Card).padding(20.dp),
@@ -88,7 +72,7 @@ private fun BigTile(title: String, sub: String, icon: androidx.compose.ui.graphi
 }
 
 @Composable
-fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit, onEditApp: (Built) -> Unit, onNetwork: () -> Unit) {
+fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit, onEditApp: (Built) -> Unit) {
     val ctx = LocalContext.current
     val ls = rememberLazyListState()
     val headerPx = with(LocalDensity.current) { 190.dp.toPx() }
@@ -111,8 +95,6 @@ fun HomeScreen(onApk: () -> Unit, onZip: () -> Unit, onAbout: () -> Unit, onEdit
                     Entrance(0, Modifier.weight(1f)) { BigTile("إنشاء APK", "اسم وأيقونة وصلاحيات وملفات", Icons.Outlined.Android, OneUi.Blue, Modifier.fillMaxWidth(), onApk) }
                     Entrance(1, Modifier.weight(1f)) { BigTile("ZIP / HTML", "ارفع الملفات وعدّلها", Icons.Outlined.FolderZip, OneUi.Green, Modifier.fillMaxWidth(), onZip) }
                 }
-                Spacer(Modifier.height(12.dp))
-                Entrance(2) { WideTile("التحكم في شبكتي", "اكتشف شبكتك وافتح لوحة الراوتر الحقيقية", Icons.Outlined.Wifi, Color(0xFF34A853), onNetwork) }
                 Spacer(Modifier.height(28.dp))
                 Text("التطبيقات التي أنشأتها", style = MaterialTheme.typography.titleMedium, color = OneUi.Ink, modifier = Modifier.padding(start = 8.dp, bottom = 10.dp))
             }

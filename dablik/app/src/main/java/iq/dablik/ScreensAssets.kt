@@ -284,7 +284,6 @@ fun AssetsScreen(f: FormState, onBack: () -> Unit, onPerms: () -> Unit, onFiles:
                         ToggleRow(Icons.Outlined.Shield, OneUi.Green, "طلب الصلاحيات عند التشغيل", "يطلب الصلاحيات الخطرة المفعّلة من المستخدم", f.askPerms) { f.askPerms = it }
                         ToggleRow(Icons.Outlined.Fullscreen, Color(0xFFFF9F1C), "ملء الشاشة", "إخفاء شريط الحالة", f.fullscreen) { f.fullscreen = it }
                         ToggleRow(Icons.Outlined.LightMode, Color(0xFFFFD60A), "إبقاء الشاشة مضاءة", "لا ينطفئ العرض أثناء الاستخدام", f.keepAwake) { f.keepAwake = it }
-                        ToggleRow(Icons.Outlined.Wifi, Color(0xFF34A853), "التحكم في شبكتي", "زر Dablik.network() بموقعك يفتح لوحة الراوتر الحقيقية ويحفظ جلسة الدخول", f.networkTool) { f.networkTool = it }
                         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.ScreenRotation, null, tint = OneUi.Muted, modifier = Modifier.size(26.dp))
                             Spacer(Modifier.width(14.dp))

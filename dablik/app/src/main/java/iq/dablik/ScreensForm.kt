@@ -125,8 +125,7 @@ fun ConsoleScreen(f: FormState, onBack: () -> Unit, onHome: () -> Unit) {
     val prog by animateFloatAsState(if (state == 1) 1f else step / 7f, tween(500), label = "prog")
     LaunchedEffect(Unit) {
         val icon = f.iconPath?.let { p -> runCatching { File(p).readBytes() }.getOrNull() }
-        val extraPerms = if (f.networkTool) listOf("android.permission.ACCESS_WIFI_STATE", "android.permission.CHANGE_WIFI_STATE", "android.permission.ACCESS_NETWORK_STATE", "android.permission.ACCESS_FINE_LOCATION") else emptyList()
-        val req = BuildRequest(f.name.trim(), f.pkg.trim(), f.version.trim(), icon, Project.dir(ctx), (f.perms + extraPerms).distinct(), f.configJson(), f.autoFit)
+        val req = BuildRequest(f.name.trim(), f.pkg.trim(), f.version.trim(), icon, Project.dir(ctx), f.perms.toList(), f.configJson(), f.autoFit)
         logs.add("$ dablik build --name \"${req.name}\" --package ${req.pkg} --version ${req.version}")
         logs.add("[INFO] login=${if (f.login) listOf("local", "firebase", "api")[f.loginMode.coerceIn(0, 2)] else "off"}  ads=${if (f.adsOn) "${f.ads.size} (30-day trial)" else "off"}  remote-update=${if (f.update) f.updateUrl.take(60) else "off"}")
         try {

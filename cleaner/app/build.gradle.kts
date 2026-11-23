@@ -30,7 +30,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; aidl = true; buildConfig = true }
     packaging { resources { excludes += setOf("META-INF/DEPENDENCIES", "META-INF/*.kotlin_module") } }
 }
 
@@ -45,4 +45,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-common-java8:2.8.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    // Shizuku API الرسمية: تعطي صلاحية شل حقيقية (ADB) عبر موافقة Shizuku نفسه، بدون أي بروتوكول مُعاد بناؤه يدوياً
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
 }

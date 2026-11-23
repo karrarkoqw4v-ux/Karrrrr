@@ -63,7 +63,7 @@ fun HomeScreen(onOpenFiles: () -> Unit, onOpenApps: () -> Unit, onOpenJunk: () -
         Spacer(Modifier.height(14.dp))
         HomeTile(Icons.Default.DeleteSweep, "ملفات غير مرغوبة", "مؤقتة، تثبيت قديمة، صور مكررة", onOpenJunk)
         Spacer(Modifier.height(14.dp))
-        HomeTile(Icons.Default.Terminal, "أوامر خاص الجهاز", "نفّذ أي أمر شل مباشرة على جهازك", onOpenDeviceCommands)
+        HomeTile(Icons.Default.Terminal, "تصحيح الأخطاء اللاسلكي", "صلاحية شل حقيقية عبر Shizuku، بموافقتك المباشرة", onOpenDeviceCommands)
     }
 }
 

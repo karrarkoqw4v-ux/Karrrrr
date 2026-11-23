@@ -26,6 +26,7 @@ sealed class Screen { object Onboarding: Screen(); object Home: Screen(); object
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ShizukuBridge.register()
         setContent {
             var screen by remember { mutableStateOf<Screen>(Screen.Onboarding) }
             var filesPermTick by remember { mutableStateOf(0) }
@@ -50,6 +51,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        ShizukuBridge.unregister()
+        super.onDestroy()
     }
 }
 

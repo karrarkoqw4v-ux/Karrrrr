@@ -17,7 +17,11 @@ import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-data class User(val id: Int, var name: String, var username: String, val idx: Int, var bio: String = "", val followers: Int = 0, val following: Int = 0)
+class User(val id: Int, name: String, username: String, val idx: Int, bio: String = "", val followers: Int = 0, val following: Int = 0) {
+    var name by mutableStateOf(name)
+    var username by mutableStateOf(username)
+    var bio by mutableStateOf(bio)
+}
 class Comment(val userId: Int, val text: String, val time: String) {
     var liked by mutableStateOf(false)
     var likes by mutableStateOf(0)

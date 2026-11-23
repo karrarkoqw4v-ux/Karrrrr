@@ -23,7 +23,7 @@ private fun humanSize(bytes: Long): String {
 }
 
 @Composable
-fun HomeScreen(onOpenFiles: () -> Unit, onOpenApps: () -> Unit, onOpenJunk: () -> Unit) {
+fun HomeScreen(onOpenFiles: () -> Unit, onOpenApps: () -> Unit, onOpenJunk: () -> Unit, onOpenDeviceCommands: () -> Unit) {
     val stat = remember {
         val s = StatFs(Environment.getExternalStorageDirectory().path)
         val total = s.totalBytes
@@ -62,6 +62,8 @@ fun HomeScreen(onOpenFiles: () -> Unit, onOpenApps: () -> Unit, onOpenJunk: () -
         HomeTile(Icons.Default.Apps, "تطبيقات ما تستخدمها", "مرتبة من الأقل استخداماً فعلياً", onOpenApps)
         Spacer(Modifier.height(14.dp))
         HomeTile(Icons.Default.DeleteSweep, "ملفات غير مرغوبة", "مؤقتة، تثبيت قديمة، صور مكررة", onOpenJunk)
+        Spacer(Modifier.height(14.dp))
+        HomeTile(Icons.Default.Terminal, "أوامر خاص الجهاز", "نفّذ أي أمر شل مباشرة على جهازك", onOpenDeviceCommands)
     }
 }
 

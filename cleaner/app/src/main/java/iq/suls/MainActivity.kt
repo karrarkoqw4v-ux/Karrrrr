@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-sealed class Screen { object Onboarding: Screen(); object Home: Screen(); object Files: Screen(); object Apps: Screen(); object Junk: Screen() }
+sealed class Screen { object Onboarding: Screen(); object Home: Screen(); object Files: Screen(); object Apps: Screen(); object Junk: Screen(); object DeviceCommands: Screen() }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,11 +39,13 @@ class MainActivity : ComponentActivity() {
                         is Screen.Home -> HomeScreen(
                             onOpenFiles = { screen = Screen.Files },
                             onOpenApps = { screen = Screen.Apps },
-                            onOpenJunk = { screen = Screen.Junk }
+                            onOpenJunk = { screen = Screen.Junk },
+                            onOpenDeviceCommands = { screen = Screen.DeviceCommands }
                         )
                         is Screen.Files -> FilesScreen(onBack = { screen = Screen.Home })
                         is Screen.Apps -> AppsScreen(onBack = { screen = Screen.Home })
                         is Screen.Junk -> JunkScreen(onBack = { screen = Screen.Home })
+                        is Screen.DeviceCommands -> DeviceCommandsScreen(onBack = { screen = Screen.Home })
                     }
                 }
             }

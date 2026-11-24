@@ -46,6 +46,14 @@ private fun SettingsScreen() {
             Spacer(Modifier.height(24.dp))
             Text("لوحتي", color = TextPrimary, fontSize = 28.sp, fontWeight = FontWeight.Bold)
             Text("كيبورد عربي بثلاث أشكال: مائي، آيفون فاتح، آيفون داكن", color = TextSecondary, fontSize = 14.sp)
+            Spacer(Modifier.height(10.dp))
+            Surface(color = Accent.copy(alpha = .15f), shape = RoundedCornerShape(10.dp)) {
+                Text(
+                    "الإصدار: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    color = Accent, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
             Spacer(Modifier.height(24.dp))
 
             Surface(color = Card, shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {

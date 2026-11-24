@@ -13,8 +13,8 @@ android {
         applicationId = "iq.lawha.keyboard"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 4
+        versionName = "1.0.3"
     }
 
     signingConfigs {
@@ -42,7 +42,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     packaging { resources { excludes += setOf("META-INF/DEPENDENCIES", "META-INF/*.kotlin_module") } }
 }
 

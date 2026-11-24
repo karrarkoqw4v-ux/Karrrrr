@@ -26,8 +26,14 @@ class ImeLifecycleOwner : LifecycleOwner, ViewModelStoreOwner, SavedStateRegistr
     override val viewModelStore: ViewModelStore get() = store
     override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
 
+    private var restored = false
+
     fun attach(view: View) {
-        savedStateRegistryController.performRestore(null)
+        // performRestore() يرمي استثناء إذا انستدعى أكثر من مرة على نفس الكائن
+        if (!restored) {
+            savedStateRegistryController.performRestore(null)
+            restored = true
+        }
         view.setViewTreeLifecycleOwner(this)
         view.setViewTreeViewModelStoreOwner(this)
         view.setViewTreeSavedStateRegistryOwner(this)

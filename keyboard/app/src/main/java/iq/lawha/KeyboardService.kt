@@ -20,6 +20,7 @@ class KeyboardService : InputMethodService() {
     private val skinState = androidx.compose.runtime.mutableStateOf(Skin.IOS_DARK)
 
     override fun onCreate() {
+        CrashLog.install(this)
         super.onCreate()
         imeOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
     }

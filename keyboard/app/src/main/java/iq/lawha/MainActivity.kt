@@ -27,6 +27,7 @@ private val TextSecondary = Color(0xFF8FA69D)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        CrashLog.install(this)
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme { SettingsScreen() }
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
 private fun SettingsScreen() {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var skin by remember { mutableStateOf(Prefs.getSkin(ctx)) }
+    var crash by remember { mutableStateOf(CrashLog.read(ctx)) }
 
     Box(Modifier.fillMaxSize().background(Bg)) {
         Column(Modifier.fillMaxSize().padding(24.dp)) {
@@ -70,6 +72,26 @@ private fun SettingsScreen() {
                         colors = ButtonDefaults.buttonColors(containerColor = Accent),
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("اختيار لوحة المفاتيح الآن", color = Bg) }
+                }
+            }
+
+            if (crash != null) {
+                Spacer(Modifier.height(14.dp))
+                Surface(color = Color(0xFF3A1414), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(20.dp)) {
+                        Text("آخر خطأ/كراش محفوظ (انسخه وأرسله حتى أصلحه)", color = Color(0xFFFFB4AB), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            crash.orEmpty(), color = Color(0xFFFFDAD6), fontSize = 11.sp,
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                cm.setPrimaryClip(android.content.ClipData.newPlainText("crash", crash))
+                                android.widget.Toast.makeText(ctx, "تم نسخ نص الخطأ", android.widget.Toast.LENGTH_SHORT).show()
+                            },
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text("مسح", color = Color(0xFFFFB4AB), modifier = Modifier.clickable { CrashLog.clear(ctx); crash = null })
+                    }
                 }
             }
 

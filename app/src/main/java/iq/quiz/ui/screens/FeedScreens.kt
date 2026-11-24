@@ -76,17 +76,24 @@ fun MainScreen(nav: Nav) {
                 else -> ProfileScreen(0, nav, onBack = null)
             }
         }
-        Row(Modifier.fillMaxWidth().background(if (dark) Color.Black else p.bg).navigationBarsPadding().height(66.dp), verticalAlignment = Alignment.CenterVertically) {
-            (0..4).forEach { i ->
-                Box(Modifier.weight(1f).fillMaxHeight().bounceClick { tab = i }, contentAlignment = Alignment.Center) {
-                    val sel = tab == i
-                    val c = Color.White
-                    if (i == 4) {
-                        Box {
-                            Box(Modifier.border(if (sel) 2.dp else 1.dp, if (sel) Color.White else Color(0x33FFFFFF), CircleShape).padding(2.dp)) { Avatar(Repo.me.name, Repo.me.idx, 34.dp) }
-                            if (Repo.chats.any { it.unread > 0 }) Box(Modifier.align(Alignment.BottomEnd).offset(x = (-3).dp, y = 3.dp).size(18.dp).clip(CircleShape).background(if (dark) Color.Black else p.bg).padding(3.dp).clip(CircleShape).background(Color(0xFFFF3040)))
-                        }
-                    } else NavGlyph(i.let { listOf(0, 1, 2, 3)[it] }, sel, c, if (dark) Color.Black else p.bg)
+        Box(
+            Modifier.fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color(0xE63B82F6), Color(0xE61D4ED8))))
+                .border(1.dp, Color(0x66BFDBFE))
+        ) {
+            Box(Modifier.fillMaxWidth().height(1.dp).align(Alignment.TopCenter).background(Color(0x99FFFFFF)))
+            Row(Modifier.fillMaxWidth().navigationBarsPadding().height(66.dp), verticalAlignment = Alignment.CenterVertically) {
+                (0..4).forEach { i ->
+                    Box(Modifier.weight(1f).fillMaxHeight().bounceClick { tab = i }, contentAlignment = Alignment.Center) {
+                        val sel = tab == i
+                        val c = Color.White
+                        if (i == 4) {
+                            Box {
+                                Box(Modifier.border(if (sel) 2.dp else 1.dp, if (sel) Color.White else Color(0x33FFFFFF), CircleShape).padding(2.dp)) { Avatar(Repo.me.name, Repo.me.idx, 34.dp) }
+                                if (Repo.chats.any { it.unread > 0 }) Box(Modifier.align(Alignment.BottomEnd).offset(x = (-3).dp, y = 3.dp).size(18.dp).clip(CircleShape).background(Color(0xFF1D4ED8)).padding(3.dp).clip(CircleShape).background(Color(0xFFFF3040)))
+                            }
+                        } else NavGlyph(i.let { listOf(0, 1, 2, 3)[it] }, sel, c, Color(0xFF1D4ED8))
+                    }
                 }
             }
         }

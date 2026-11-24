@@ -1,0 +1,3 @@
+-dontwarn org.json.**
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

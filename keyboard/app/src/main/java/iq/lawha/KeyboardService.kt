@@ -22,7 +22,10 @@ class KeyboardService : InputMethodService() {
     override fun onCreate() {
         CrashLog.install(this)
         super.onCreate()
-        imeOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        // لا نرسل ON_CREATE هنا: لازم يصير composition (setContent) أول وهو بمرحلة
+        // "التهيئة" (INITIALIZED) قبل أي حدث ON_CREATE، وإلا Compose يرمي استثناء حقيقي
+        // "Restarter must be created only during owner's initialization stage" —
+        // نفس آلية ComponentActivity بالضبط (performRestore + setContent قبل ON_CREATE).
     }
 
     override fun onCreateInputView(): View {
@@ -42,6 +45,7 @@ class KeyboardService : InputMethodService() {
             )
         }
         rootView = view
+        imeOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         return view
     }
 

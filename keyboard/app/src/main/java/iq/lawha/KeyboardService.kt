@@ -63,6 +63,12 @@ class KeyboardService : InputMethodService() {
     }
 
     override fun onDestroy() {
+        // إذا الخدمة انسكّرت قبل ما تنفتح الواجهة أصلاً (onCreateInputView ما انستدعى)،
+        // دورة الحياة لسا بمرحلة INITIALIZED، وما يصير نرسل ON_DESTROY مباشرة عليها —
+        // لازم تمر بـ CREATED أول وإلا LifecycleRegistry يرمي استثناء حقيقي.
+        if (imeOwner.lifecycle.currentState == Lifecycle.State.INITIALIZED) {
+            imeOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        }
         imeOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         rootView = null
         super.onDestroy()

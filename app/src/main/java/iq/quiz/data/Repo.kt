@@ -93,7 +93,7 @@ object Repo {
         sp = ctx.applicationContext.getSharedPreferences("hala", Context.MODE_PRIVATE)
         media = File(ctx.filesDir, "media").apply { mkdirs() }
         dark = sp.getBoolean("dark", true)
-        demo = sp.getBoolean("demo", true)
+        demo = sp.getBoolean("demo", false)
         sp.getString("following", "")?.split(",")?.mapNotNull { it.toIntOrNull() }?.let { following.addAll(it) }
         sp.getString("cur", null)?.let { loadMe(it) }
         seed()

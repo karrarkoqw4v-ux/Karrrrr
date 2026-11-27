@@ -228,23 +228,20 @@ class K(_C):
         self.text(cx, cy - size * 0.3 + bw * 0.39, "؟", size * 0.34, "b", mark, "c")
 
     def tabbar(self, active=0):
+        # مطابق لـ FeedScreens.kt: شريط زجاجي أزرق متدرج (3B82F6 -> 1D4ED8) + خط علوي أبيض شفاف
         y0 = H - NAV_H
-        self.shadow(0, y0, W, H + 20, r=0, blur=6, dy=-1, alpha=18)
-        self.rr(0, y0, W, H + 20, 0, fill=SURFACE)
-        self.hline(0, W, y0, LINE)
-        items = [("home", "الرئيسية"), ("search", "استكشاف"), ("plus", "نشر"), ("reel", "ريلز"), ("user", "حسابي")]
+        self.grad(0, y0, W, H + 20, NAV_GLASS1, NAV_GLASS2, r=0)
+        self.hline(0, W, y0, "#FFFFFF")
+        items = [("home", "الرئيسية"), ("reel", "ريلز"), ("send", "الرسائل"), ("search", "استكشاف"), ("user", "حسابي")]
         slot = W / 5
         for i, (ic, lb) in enumerate(items):
             cx = W - slot * (i + 0.5)       # RTL: الأول من اليمين
             on = i == active
-            col = PRIMARY_DARK if on else FAINT
-            if ic == "plus":
-                self.grad(cx - 22, y0 + 10, cx + 22, y0 + 42, PRIMARY, PRIMARY_DARK, r=12, horizontal=True)
-                self.icon("plus", cx, y0 + 26, 22, "#FFFFFF", sw=2.4, bg=PRIMARY)
-            elif ic == "user":
-                self.avatar(cx, y0 + 26, 14, "س", 0, ring="new" if on else None)
+            col = "#FFFFFF"
+            if ic == "user":
+                self.avatar(cx, y0 + 26, 14, "س", 0, ring="new" if on else None, ring_w=2.0 if on else 1.3)
             else:
-                self.icon(ic, cx, y0 + 26, 27, col, sw=2.1 if on else 1.7)
+                self.icon(ic, cx, y0 + 26, 27, col, sw=2.3 if on else 1.7, bg=NAV_CUT)
             self.text(cx, y0 + 58, lb, 11, "b" if on else "m", col, "c")
 
     def back(self, title, right=None, left=None, size=17):

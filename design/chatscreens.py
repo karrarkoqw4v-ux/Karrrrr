@@ -77,7 +77,7 @@ def inbox():
         if unread:
             c.circle(L + 10, y + 46, 10, fill=PRIMARY); c.text(L + 10, y + 46, str(unread), 11, "b", "#FFFFFF", "c", rtl=False)
         y += 70
-    c.tabbar(1)
+    c.tabbar(2)
     return c
 
 

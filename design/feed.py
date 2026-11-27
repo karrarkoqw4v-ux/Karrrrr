@@ -196,7 +196,7 @@ def explore():
         c.photo(x0, y0, x1, y1, kind)
         if rh == 2:
             c.icon("reel", x1 - 18, y0 + 18, 18, "#FFFFFF", bg="#000000")
-    c.tabbar(1)
+    c.tabbar(3)
     return c
 
 
@@ -220,7 +220,7 @@ def search_results():
         else:
             c.grad(L, y + 14, L + 84, y + 44, PRIMARY, PRIMARY_DARK, r=15, horizontal=True); c.text(L + 42, y + 29, "متابعة", 12.5, "b", "#FFFFFF", "c")
         y += 66
-    c.tabbar(1)
+    c.tabbar(3)
     return c
 
 

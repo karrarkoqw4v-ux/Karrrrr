@@ -9,7 +9,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
@@ -141,95 +139,62 @@ private fun rememberShake(trigger: Int): Animatable<Float, AnimationVector1D> {
     return s
 }
 
-private val WaterDeep = Color(0xFF06424C)
-private val WaterMid = Color(0xFF0EA5B7)
-private val WaterLight = Color(0xFF22D3EE)
-
-@Composable
-private fun WaterField(
-    value: String, onChange: (String) -> Unit, placeholder: String, leading: ImageVector,
-    trailing: ImageVector? = null, onTrailing: (() -> Unit)? = null, password: Boolean = false, show: Boolean = true, error: Boolean = false,
-) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .background(Brush.linearGradient(listOf(Color(0x40FFFFFF), Color(0x1AFFFFFF))), RoundedCornerShape(18.dp))
-            .border(1.dp, if (error) Danger else Color(0x59FFFFFF), RoundedCornerShape(18.dp))
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(leading, null, tint = Color(0xCCFFFFFF), modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(10.dp))
-        BasicTextField(
-            value, onChange, Modifier.weight(1f), singleLine = true,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-            cursorBrush = SolidColor(Color.White),
-            visualTransformation = if (password && !show) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
-            decorationBox = { inner -> if (value.isEmpty()) Text(placeholder, color = Color(0x99FFFFFF), style = MaterialTheme.typography.bodyMedium); inner() },
-        )
-        if (trailing != null) Icon(trailing, null, tint = Color(0xCCFFFFFF), modifier = Modifier.size(20.dp).clickable(enabled = onTrailing != null) { onTrailing?.invoke() })
-    }
-}
-
-@Composable
-private fun WaterButton(text: String, onClick: () -> Unit) {
-    Box(
-        Modifier.fillMaxWidth().height(56.dp).bounceClick(onClick = onClick)
-            .background(Brush.horizontalGradient(listOf(Color(0x59FFFFFF), Color(0x33FFFFFF))), RoundedCornerShape(18.dp))
-            .border(1.dp, Color(0x80FFFFFF), RoundedCornerShape(18.dp)),
-        contentAlignment = Alignment.Center,
-    ) { Text(text, color = Color.White, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold) }
-}
-
 @Composable
 fun LoginScreen(onDone: () -> Unit, onSignup: () -> Unit, onForgot: () -> Unit) {
+    val p = pal
     var id by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var show by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var tick by remember { mutableIntStateOf(0) }
     val shake = rememberShake(tick)
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WaterDeep, Color(0xFF031C21))))) {
-        Box(Modifier.size(420.dp).offset(x = (-120).dp, y = (-80).dp).clip(CircleShape).background(WaterMid.copy(alpha = .5f)))
-        Box(Modifier.size(360.dp).align(Alignment.BottomEnd).offset(x = 100.dp, y = 120.dp).clip(CircleShape).background(WaterLight.copy(alpha = .35f)))
-
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().navigationBarsPadding().imePadding().padding(horizontal = 20.dp, vertical = 28.dp)) {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                val f = rememberFloat(4f)
-                HalaLogo(72.dp, Modifier.graphicsLayer { translationY = f * density })
-                Spacer(Modifier.height(18.dp))
-                Entrance(1) { Text("هلا بيك مجدداً", style = MaterialTheme.typography.displaySmall, color = Color.White) }
-                Entrance(2) { Text("ادخل حتى تكمل دردشتك", style = MaterialTheme.typography.bodyMedium, color = Color(0xCCFFFFFF)) }
+    Box(Modifier.fillMaxSize().background(p.bg)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().navigationBarsPadding().imePadding().padding(horizontal = 32.dp, vertical = 28.dp)) {
+            Spacer(Modifier.weight(0.6f))
+            Entrance(1) {
+                Text(
+                    "كويز تواصلكم", style = MaterialTheme.typography.displaySmall.copy(brush = BrandBrush),
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
             }
-            Spacer(Modifier.height(28.dp))
-            Column(
-                Modifier.offset { IntOffset(shake.value.dp.roundToPx(), 0) }
-                    .background(Brush.linearGradient(listOf(Color(0x40FFFFFF), Color(0x14FFFFFF))), RoundedCornerShape(28.dp))
-                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(28.dp))
-                    .padding(22.dp),
-            ) {
-                Entrance(3) { WaterField(id, { id = it; error = null }, "رقم الهاتف أو البريد أو اسم المستخدم", Icons.Outlined.Person, error = error != null) }
-                Spacer(Modifier.height(12.dp))
-                Entrance(4) {
-                    WaterField(pass, { pass = it; error = null }, "كلمة المرور", Icons.Outlined.Lock, trailing = if (show) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+            Spacer(Modifier.height(44.dp))
+            Column(Modifier.offset { IntOffset(shake.value.dp.roundToPx(), 0) }) {
+                Entrance(2) { HalaField(id, { id = it; error = null }, "رقم الهاتف أو البريد أو اسم المستخدم", Icons.Outlined.Person, error = error != null) }
+                Spacer(Modifier.height(10.dp))
+                Entrance(3) {
+                    HalaField(pass, { pass = it; error = null }, "كلمة المرور", Icons.Outlined.Lock, trailing = if (show) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         onTrailing = { show = !show }, password = true, show = show, error = error != null)
                 }
                 AnimatedVisibility(error != null) { Column { Spacer(Modifier.height(12.dp)); ErrorBanner(error.orEmpty()) } }
                 Spacer(Modifier.height(10.dp))
-                Text("نسيت كلمة المرور؟", style = MaterialTheme.typography.labelMedium, color = Color.White, modifier = Modifier.bounceClick { onForgot() }.padding(6.dp))
+                Text("نسيت كلمة المرور؟", style = MaterialTheme.typography.labelMedium, color = Primary, modifier = Modifier.align(Alignment.End).bounceClick { onForgot() }.padding(6.dp))
                 Spacer(Modifier.height(14.dp))
-                Entrance(5) {
-                    WaterButton("دخول") {
+                Entrance(4) {
+                    GradButton("دخول", {
                         when (val r = Repo.signIn(id, pass)) {
                             is Repo.Result.Ok -> onDone()
                             is Repo.Result.Fail -> { error = r.msg; tick++ }
                         }
-                    }
+                    })
                 }
             }
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(22.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                HorizontalDivider(Modifier.weight(1f), color = p.line)
+                Text("أو", style = MaterialTheme.typography.labelMedium, color = p.faint, modifier = Modifier.padding(horizontal = 14.dp))
+                HorizontalDivider(Modifier.weight(1f), color = p.line)
+            }
+            Spacer(Modifier.height(22.dp))
             Text(
-                buildAnnotatedString { append("ما عندك حساب؟ "); withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Bold)) { append("سجّل الحين") } },
-                style = MaterialTheme.typography.bodyMedium, color = Color(0xCCFFFFFF), modifier = Modifier.align(Alignment.CenterHorizontally).bounceClick { onSignup() }.padding(12.dp),
+                "تسجيل الدخول برقم الهاتف", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = Primary, modifier = Modifier.align(Alignment.CenterHorizontally).bounceClick { }.padding(8.dp),
+            )
+            Spacer(Modifier.weight(1f))
+            HorizontalDivider(color = p.line)
+            Spacer(Modifier.height(18.dp))
+            Text(
+                buildAnnotatedString { append("ما عندك حساب؟ "); withStyle(SpanStyle(color = Primary, fontWeight = FontWeight.Bold)) { append("سجّل الحين") } },
+                style = MaterialTheme.typography.bodyMedium, color = p.muted, modifier = Modifier.align(Alignment.CenterHorizontally).bounceClick { onSignup() }.padding(12.dp),
             )
         }
     }

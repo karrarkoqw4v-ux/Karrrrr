@@ -25,15 +25,17 @@ import iq.quiz.R
 val Primary = Color(0xFF0095F6)
 val PrimaryDark = Color(0xFF3797EF)
 
-/** تدرج الهوية (حلقات القصص والشعار): بنفسجي - وردي - كهرماني */
-val Brand1 = Color(0xFF7C3AED)
-val Brand2 = Color(0xFFEC4899)
-val Brand3 = Color(0xFFF59E0B)
-val BrandBrush = Brush.linearGradient(listOf(Brand1, Brand2, Brand3))
+/** تدرج الهوية الرسمي لإنستقرام (حلقات القصص والشعار): أزرق - بنفسجي - وردي - برتقالي - كهرماني */
+val Brand1 = Color(0xFF405DE6)
+val Brand2 = Color(0xFFC13584)
+val Brand3 = Color(0xFFFCAF45)
+val BrandBrush = Brush.linearGradient(
+    listOf(Color(0xFF405DE6), Color(0xFF5851DB), Color(0xFF833AB4), Color(0xFFC13584), Color(0xFFE1306C), Color(0xFFFD1D1D), Color(0xFFF56040), Color(0xFFF77737), Color(0xFFFCAF45)),
+)
 
 val Accent = Brand3
-val Like = Color(0xFFFF3B5C)
-val Danger = Color(0xFFFF4D4F)
+val Like = Color(0xFFED4956)
+val Danger = Color(0xFFED4956)
 val Success = Color(0xFF34C759)
 
 /** ألوان الواجهة (داكن افتراضي، وفاتح اختياري) */

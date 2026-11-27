@@ -78,21 +78,21 @@ fun MainScreen(nav: Nav) {
         }
         Box(
             Modifier.fillMaxWidth()
-                .background(Brush.verticalGradient(listOf(Color(0xE63B82F6), Color(0xE61D4ED8))))
-                .border(1.dp, Color(0x66BFDBFE))
+                .background(if (dark) Color.Black else Color.White)
+                .border(0.dp, Color.Transparent)
         ) {
-            Box(Modifier.fillMaxWidth().height(1.dp).align(Alignment.TopCenter).background(Color(0x99FFFFFF)))
-            Row(Modifier.fillMaxWidth().navigationBarsPadding().height(66.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.fillMaxWidth().height(1.dp).align(Alignment.TopCenter).background(p.line))
+            Row(Modifier.fillMaxWidth().navigationBarsPadding().height(50.dp), verticalAlignment = Alignment.CenterVertically) {
                 (0..4).forEach { i ->
                     Box(Modifier.weight(1f).fillMaxHeight().bounceClick { tab = i }, contentAlignment = Alignment.Center) {
                         val sel = tab == i
-                        val c = Color.White
+                        val c = if (dark) Color.White else Color.Black
                         if (i == 4) {
                             Box {
-                                Box(Modifier.border(if (sel) 2.dp else 1.dp, if (sel) Color.White else Color(0x33FFFFFF), CircleShape).padding(2.dp)) { Avatar(Repo.me.name, Repo.me.idx, 34.dp) }
-                                if (Repo.chats.any { it.unread > 0 }) Box(Modifier.align(Alignment.BottomEnd).offset(x = (-3).dp, y = 3.dp).size(18.dp).clip(CircleShape).background(Color(0xFF1D4ED8)).padding(3.dp).clip(CircleShape).background(Color(0xFFFF3040)))
+                                Box(Modifier.border(if (sel) 1.5.dp else 0.dp, c, CircleShape).padding(2.dp)) { Avatar(Repo.me.name, Repo.me.idx, 28.dp) }
+                                if (Repo.chats.any { it.unread > 0 }) Box(Modifier.align(Alignment.BottomEnd).offset(x = (-2).dp, y = 2.dp).size(14.dp).clip(CircleShape).background(if (dark) Color.Black else Color.White).padding(2.dp).clip(CircleShape).background(Color(0xFFED4956)))
                             }
-                        } else NavGlyph(i.let { listOf(0, 1, 2, 3)[it] }, sel, c, Color(0xFF1D4ED8))
+                        } else NavGlyph(i.let { listOf(0, 1, 2, 3)[it] }, sel, c, if (dark) Color.Black else Color.White, size = 28.dp)
                     }
                 }
             }

@@ -4,18 +4,41 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import iq.quiz.data.CallSignal
+import iq.quiz.data.Cloud
 import iq.quiz.data.Repo
 import iq.quiz.ui.screens.*
+
+private fun callRoute(callId: String, peerUid: String, peerName: String, isCaller: Boolean, video: Boolean) =
+    "realcall/$callId/$peerUid/${android.net.Uri.encode(peerName)}/$isCaller/$video"
 
 @Composable
 fun AppNav() {
     val nav = rememberNavController()
     val start = if (Repo.loggedIn) "main" else "splash"
+    var lastIncomingId by remember { mutableStateOf<String?>(null) }
+    DisposableEffect(Repo.loggedIn) {
+        val uid = Cloud.uid
+        val listener = if (Repo.loggedIn) {
+            CallSignal.listenIncoming { incoming ->
+                if (incoming != null && incoming.id != lastIncomingId) {
+                    lastIncomingId = incoming.id
+                    nav.navigate(callRoute(incoming.id, incoming.callerId, "...", isCaller = false, video = incoming.video))
+                }
+            }
+        } else null
+        onDispose { if (uid != null && listener != null) CallSignal.stopListeningIncoming(uid, listener) }
+    }
     val ease = tween<Float>(320, easing = FastOutSlowInEasing)
     val slide = tween<androidx.compose.ui.unit.IntOffset>(320, easing = FastOutSlowInEasing)
     val actions = Nav(
@@ -78,10 +101,35 @@ fun AppNav() {
             "realchat/{uid}/{name}",
             arguments = listOf(navArgument("uid") { type = NavType.StringType }, navArgument("name") { type = NavType.StringType }),
         ) { e ->
+            val peerUid = e.arguments?.getString("uid") ?: ""
+            val peerName = android.net.Uri.decode(e.arguments?.getString("name") ?: "...")
             RealChatScreen(
+                peerUid = peerUid,
+                peerNameArg = peerName,
+                onBack = { nav.popBackStack() },
+                onCall = { pid, video ->
+                    val id = CallSignal.startCall(pid, video)
+                    if (id != null) nav.navigate(callRoute(id, pid, peerName, isCaller = true, video = video))
+                },
+            )
+        }
+        composable(
+            "realcall/{callId}/{uid}/{name}/{isCaller}/{video}",
+            arguments = listOf(
+                navArgument("callId") { type = NavType.StringType },
+                navArgument("uid") { type = NavType.StringType },
+                navArgument("name") { type = NavType.StringType },
+                navArgument("isCaller") { type = NavType.BoolType },
+                navArgument("video") { type = NavType.BoolType },
+            ),
+        ) { e ->
+            RealCallScreen(
+                callId = e.arguments?.getString("callId") ?: "",
                 peerUid = e.arguments?.getString("uid") ?: "",
                 peerNameArg = android.net.Uri.decode(e.arguments?.getString("name") ?: "..."),
-                onBack = { nav.popBackStack() },
+                isCaller = e.arguments?.getBoolean("isCaller") ?: true,
+                video = e.arguments?.getBoolean("video") ?: false,
+                onEnd = { lastIncomingId = null; nav.popBackStack() },
             )
         }
     }

@@ -67,4 +67,6 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    // مكالمات صوت/فيديو حقيقية (WebRTC فعلي، إشارات التفاوض عبر Realtime Database)
+    implementation("io.getstream:stream-webrtc-android:1.1.1")
 }

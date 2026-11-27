@@ -11,7 +11,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -109,7 +111,7 @@ fun RealInboxScreen(onBack: () -> Unit, onOpenChat: (String, String) -> Unit) {
 }
 
 @Composable
-fun RealChatScreen(peerUid: String, peerNameArg: String, onBack: () -> Unit) {
+fun RealChatScreen(peerUid: String, peerNameArg: String, onBack: () -> Unit, onCall: (String, Boolean) -> Unit = { _, _ -> }) {
     val p = pal
     val scope = rememberCoroutineScope()
     var peerName by remember { mutableStateOf(peerNameArg) }
@@ -128,7 +130,10 @@ fun RealChatScreen(peerUid: String, peerNameArg: String, onBack: () -> Unit) {
     LaunchedEffect(msgs.size) { if (msgs.isNotEmpty()) listState.animateScrollToItem(msgs.size - 1) }
 
     Column(Modifier.fillMaxSize().background(p.bg)) {
-        TopBack(peerName, onBack)
+        TopBack(peerName, onBack) {
+            IconBtn(Icons.Outlined.Videocam, "اتصال فيديو", tint = Primary) { onCall(peerUid, true) }
+            IconBtn(Icons.Outlined.Call, "اتصال صوتي", tint = Primary) { onCall(peerUid, false) }
+        }
         LazyColumn(Modifier.weight(1f).padding(horizontal = 12.dp), state = listState, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(msgs, key = { it.id }) { m ->
                 val mine = m.senderId == me

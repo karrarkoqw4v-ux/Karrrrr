@@ -90,6 +90,7 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, onOpen: (String) ->
             if (hit("الأرشيف")) SettingRow(Icons.Outlined.Archive, "الأرشيف", "منشورات أرشفتها", Color(0xFF6366F1)) { onOpen("archive") }
             if (hit("المحفوظات")) SettingRow(Icons.Outlined.BookmarkBorder, "المحفوظات", null, Color(0xFFEC4899)) { onOpen("saved") }
             if (hit("الإشعارات النشاط")) SettingRow(Icons.Outlined.FavoriteBorder, "النشاط", "إعجابات وتعليقات ومتابعون", Like) { onOpen("activity") }
+            if (hit("المراسلات الحقيقية Firebase")) SettingRow(Icons.Outlined.Chat, "المراسلات الحقيقية", "دردشة فعلية مع أي حساب مسجّل (Firebase)", Success) { onOpen("realinbox") }
             Text("إعدادات التطبيق", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
             cats.filter { hit(it.title) || it.items.any { i -> hit(i.title) } }.forEach { c ->
                 SettingRow(c.icon, c.title, c.items.take(3).joinToString("، ") { it.title }, c.tint) { open = c }

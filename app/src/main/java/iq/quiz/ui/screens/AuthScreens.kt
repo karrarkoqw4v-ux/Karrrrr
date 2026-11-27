@@ -142,10 +142,12 @@ private fun rememberShake(trigger: Int): Animatable<Float, AnimationVector1D> {
 @Composable
 fun LoginScreen(onDone: () -> Unit, onSignup: () -> Unit, onForgot: () -> Unit) {
     val p = pal
+    val scope = rememberCoroutineScope()
     var id by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var show by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
     var tick by remember { mutableIntStateOf(0) }
     val shake = rememberShake(tick)
     Box(Modifier.fillMaxSize().background(p.bg)) {
@@ -159,7 +161,7 @@ fun LoginScreen(onDone: () -> Unit, onSignup: () -> Unit, onForgot: () -> Unit) 
             }
             Spacer(Modifier.height(44.dp))
             Column(Modifier.offset { IntOffset(shake.value.dp.roundToPx(), 0) }) {
-                Entrance(2) { HalaField(id, { id = it; error = null }, "رقم الهاتف أو البريد أو اسم المستخدم", Icons.Outlined.Person, error = error != null) }
+                Entrance(2) { HalaField(id, { id = it; error = null }, "البريد الإلكتروني أو اسم المستخدم", Icons.Outlined.Person, error = error != null) }
                 Spacer(Modifier.height(10.dp))
                 Entrance(3) {
                     HalaField(pass, { pass = it; error = null }, "كلمة المرور", Icons.Outlined.Lock, trailing = if (show) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
@@ -171,11 +173,15 @@ fun LoginScreen(onDone: () -> Unit, onSignup: () -> Unit, onForgot: () -> Unit) 
                 Spacer(Modifier.height(14.dp))
                 Entrance(4) {
                     GradButton("دخول", {
-                        when (val r = Repo.signIn(id, pass)) {
-                            is Repo.Result.Ok -> onDone()
-                            is Repo.Result.Fail -> { error = r.msg; tick++ }
+                        loading = true
+                        scope.launch {
+                            when (val r = Repo.signIn(id, pass)) {
+                                is Repo.Result.Ok -> onDone()
+                                is Repo.Result.Fail -> { error = r.msg; tick++ }
+                            }
+                            loading = false
                         }
-                    })
+                    }, enabled = !loading)
                 }
             }
             Spacer(Modifier.height(22.dp))
@@ -240,8 +246,10 @@ private fun strength(p: String): Int {
 @Composable
 fun SignupScreen(onBack: () -> Unit, onDone: () -> Unit) {
     val p = pal
+    val scope = rememberCoroutineScope()
+    var loading by remember { mutableStateOf(false) }
     var step by remember { mutableIntStateOf(0) }
-    var phone by remember { mutableStateOf(true) }
+    var phone by remember { mutableStateOf(false) }
     var contact by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
@@ -261,16 +269,20 @@ fun SignupScreen(onBack: () -> Unit, onDone: () -> Unit) {
     fun next() {
         error = null
         val msg = when (step) {
-            0 -> if (contact.trim().length < 5) "اكتب رقم هاتف أو بريد صحيح" else null
+            0 -> if (phone) "التسجيل برقم الهاتف غير مفعّل بعد، اختر البريد الإلكتروني" else if (!contact.contains("@") || !contact.contains(".")) "اكتب بريد إلكتروني صحيح" else null
             1 -> if (name.isBlank()) "اكتب اسمك" else if (pass.length < 6) "كلمة المرور 6 أحرف على الأقل" else null
             2 -> if (!free) "اسم المستخدم غير متاح أو قصير" else if (day.toIntOrNull() !in 1..31 || month.toIntOrNull() !in 1..12 || (year.toIntOrNull() ?: 0) !in 1930..2015) "تاريخ الميلاد غير صحيح" else null
             else -> null
         }
         if (msg != null) { error = msg; tick++; return }
         if (step < 3) { step++; return }
-        when (val r = Repo.signUp(contact, name, username, pass)) {
-            is Repo.Result.Ok -> onDone()
-            is Repo.Result.Fail -> { error = r.msg; tick++; step = 0 }
+        loading = true
+        scope.launch {
+            when (val r = Repo.signUp(contact, name, username, pass)) {
+                is Repo.Result.Ok -> onDone()
+                is Repo.Result.Fail -> { error = r.msg; tick++; step = 0 }
+            }
+            loading = false
         }
     }
 
@@ -363,7 +375,7 @@ fun SignupScreen(onBack: () -> Unit, onDone: () -> Unit) {
             AnimatedVisibility(error != null) { Column { Spacer(Modifier.height(14.dp)); ErrorBanner(error.orEmpty()) } }
         }
         Box(Modifier.padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding()) {
-            GradButton(if (step < 3) "التالي" else "ابدأ", { next() })
+            GradButton(if (step < 3) "التالي" else "ابدأ", { next() }, enabled = !loading)
         }
     }
 }

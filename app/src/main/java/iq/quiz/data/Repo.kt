@@ -3,19 +3,17 @@ package iq.quiz.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
-import android.util.Base64
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.security.SecureRandom
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
 
 class User(val id: Int, name: String, username: String, val idx: Int, bio: String = "", val followers: Int = 0, val following: Int = 0) {
     var name by mutableStateOf(name)
@@ -95,7 +93,12 @@ object Repo {
         dark = sp.getBoolean("dark", true)
         demo = sp.getBoolean("demo", false)
         sp.getString("following", "")?.split(",")?.mapNotNull { it.toIntOrNull() }?.let { following.addAll(it) }
-        sp.getString("cur", null)?.let { loadMe(it) }
+        if (Cloud.uid != null) {
+            loggedIn = true
+            CoroutineScope(Dispatchers.IO).launch {
+                Cloud.myProfile()?.let { p -> withContext(Dispatchers.Main) { applyCloudProfile(p) } }
+            }
+        }
         seed()
         loadUserPosts()
         if (System.currentTimeMillis() - sp.getLong("note_t", 0) < 24 * 3600_000L) note = sp.getString("note", "") ?: ""
@@ -138,58 +141,42 @@ object Repo {
         chats.add(1, Chat(99, 2, "شباب بغداد", true).also { it.msgs.add(Msg(1, false, "علي: الاجتماع الساعة 8")); it.unread = 5 })
     }
 
-    // ---------- الحسابات (محلية) ----------
-    private fun hash(pass: String, salt: ByteArray): String {
-        val spec = PBEKeySpec(pass.toCharArray(), salt, 60_000, 256)
-        return Base64.encodeToString(SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded, Base64.NO_WRAP)
-    }
-
+    // ---------- الحسابات (حقيقية عبر Firebase) ----------
     sealed interface Result { data object Ok : Result; data class Fail(val msg: String) : Result }
 
-    fun signUp(contact: String, name: String, username: String, pass: String): Result {
+    suspend fun signUp(contact: String, name: String, username: String, pass: String): Result {
         val u = username.trim().lowercase()
-        val c = contact.trim().lowercase()
-        if (c.length < 5) return Result.Fail("اكتب رقم هاتف أو بريد صحيح")
+        val email = contact.trim()
+        if (!email.contains("@") || !email.contains(".")) return Result.Fail("اكتب بريد إلكتروني صحيح (البريد مطلوب حالياً، رقم الهاتف لاحقاً)")
         if (name.isBlank()) return Result.Fail("اكتب اسمك")
         if (u.length < 3 || !u.all { it.isLetterOrDigit() || it == '.' || it == '_' }) return Result.Fail("اسم المستخدم 3 أحرف على الأقل (حروف وأرقام ونقطة)")
         if (pass.length < 6) return Result.Fail("كلمة المرور 6 أحرف على الأقل")
-        if (sp.contains("acc_u_$u") || sp.contains("acc_c_$c")) return Result.Fail("الحساب موجود، سجّل دخول")
-        val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
-        val acc = JSONObject().put("name", name.trim()).put("username", u).put("contact", c)
-            .put("salt", Base64.encodeToString(salt, Base64.NO_WRAP)).put("hash", hash(pass, salt)).put("bio", "")
-        sp.edit().putString("acc_u_$u", acc.toString()).putString("acc_c_$c", u).putString("cur", u).apply()
-        loadMe(u)
-        return Result.Ok
+        return when (val r = Cloud.signUp(email, name, u, pass)) {
+            is Cloud.Result.Ok -> { applyCloudProfile(Cloud.Profile(Cloud.uid ?: "", name.trim(), u)); Result.Ok }
+            is Cloud.Result.Fail -> Result.Fail(r.msg)
+        }
     }
 
-    fun signIn(id: String, pass: String): Result {
-        val key = id.trim().lowercase()
-        val u = if (sp.contains("acc_u_$key")) key else sp.getString("acc_c_$key", null) ?: return Result.Fail("ما لقينا حساب بهذا الاسم")
-        val acc = JSONObject(sp.getString("acc_u_$u", null) ?: return Result.Fail("الحساب غير موجود"))
-        val salt = Base64.decode(acc.getString("salt"), Base64.NO_WRAP)
-        if (hash(pass, salt) != acc.getString("hash")) return Result.Fail("كلمة المرور غلط")
-        sp.edit().putString("cur", u).apply()
-        loadMe(u)
-        return Result.Ok
-    }
+    suspend fun signIn(id: String, pass: String): Result =
+        when (val r = Cloud.signIn(id, pass)) {
+            is Cloud.Result.Ok -> { Cloud.myProfile()?.let { applyCloudProfile(it) }; Result.Ok }
+            is Cloud.Result.Fail -> Result.Fail(r.msg)
+        }
 
-    fun usernameFree(u: String) = !sp.contains("acc_u_${u.trim().lowercase()}")
+    /** فحص شكل اسم المستخدم فقط (محلي وفوري)؛ التأكد من عدم حجزه فعلياً يصير وقت التسجيل الحقيقي */
+    fun usernameFree(u: String) = u.length >= 3 && u.all { it.isLetterOrDigit() || it == '.' || it == '_' }
 
-    private fun loadMe(u: String) {
-        val acc = JSONObject(sp.getString("acc_u_$u", null) ?: return)
-        me.name = acc.optString("name"); me.username = acc.optString("username"); me.bio = acc.optString("bio")
+    private fun applyCloudProfile(p: Cloud.Profile) {
+        me.name = p.name; me.username = p.username; me.bio = p.bio
         loggedIn = true
     }
 
     fun updateMe(name: String, username: String, bio: String) {
-        val u = sp.getString("cur", null) ?: return
-        val acc = JSONObject(sp.getString("acc_u_$u", null) ?: return)
-        acc.put("name", name.trim()).put("bio", bio.trim())
-        sp.edit().putString("acc_u_$u", acc.toString()).apply()
         me.name = name.trim(); me.bio = bio.trim()
+        CoroutineScope(Dispatchers.IO).launch { Cloud.updateProfile(name, bio) }
     }
 
-    fun signOut() { sp.edit().remove("cur").apply(); loggedIn = false }
+    fun signOut() { Cloud.signOut(); loggedIn = false }
 
     fun updateDark(v: Boolean) { dark = v; sp.edit().putBoolean("dark", v).apply() }
     fun flag(key: String, def: Boolean) = sp.getBoolean("f_$key", def)

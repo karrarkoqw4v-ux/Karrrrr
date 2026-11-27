@@ -71,5 +71,18 @@ fun AppNav() {
         composable("settings") {
             SettingsScreen(onBack = { nav.popBackStack() }, onLogout = { nav.navigate("login") { popUpTo(0) { inclusive = true } } }, onOpen = { r -> nav.navigate(r) })
         }
+        composable("realinbox") {
+            RealInboxScreen(onBack = { nav.popBackStack() }, onOpenChat = { peerUid, name -> nav.navigate("realchat/$peerUid/${android.net.Uri.encode(name)}") })
+        }
+        composable(
+            "realchat/{uid}/{name}",
+            arguments = listOf(navArgument("uid") { type = NavType.StringType }, navArgument("name") { type = NavType.StringType }),
+        ) { e ->
+            RealChatScreen(
+                peerUid = e.arguments?.getString("uid") ?: "",
+                peerNameArg = android.net.Uri.decode(e.arguments?.getString("name") ?: "..."),
+                onBack = { nav.popBackStack() },
+            )
+        }
     }
 }

@@ -126,7 +126,11 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, onOpen: (String) ->
                 SettingRow(Icons.Outlined.Science, "محتوى تجريبي", "أشخاص ومنشورات ورسائل وملاحظات وهمية لتجربة التطبيق", Color(0xFFF59E0B), toggle = Repo.demo, onToggle = { Repo.updateDemo(it) })
                 Text("الحساب", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 4.dp))
                 SettingRow(Icons.Outlined.Logout, "تسجيل الخروج", null, Danger) { Repo.signOut(); onLogout() }
-                Text("كويز تواصلكم 0.3 - البيانات محفوظة على جهازك فقط", style = MaterialTheme.typography.labelSmall, color = p.faint, modifier = Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center)
+                Text(
+                    "كويز تواصلكم - الإصدار ${iq.quiz.BuildConfig.VERSION_NAME} (${iq.quiz.BuildConfig.VERSION_CODE})",
+                    style = MaterialTheme.typography.labelSmall, color = p.faint, modifier = Modifier.fillMaxWidth().padding(top = 20.dp, start = 20.dp, end = 20.dp), textAlign = TextAlign.Center,
+                )
+                Text("الحسابات والمراسلات الحقيقية على Firebase - باقي البيانات محفوظة على جهازك", style = MaterialTheme.typography.labelSmall, color = p.faint, modifier = Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center)
             }
         }
     }

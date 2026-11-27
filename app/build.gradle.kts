@@ -10,17 +10,31 @@ android {
     compileSdk = 34
 
     defaultConfig {
+        // applicationId ثابت للأبد — لا تغيّره أبداً، حتى تنصّب كل نسخة جديدة كتحديث فوق القديمة بدون حذف
         applicationId = "iq.quiz.tawasulkum"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            // مفتاح توقيع ثابت محفوظ بالمشروع: كل بناء جديد يوقّع بنفس المفتاح،
+            // فيصير تحديث حقيقي فوق النسخة المثبتة بدل ما يطلب حذفها أول.
+            // (قبل هذا كان البناء يوقّع بمفتاح debug عشوائي يتجدد بكل تشغيل CI،
+            // فكل تحديث كان يفشل التنصيب بصمت فوق النسخة القديمة.)
+            storeFile = file("release.keystore")
+            storePassword = "quiztawasulkum123"
+            keyAlias = "quiztawasulkum"
+            keyPassword = "quiztawasulkum123"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")   // للتجربة فقط
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -28,7 +42,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
 }
 
 dependencies {

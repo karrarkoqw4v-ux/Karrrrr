@@ -2,6 +2,7 @@ package iq.quiz.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import iq.quiz.data.CrashLog
 import iq.quiz.data.Notifier
 import iq.quiz.data.Repo
 import iq.quiz.ui.components.*
@@ -58,9 +60,11 @@ private val cats = listOf(
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, onOpen: (String) -> Unit) {
     val p = pal
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     var open by remember { mutableStateOf<SCat?>(null) }
     var q by remember { mutableStateOf("") }
     var lang by remember { mutableStateOf(false) }
+    var crash by remember { mutableStateOf(CrashLog.read(ctx)) }
     BackHandler(open != null) { open = null }
     val cat = open
     if (cat != null) {
@@ -86,6 +90,22 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, onOpen: (String) ->
         }
         Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
             fun hit(t: String) = q.isBlank() || t.contains(q)
+            if (crash != null) {
+                Column(Modifier.fillMaxWidth().padding(16.dp, 10.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF3A1414)).padding(16.dp)) {
+                    Text("آخر خطأ/كراش محفوظ (انسخه وأرسله حتى أصلحه)", color = Color(0xFFFFB4AB), style = MaterialTheme.typography.labelLarge)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        crash.orEmpty(), color = Color(0xFFFFDAD6), style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            cm.setPrimaryClip(android.content.ClipData.newPlainText("crash", crash))
+                            android.widget.Toast.makeText(ctx, "تم نسخ نص الخطأ", android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text("مسح", color = Color(0xFFFFB4AB), modifier = Modifier.clickable { CrashLog.clear(ctx); crash = null })
+                }
+            }
             Text("نشاطك", style = MaterialTheme.typography.labelMedium, color = p.muted, modifier = Modifier.padding(16.dp, 12.dp, 16.dp, 4.dp))
             if (hit("الأرشيف")) SettingRow(Icons.Outlined.Archive, "الأرشيف", "منشورات أرشفتها", Color(0xFF6366F1)) { onOpen("archive") }
             if (hit("المحفوظات")) SettingRow(Icons.Outlined.BookmarkBorder, "المحفوظات", null, Color(0xFFEC4899)) { onOpen("saved") }

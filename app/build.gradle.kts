@@ -51,6 +51,6 @@ dependencies {
     // حسابات ومراسلات حقيقية (سيرفر Firebase الحقيقي: مشروع gvzkkf)
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 }

@@ -10,24 +10,18 @@ INK = "#F5F5F7"
 MUTED = "#A1A1AA"
 FAINT = "#6B6B73"
 LINE = "#2C2C2E"
-PRIMARY = "#2F8CFF"
-PRIMARY_DARK = "#1B6FE0"
+# نفس قيم Theme.kt بالضبط: أزرق إنستقرام الرسمي
+PRIMARY = "#0095F6"
+PRIMARY_DARK = "#3797EF"
 PRIMARY_SOFT = "#0F2A4A"
-# الشريط السفلي الزجاجي الأزرق (نفس قيم Kotlin بالضبط: FeedScreens.kt)
-NAV_GLASS1 = "#3B82F6"
-NAV_GLASS2 = "#1D4ED8"
-NAV_CUT = "#1D4ED8"
-# شاشة الدخول المائية (نفس قيم Kotlin بالضبط: AuthScreens.kt)
-WATER_DEEP = "#06424C"
-WATER_MID = "#0EA5B7"
-WATER_LIGHT = "#22D3EE"
-WATER_BOTTOM = "#031C21"
-BRAND1 = "#7C3AED"
-BRAND2 = "#EC4899"
-BRAND3 = "#F59E0B"
+# تدرج الهوية الرسمي لإنستقرام (شعار 2016): أزرق - بنفسجي - وردي - برتقالي - كهرماني
+IG_GRADIENT = ["#405DE6", "#5851DB", "#833AB4", "#C13584", "#E1306C", "#FD1D1D", "#F56040", "#F77737", "#FCAF45"]
+BRAND1 = "#405DE6"
+BRAND2 = "#C13584"
+BRAND3 = "#FCAF45"
 ACCENT = BRAND3
-LIKE = "#FF3B5C"
-BLUE = "#2F8CFF"
+LIKE = "#ED4956"
+BLUE = PRIMARY
 SUCCESS = "#34C759"
 SUCCESS_SOFT = "#12301B"
 WARN = "#F59E0B"

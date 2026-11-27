@@ -76,42 +76,21 @@ def welcome(step):
     return c
 
 
-def water_field(c, y, placeholder, icon, value=None, trailing=None, x0=L, x1=None):
-    """حقل مائي شفاف 100% مطابق لـ WaterField بـ AuthScreens.kt: تدرج أبيض شفاف + حد فاتح."""
-    x1 = x1 or (W - L)
-    c.arr(x0, y, x1, y + FIELD_H, RADIUS_FIELD, "#FFFFFF", 0.20)
-    c.rr(x0, y, x1, y + FIELD_H, RADIUS_FIELD, line="#FFFFFF", lw=1.1)
-    c.icon(icon, x1 - 24, y + FIELD_H / 2, 20, "#FFFFFF", bg=WATER_DEEP)
-    c.text(x1 - 50, y + FIELD_H / 2, value or placeholder, 14, "r", "#FFFFFF" if value else "#C9F3F7", "r")
-    if trailing:
-        c.icon(trailing, x0 + 24, y + FIELD_H / 2, 20, "#FFFFFF", bg=WATER_DEEP)
-    return y + FIELD_H
-
-
-def water_button(c, y, label, x0=L, x1=None):
-    x1 = x1 or (W - L)
-    c.arr(x0, y, x1, y + BUTTON_H, RADIUS_BUTTON, "#FFFFFF", 0.28)
-    c.rr(x0, y, x1, y + BUTTON_H, RADIUS_BUTTON, line="#FFFFFF", lw=1.2)
-    c.text((x0 + x1) / 2, y + BUTTON_H / 2, label, 15, "b", "#FFFFFF", "c")
-
-
 def login():
-    """مطابقة 100% لـ LoginScreen بـ AuthScreens.kt: مائي شفاف بالكامل، نفس القيم بالضبط."""
-    c = K(WATER_DEEP)
-    c.grad(0, 0, W, H, WATER_DEEP, WATER_BOTTOM)
-    c.acircle(30, 20, 210, WATER_MID, 0.5)
-    c.acircle(330, 650, 180, WATER_LIGHT, 0.35)
-    c.logo(180, 128, 72, white=True)
-    c.text(180, 200, "هلا بيك مجدداً", 26, "x", "#FFFFFF", "c")
-    c.text(180, 230, "ادخل حتى تكمل دردشتك", 13.5, "r", "#E6FBFA", "c")
-    cx0, cx1, cy0 = 20, W - 20, 272
-    c.arr(cx0, cy0, cx1, cy0 + 236, 28, "#FFFFFF", 0.14)
-    c.rr(cx0, cy0, cx1, cy0 + 236, 28, line="#FFFFFF", lw=1.0)
-    y = water_field(c, cy0 + 22, "رقم الهاتف أو البريد أو اسم المستخدم", "user", value="sara.ali", x0=cx0 + 22, x1=cx1 - 22)
-    y = water_field(c, y + 12, "كلمة المرور", "lock", trailing="eye", value="••••••••", x0=cx0 + 22, x1=cx1 - 22)
-    c.text(cx1 - 22, y + 20, "نسيت كلمة المرور؟", 12.5, "b", "#FFFFFF", "l")
-    water_button(c, y + 48, "دخول", x0=cx0 + 22, x1=cx1 - 22)
-    c.runs(R - 56, cy0 + 236 + 46, [("ما عندك حساب؟ ", "#E6FBFA", "r"), ("سجّل الحين", "#FFFFFF", "b")], 14)
+    """مطابقة لـ LoginScreen الحالية بـ AuthScreens.kt: شاشة مسطّحة (مثل إنستقرام الرسمي)،
+    بدون أي زجاج/ماء — شعار بتدرج الهوية الرسمي + حقول عادية + زر أزرق صلب."""
+    c = K(BG)
+    c.logo(180, 92, 64)
+    c.text(180, 150, "كويز تواصلكم", 24, "x", INK, "c")
+    y = c.input(240, "رقم الهاتف أو البريد أو اسم المستخدم", "user", value="sara.ali", focus=True)
+    y = c.input(y + 10, "كلمة المرور", "lock", trailing="eye", value="••••••••")
+    c.text(L, y + 22, "نسيت كلمة المرور؟", 13, "b", PRIMARY, "l")
+    c.btn(y + 50, "دخول")
+    yy = y + 50 + BUTTON_H + 22
+    c.hline(L, 150, yy); c.hline(210, R, yy); c.text(180, yy, "أو", 12.5, "m", FAINT, "c")
+    c.text(180, yy + 30, "تسجيل الدخول برقم الهاتف", 13.5, "b", PRIMARY, "c")
+    c.hline(0, W, 696, LINE)
+    c.runs(R - 56, 734, [("ما عندك حساب؟ ", MUTED, "r"), ("سجّل الحين", PRIMARY, "b")], 14)
     return c
 
 

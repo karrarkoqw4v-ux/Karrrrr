@@ -1,0 +1,42 @@
+name: Build Quiz Tawasulkum APK
+
+on:
+  push:
+    branches: [ccr-ce495802-xqkwag, main]
+    paths-ignore: ['design/**', 'README.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build APK
+        run: gradle assembleRelease --no-daemon --stacktrace
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk QuizTawasulkum.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuizTawasulkum-apk
+          path: QuizTawasulkum.apk
+      - name: Publish APK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=quiz-apk-latest
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --prerelease --target "${{ github.sha }}" \
+              --title "كويز تواصلكم - أحدث نسخة" --notes "نسخة تجريبية"
+          fi
+          gh release upload "$TAG" QuizTawasulkum.apk --clobber
+          gh release edit "$TAG" --notes "نسخة تجريبية من تطبيق كويز تواصلكم (أندرويد 8.0 فما فوق). Commit: ${{ github.sha }}"

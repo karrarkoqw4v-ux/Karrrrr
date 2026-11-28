@@ -1,0 +1,159 @@
+<!doctype html><html lang="ar" dir="ltr"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:T;font-weight:500;src:url(tajawal_medium.ttf)}
+@font-face{font-family:T;font-weight:700;src:url(tajawal_bold.ttf)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:T,-apple-system,sans-serif}
+body{background:#0b0b10}
+.sheet{display:flex;gap:70px;padding:60px;background:#0b0b10}
+.phone{width:620px}
+.lbl{color:#fff;font-size:30px;font-weight:700;text-align:center;margin-bottom:20px}
+.screen{position:relative;width:620px;height:1340px;border-radius:46px;overflow:hidden;background:#1c1c1e}
+.statusbar{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;color:#fff;font-size:22px;font-weight:700}
+.appbar{height:70px;display:flex;align-items:center;padding:0 20px;color:#fff;font-size:26px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08)}
+.chatarea{position:absolute;left:0;right:0;top:130px;bottom:0;padding:20px}
+.bubble{max-width:70%;padding:16px 20px;border-radius:22px;font-size:24px;margin-bottom:14px}
+.bubble.them{background:#2c2c2e;color:#fff;border-bottom-left-radius:6px}
+.bubble.me{background:#0a84ff;color:#fff;margin-left:auto;border-bottom-right-radius:6px}
+.typing{position:absolute;left:20px;right:20px;top:460px;height:70px;background:#2c2c2e;border-radius:20px;display:flex;align-items:center;padding:0 22px;color:rgba(255,255,255,.4);font-size:24px}
+
+/* ===== لوحة المفاتيح: ترتيب حروف عربي حقيقي (مأخوذ من لقطة شاشة آيفون فعلية) ===== */
+.kb{position:absolute;left:0;right:0;bottom:0;padding:10px 6px 18px}
+.row{display:flex;justify-content:center;gap:7px;margin-bottom:9px}
+.key{height:68px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:27px;flex:1}
+.key.wide{flex:1.5}
+.key.space{flex:5}
+.key.small{font-size:20px}
+.key svg{width:26px;height:26px}
+
+/* Water keyboard — مائي 100% */
+.kb.water{
+  background:
+    radial-gradient(circle at 15% 10%, rgba(120,230,255,.18) 0%, transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(14,165,183,.25) 0%, transparent 50%),
+    linear-gradient(160deg, rgba(5,40,48,.55), rgba(2,14,18,.7));
+  backdrop-filter:blur(14px) saturate(1.3);
+}
+.kb.water .key{background:linear-gradient(160deg,rgba(34,211,238,.4),rgba(6,110,130,.35));border:1px solid rgba(180,255,250,.4);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 4px 10px -4px rgba(0,0,0,.4)}
+.kb.water .key.wide{background:linear-gradient(160deg,rgba(14,165,183,.5),rgba(3,70,85,.4));border:1px solid rgba(180,255,250,.3)}
+.kb.water .key.space{background:linear-gradient(160deg,rgba(34,211,238,.3),rgba(14,165,183,.25));border:1px solid rgba(180,255,250,.3)}
+.kb.water .key.del{background:linear-gradient(160deg,rgba(120,230,255,.55),rgba(34,211,238,.4));border:1px solid rgba(220,255,252,.55)}
+
+/* ===== iOS داكن — ألوان مأخوذة حرفياً بالبكسل من لقطة شاشة حقيقية (كيبورد iOS الحديث):
+   خلفية اللوحة #1F1F1F، تعبئة المفتاح #434343، مفتاح الحذف الأفتح #909090 ===== */
+.kb.iosdark{background:#1f1f1f}
+.kb.iosdark .key{background:#434343;color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.kb.iosdark .key.wide{background:#434343;color:#fff}
+.kb.iosdark .key.space{background:#434343;color:#fff}
+.kb.iosdark .key.del{background:#909090;color:#1f1f1f}
+.kb.iosdark .key.enter{background:#434343;color:#fff}
+
+/* ===== iOS فاتح — نفس نمط العلاقة (المفاتيح أفتح من خلفية اللوحة) مع مفتاح حذف أغمق قليلاً مطابق لشكل أبل الفاتح المعروف ===== */
+.kb.ioslight{background:#d1d3d9}
+.kb.ioslight .key{background:#fff;color:#000;box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.kb.ioslight .key.wide{background:#fff;color:#000}
+.kb.ioslight .key.space{background:#fff;color:#000}
+.kb.ioslight .key.del{background:#aeb1ba;color:#000}
+.kb.ioslight .key.enter{background:#fff;color:#000}
+
+.predict{height:48px;display:flex;align-items:center;justify-content:space-around;padding:0 20px;font-size:22px}
+.kb.water .predict{color:rgba(255,255,255,.65)}
+.kb.ioslight .predict{color:#000}
+.kb.iosdark .predict{color:#fff}
+
+.bottomrow{display:flex;justify-content:space-between;align-items:center;padding:6px 18px 0}
+</style></head><body>
+<div class="sheet" id="root">
+
+<div class="phone" id="p1">
+  <div class="lbl">١ - مائي شفاف</div>
+  <div class="screen">
+    <div class="statusbar">9:41 <span>🔋100%</span></div>
+    <div class="appbar">محادثة</div>
+    <div class="chatarea">
+      <div class="bubble them">هلا شلونك اليوم؟</div>
+      <div class="bubble me">تمام والحمدلله، وانت؟</div>
+    </div>
+    <div class="typing">اكتب رسالة...</div>
+    <div class="kb water" id="kb1"></div>
+  </div>
+</div>
+
+<div class="phone" id="p2">
+  <div class="lbl">٢ - نسخة iPhone (فاتح)</div>
+  <div class="screen" style="background:#fff">
+    <div class="statusbar" style="color:#000">9:41 <span>🔋100%</span></div>
+    <div class="appbar" style="color:#000;border-bottom:1px solid #e5e5ea">محادثة</div>
+    <div class="chatarea">
+      <div class="bubble them" style="background:#e9e9eb;color:#000">هلا شلونك اليوم؟</div>
+      <div class="bubble me">تمام والحمدلله، وانت؟</div>
+    </div>
+    <div class="typing" style="background:#f2f2f7;color:#8e8e93">اكتب رسالة...</div>
+    <div class="kb ioslight" id="kb2"></div>
+  </div>
+</div>
+
+<div class="phone" id="p3">
+  <div class="lbl">٣ - نسخة iPhone (داكن)</div>
+  <div class="screen">
+    <div class="statusbar">9:41 <span>🔋100%</span></div>
+    <div class="appbar">محادثة</div>
+    <div class="chatarea">
+      <div class="bubble them">هلا شلونك اليوم؟</div>
+      <div class="bubble me">تمام والحمدلله، وانت؟</div>
+    </div>
+    <div class="typing">اكتب رسالة...</div>
+    <div class="kb iosdark" id="kb3"></div>
+  </div>
+</div>
+
+</div>
+<script>
+// ترتيب الحروف العربي الحقيقي مثل كيبورد آيفون (مأخوذ من لقطة شاشة فعلية)
+const rows = [
+  ['ض','ص','ق','ف','غ','ع','ه','خ','ح','ج'],
+  ['ش','س','ي','ب','ل','ا','ت','ن','م','ك'],
+  ['⇧','ظ','ط','ذ','د','ز','ر','و','ة','ث','⌫'],
+];
+const ICON = {
+  '⇧': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 4 11h5v8h6v-8h5z"/></svg>',
+  '⌫': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-6 8 6 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><path d="M12 9l6 6M18 9l-6 6"/></svg>',
+  'enter': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6v6a2 2 0 0 1-2 2H5M10 10l-5 4 5 4"/></svg>',
+  'globe': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>',
+  'mic': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg>',
+  'emoji': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2" stroke-linecap="round"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/></svg>',
+};
+function buildKB(id, predictWords) {
+  const kb = document.getElementById(id);
+  const p = document.createElement('div'); p.className='predict';
+  predictWords.forEach(w=>{ const s=document.createElement('span'); s.textContent=w; p.appendChild(s); });
+  kb.appendChild(p);
+  rows.forEach(row=>{
+    const r = document.createElement('div'); r.className='row';
+    row.forEach(k=>{
+      const d = document.createElement('div');
+      const isIcon = k==='⇧'||k==='⌫';
+      d.className = 'key' + (isIcon?' wide small':'') + (k==='⌫'?' del':'');
+      d.innerHTML = ICON[k] || k;
+      r.appendChild(d);
+    });
+    kb.appendChild(r);
+  });
+  const last = document.createElement('div'); last.className='row';
+  const k123 = document.createElement('div'); k123.className='key wide small'; k123.textContent='123'; last.appendChild(k123);
+  const space = document.createElement('div'); space.className='key space small'; last.appendChild(space);
+  const ret = document.createElement('div'); ret.className='key wide small enter'; ret.innerHTML = ICON['enter']; last.appendChild(ret);
+  kb.appendChild(last);
+  const br = document.createElement('div'); br.className='bottomrow';
+  const emoji = document.createElement('div'); emoji.style.cssText='width:30px;height:30px;color:inherit'; emoji.innerHTML = ICON['emoji'];
+  const mic = document.createElement('div'); mic.style.cssText='width:30px;height:30px;color:inherit'; mic.innerHTML = ICON['mic'];
+  br.appendChild(emoji); br.appendChild(mic);
+  kb.appendChild(br);
+  // لون الأيقونات بالأسفل يتبع لون نص اللوحة
+  const color = getComputedStyle(kb.querySelector('.predict')).color;
+  br.style.color = color;
+}
+buildKB('kb1', ['تمام','يلا','شلونك']);
+buildKB('kb2', ['تمام','يلا','شلونك']);
+buildKB('kb3', ['تمام','يلا','شلونك']);
+</script>
+</body></html>

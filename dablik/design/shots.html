@@ -1,0 +1,110 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:T;font-weight:400;src:url(tajawal_medium.ttf)}
+@font-face{font-family:T;font-weight:600;src:url(tajawal_bold.ttf)}
+@font-face{font-family:T;font-weight:800;src:url(tajawal_extrabold.ttf)}
+:root{--bg:#000;--card:#1c1c1e;--card2:#2a2a2d;--blue:#3e91ff;--bs:#1b3556;--ink:#f5f5f5;--mut:#a0a0a5;--faint:#6e6e73;--line:#2e2e31;--red:#ff5a5a;--green:#3ddc84}
+*{box-sizing:border-box;margin:0}
+body{background:#000;font-family:T;color:var(--ink)}
+.s{width:390px;height:844px;position:relative;overflow:hidden;background:#000;display:none}
+.s.on{display:block}
+.sb{position:absolute;top:0;left:0;right:0;height:36px;display:flex;justify-content:space-between;padding:12px 22px 0;font-size:12px;color:#ddd;z-index:5}
+.shadeT{position:absolute;top:0;left:0;right:0;height:90px;background:linear-gradient(#000f,#000a,#0000);z-index:3}
+.shadeB{position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(#0000,#000a,#000f);z-index:3}
+.big{position:absolute;top:150px;right:30px;}
+.big h1{font-weight:800;font-size:38px}.big p{font-size:14px;color:var(--mut);margin-top:2px}
+.tiles{position:absolute;top:262px;right:16px;left:16px;display:flex;gap:12px}
+.tile{flex:1;aspect-ratio:.92;background:var(--card);border-radius:28px;padding:20px;display:flex;flex-direction:column;justify-content:space-between}
+.ic{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:30px}
+.tile b{font-size:21px;font-weight:800;display:block}.tile span{font-size:14px;color:var(--mut)}
+h3{font-size:18px;font-weight:600}
+.sec{position:absolute;right:24px;top:500px}
+.empty{position:absolute;top:545px;right:16px;left:16px;background:var(--card);border-radius:28px;padding:26px;text-align:center}
+.empty b{display:block;font-size:18px;margin:8px 0 2px}.empty span{font-size:14px;color:var(--mut)}
+.row{display:flex;align-items:center;background:var(--card);border-radius:28px;padding:14px;margin-bottom:10px}
+.row .ico{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-size:26px;margin-left:14px}
+.row .t{flex:1}.row b{font-size:17px;font-weight:600;display:block}.row small{font-size:12.5px;color:var(--mut)}
+.row i{font-style:normal;width:42px;text-align:center;color:var(--mut);font-size:19px}
+.top{position:absolute;top:36px;right:12px;left:12px;height:64px;display:flex;align-items:center;gap:12px;z-index:4}
+.back{width:46px;height:46px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:22px}
+.top h2{font-size:21px;font-weight:800;flex:1}
+.fld{background:var(--card);border-radius:22px;padding:10px 18px;min-height:68px;margin-bottom:12px}
+.fld small{display:block;font-size:12.5px;color:var(--mut)}.fld div{font-size:17px;margin-top:2px}
+.fld.f{border:1.5px solid var(--blue)}.fld.f small{color:var(--blue)}
+.btn{position:absolute;bottom:26px;right:16px;left:16px;height:58px;border-radius:28px;background:var(--blue);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:17px;z-index:4}
+.btn.g{background:var(--card2)}
+.two{display:flex;gap:12px}.box{flex:1;height:170px;background:var(--card);border-radius:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}
+.box .p{width:84px;height:84px;border-radius:22px;background:var(--card2);display:grid;place-items:center;font-size:36px;margin-bottom:10px}
+.pill{background:var(--card2);color:var(--blue);padding:9px 18px;border-radius:18px;font-size:14px;margin-top:8px}
+.pill.a{background:var(--bs)}
+.body{position:absolute;top:104px;right:16px;left:16px}
+.term{position:absolute;top:150px;bottom:150px;right:16px;left:16px;background:#050505;border:1px solid var(--line);border-radius:28px;padding:18px;font-family:monospace;font-size:13px;line-height:21px;direction:rtl;text-align:start;color:#d0d0d0;overflow:hidden}
+.term .c{color:var(--blue)}.term .g{color:var(--green)}.term .w{color:var(--red)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:8px}
+.prev{width:340px;height:340px;border-radius:26px;margin:0 auto;background:linear-gradient(135deg,#ffb347,#ff5e62 50%,#7b2ff7);position:relative;overflow:hidden}
+.prev .tx{position:absolute;top:44%;width:100%;text-align:center;font-size:64px;font-weight:800;color:#fff;text-shadow:0 0 6px #0008}
+.sl{margin:6px 0}.sl small{font-size:13px;color:var(--mut)}.sl .tr{height:4px;background:var(--card2);border-radius:2px;margin:12px 0;position:relative}.sl .tr b{position:absolute;right:0;top:0;height:4px;background:var(--blue);border-radius:2px}.sl .tr u{position:absolute;top:-8px;width:20px;height:20px;border-radius:50%;background:var(--blue)}
+.tools{position:absolute;bottom:0;left:0;right:0;background:var(--card);padding:8px 0 22px;display:flex;justify-content:space-around;z-index:4}
+.tl{text-align:center;font-size:11.5px;color:var(--mut)}.tl div{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:22px;margin:0 auto}
+.tl.on{color:var(--blue)}.tl.on div{background:var(--bs)}
+.sw{display:flex;gap:10px;margin:8px 0}.sw i{width:38px;height:38px;border-radius:50%;border:1px solid var(--line)}.sw i.on{border:3px solid var(--blue)}
+</style></head><body>
+
+<!-- 1 home empty -->
+<div class="s" id="s1"><div class="sb"><span>٩:٤١</span><span>٥٩٪ ▮</span></div><div class="shadeT"></div>
+<div class="big"><h1>دبليك</h1><p>حوّل موقعك إلى تطبيق APK قابل للتثبيت</p></div>
+<div class="tiles">
+<div class="tile"><div class="ic" style="background:#3e91ff2e;color:var(--blue)">🤖</div><div><b>إنشاء APK</b><span>من صفحة HTML</span></div></div>
+<div class="tile"><div class="ic" style="background:#3ddc842e;color:var(--green)">🗜</div><div><b>ZIP / HTML</b><span>موقع كامل داخل ملف ZIP</span></div></div></div>
+<h3 class="sec" style="top:510px">التطبيقات التي أنشأتها</h3>
+<div class="empty" style="top:552px"><div style="font-size:40px">📦</div><b>لا توجد تطبيقات بعد</b><span>اضغط «إنشاء APK» وسيظهر تطبيقك هنا بعد البناء</span></div>
+<div class="shadeB"></div></div>
+
+<!-- 2 home with items -->
+<div class="s" id="s2"><div class="sb"><span>٩:٤١</span><span>٥٩٪ ▮</span></div><div class="shadeT"></div>
+<div class="big"><h1>دبليك</h1><p>حوّل موقعك إلى تطبيق APK قابل للتثبيت</p></div>
+<div class="tiles">
+<div class="tile"><div class="ic" style="background:#3e91ff2e;color:var(--blue)">🤖</div><div><b>إنشاء APK</b><span>من صفحة HTML</span></div></div>
+<div class="tile"><div class="ic" style="background:#3ddc842e;color:var(--green)">🗜</div><div><b>ZIP / HTML</b><span>موقع كامل داخل ملف ZIP</span></div></div></div>
+<h3 class="sec" style="top:510px">التطبيقات التي أنشأتها</h3>
+<div style="position:absolute;top:552px;right:16px;left:16px">
+<div class="row"><div class="ico" style="background:linear-gradient(135deg,#ffb347,#ff5e62)">🛒</div><div class="t"><b>متجري</b><small>com.fff.shop · 1.1.0</small></div><i>⤴</i><i style="color:var(--red)">🗑</i></div>
+<div class="row"><div class="ico" style="background:linear-gradient(135deg,#43e97b,#38f9d7)">📖</div><div class="t"><b>قاموسي</b><small>com.fff.dict · 2.0.1</small></div><i>⤴</i><i style="color:var(--red)">🗑</i></div></div>
+<div class="shadeB"></div></div>
+
+<!-- 3 form -->
+<div class="s" id="s3"><div class="sb"><span>٩:٤١</span><span>٥٩٪ ▮</span></div><div class="shadeT"></div>
+<div class="top"><div class="back">→</div><h2>إنشاء APK</h2></div>
+<div class="body">
+<div class="fld f"><small>اسم التطبيق</small><div>متجري</div></div>
+<div class="fld"><small>حزمة التطبيق</small><div style="direction:ltr;text-align:right">com.fff.shop</div></div>
+<div class="fld"><small>إصدار التطبيق</small><div>1.1.0</div></div>
+<div class="two"><div class="box"><div class="p" style="background:linear-gradient(135deg,#ffb347,#ff5e62)">🛒</div><b style="font-size:14.5px;font-weight:600">تعديل الأيقونة</b><small style="color:var(--mut);font-size:12.5px">من المعرض + تعديل</small></div>
+<div class="box"><div style="font-size:40px;color:var(--blue)">&lt;/&gt;</div><div style="font-size:14px;margin:6px 0">صفحة HTML</div><div style="display:flex;gap:6px"><span class="pill a" style="margin:0">ملف</span><span class="pill a" style="margin:0">كتابة</span></div></div></div></div>
+<div class="shadeB"></div><div class="btn">🔨 إنشاء</div></div>
+
+<!-- 4 editor -->
+<div class="s" id="s4"><div class="sb"><span>٩:٤١</span><span>٥٩٪ ▮</span></div>
+<div class="top"><div class="back">→</div><h2>تعديل الأيقونة</h2><div style="background:var(--blue);padding:10px 22px;border-radius:22px;font-weight:800;font-size:17px">حفظ</div></div>
+<div style="position:absolute;top:112px;left:0;right:0"><div class="prev"><div class="tx">🛒</div></div></div>
+<div style="position:absolute;top:470px;right:20px;left:20px">
+<div class="sl"><small>السطوع</small><div class="tr"><b style="width:55%"></b><u style="right:55%"></u></div></div>
+<div class="sl"><small>التباين (الوضوح)</small><div class="tr"><b style="width:62%"></b><u style="right:62%"></u></div></div>
+<div class="sl"><small>تشبّع الألوان</small><div class="tr"><b style="width:50%"></b><u style="right:50%"></u></div></div></div>
+<div class="tools"><div class="tl"><div>⛶</div>قص</div><div class="tl on"><div>☼</div>توضيح</div><div class="tl"><div>🎨</div>تلوين</div><div class="tl"><div>◌</div>تغويش</div><div class="tl"><div>T</div>خط</div><div class="tl"><div>✎</div>رسم</div></div></div>
+
+<!-- 5 console running -->
+<div class="s" id="s5"><div class="sb"><span>٩:٤١</span><span>٥٩٪ ▮</span></div><div class="shadeT"></div>
+<div class="top"><h2 style="padding-right:12px">لوحة التحكم</h2></div>
+<div style="position:absolute;top:104px;right:22px;font-size:14px;color:var(--blue)"><span class="dot" style="background:var(--blue)"></span>جارٍ البناء...</div>
+<div class="term"><span class="c">$ dablik build --name "متجري" --package com.fff.shop --version 1.1.0</span><br>[1/7] تهيئة مجلد العمل ... تم<br>[2/7] استخراج قالب التطبيق: 31 KB<br>[3/7] تحميل مكتبة التوقيع apksig وشهادة التوقيع ... تم<br>[4/7] تجهيز ملفات الموقع: 1 ملف، 0 KB<br>[5/7] تعديل AndroidManifest: الاسم «متجري» · الحزمة com.fff.shop · الإصدار 1.1.0 (10100)<br>[6/7] حقن الأيقونة المخصصة ... تم<br><span class="g">▌</span></div>
+<div class="shadeB"></div></div>
+
+<!-- 6 console done -->
+<div class="s" id="s6"><div class="sb"><span>٩:٤١</span><span>٥٩٪ ▮</span></div><div class="shadeT"></div>
+<div class="top"><div class="back">→</div><h2>لوحة التحكم</h2></div>
+<div style="position:absolute;top:104px;right:22px;font-size:14px;color:var(--green)"><span class="dot" style="background:var(--green)"></span>اكتمل البناء</div>
+<div class="term" style="bottom:240px"><span class="c">$ dablik build --name "متجري" --package com.fff.shop --version 1.1.0</span><br>[1/7] تهيئة مجلد العمل ... تم<br>[2/7] استخراج قالب التطبيق: 31 KB<br>[3/7] تحميل مكتبة التوقيع apksig ... تم<br>[4/7] تجهيز ملفات الموقع: 1 ملف<br>[5/7] تعديل AndroidManifest ... تم<br>[6/7] حقن الأيقونة المخصصة ... تم<br>[7/7] التجميع والتوقيع (v1 + v2) ... تم<br>التحقق من الحزمة: ناجح (v1=true, v2=true)<br>الحجم النهائي: 34 KB<br><span class="g">✔ تم إنشاء متجري_1.1.0.apk</span></div>
+<div style="position:absolute;bottom:26px;right:16px;left:16px;display:flex;flex-direction:column;gap:10px;z-index:4"><div class="btn" style="position:static">📲 تثبيت التطبيق</div><div style="display:flex;gap:10px"><div class="btn g" style="position:static;flex:1">↗ مشاركة</div><div class="btn g" style="position:static;flex:1">⌂ الرئيسية</div></div></div>
+<div class="shadeB" style="height:60px"></div></div>
+</body></html>

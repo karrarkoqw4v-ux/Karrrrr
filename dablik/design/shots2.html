@@ -1,0 +1,121 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:T;font-weight:400;src:url(tajawal_medium.ttf)}
+@font-face{font-family:T;font-weight:600;src:url(tajawal_bold.ttf)}
+@font-face{font-family:T;font-weight:800;src:url(tajawal_extrabold.ttf)}
+:root{--bg:#000;--card:#1c1c1e;--card2:#2a2a2d;--blue:#3e91ff;--bs:#1b3556;--ink:#f5f5f5;--mut:#a0a0a5;--faint:#6e6e73;--line:#2e2e31;--red:#ff5a5a;--green:#3ddc84}
+*{box-sizing:border-box;margin:0}
+body{background:#000;font-family:T;color:var(--ink)}
+.s{width:390px;height:844px;position:relative;overflow:hidden;background:#000;display:none}
+.s.on{display:block}
+.sb{position:absolute;top:0;left:0;right:0;height:36px;display:flex;justify-content:space-between;padding:12px 22px 0;font-size:12px;color:#ddd;z-index:5}
+.shadeT{position:absolute;top:0;left:0;right:0;height:90px;background:linear-gradient(#000f,#000a,#0000);z-index:3}
+.shadeB{position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(#0000,#000a,#000f);z-index:3}
+.big{position:absolute;top:150px;right:30px;}
+.big h1{font-weight:800;font-size:38px}.big p{font-size:14px;color:var(--mut);margin-top:2px}
+.tiles{position:absolute;top:262px;right:16px;left:16px;display:flex;gap:12px}
+.tile{flex:1;aspect-ratio:.92;background:var(--card);border-radius:28px;padding:20px;display:flex;flex-direction:column;justify-content:space-between}
+.ic{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:30px}
+.tile b{font-size:21px;font-weight:800;display:block}.tile span{font-size:14px;color:var(--mut)}
+h3{font-size:18px;font-weight:600}
+.sec{position:absolute;right:24px;top:500px}
+.empty{position:absolute;top:545px;right:16px;left:16px;background:var(--card);border-radius:28px;padding:26px;text-align:center}
+.empty b{display:block;font-size:18px;margin:8px 0 2px}.empty span{font-size:14px;color:var(--mut)}
+.row{display:flex;align-items:center;background:var(--card);border-radius:28px;padding:14px;margin-bottom:10px}
+.row .ico{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-size:26px;margin-left:14px}
+.row .t{flex:1}.row b{font-size:17px;font-weight:600;display:block}.row small{font-size:12.5px;color:var(--mut)}
+.row i{font-style:normal;width:42px;text-align:center;color:var(--mut);font-size:19px}
+.top{position:absolute;top:36px;right:12px;left:12px;height:64px;display:flex;align-items:center;gap:12px;z-index:4}
+.back{width:46px;height:46px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:22px}
+.top h2{font-size:21px;font-weight:800;flex:1}
+.fld{background:var(--card);border-radius:22px;padding:10px 18px;min-height:68px;margin-bottom:12px}
+.fld small{display:block;font-size:12.5px;color:var(--mut)}.fld div{font-size:17px;margin-top:2px}
+.fld.f{border:1.5px solid var(--blue)}.fld.f small{color:var(--blue)}
+.btn{position:absolute;bottom:26px;right:16px;left:16px;height:58px;border-radius:28px;background:var(--blue);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:17px;z-index:4}
+.btn.g{background:var(--card2)}
+.two{display:flex;gap:12px}.box{flex:1;height:170px;background:var(--card);border-radius:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}
+.box .p{width:84px;height:84px;border-radius:22px;background:var(--card2);display:grid;place-items:center;font-size:36px;margin-bottom:10px}
+.pill{background:var(--card2);color:var(--blue);padding:9px 18px;border-radius:18px;font-size:14px;margin-top:8px}
+.pill.a{background:var(--bs)}
+.body{position:absolute;top:104px;right:16px;left:16px}
+.term{position:absolute;top:150px;bottom:150px;right:16px;left:16px;background:#050505;border:1px solid var(--line);border-radius:28px;padding:18px;font-family:monospace;font-size:13px;line-height:21px;direction:rtl;text-align:start;color:#d0d0d0;overflow:hidden}
+.term .c{color:var(--blue)}.term .g{color:var(--green)}.term .w{color:var(--red)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:8px}
+.prev{width:340px;height:340px;border-radius:26px;margin:0 auto;background:linear-gradient(135deg,#ffb347,#ff5e62 50%,#7b2ff7);position:relative;overflow:hidden}
+.prev .tx{position:absolute;top:44%;width:100%;text-align:center;font-size:64px;font-weight:800;color:#fff;text-shadow:0 0 6px #0008}
+.sl{margin:6px 0}.sl small{font-size:13px;color:var(--mut)}.sl .tr{height:4px;background:var(--card2);border-radius:2px;margin:12px 0;position:relative}.sl .tr b{position:absolute;right:0;top:0;height:4px;background:var(--blue);border-radius:2px}.sl .tr u{position:absolute;top:-8px;width:20px;height:20px;border-radius:50%;background:var(--blue)}
+.tools{position:absolute;bottom:0;left:0;right:0;background:var(--card);padding:8px 0 22px;display:flex;justify-content:space-around;z-index:4}
+.tl{text-align:center;font-size:11.5px;color:var(--mut)}.tl div{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:22px;margin:0 auto}
+.tl.on{color:var(--blue)}.tl.on div{background:var(--bs)}
+.sw{display:flex;gap:10px;margin:8px 0}.sw i{width:38px;height:38px;border-radius:50%;border:1px solid var(--line)}.sw i.on{border:3px solid var(--blue)}
+
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.16em}
+.row i{font-size:21px}.back{font-size:24px}.btn{font-size:17px}.btn .i{font-size:22px}.tile .ic{font-size:32px}.p{font-size:38px!important}
+.ab .r{display:flex;gap:14px;padding:14px 18px;align-items:flex-start}.ab .r .c{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:25px;flex:none}.ab b{display:block;font-size:17px;font-weight:600}.ab small{font-size:13.5px;color:var(--mut);line-height:1.5}
+.ab .cd{background:var(--card);border-radius:28px;margin-bottom:6px}.ab h3{margin:18px 10px 10px}
+</style><svg width="0" height="0" style="position:absolute"><symbol id="android" viewBox="0 0 24 24"><path d="M5 16a7 7 0 0 1 14 0z"/><path d="M8 6.5l1.6 2.6M16 6.5l-1.6 2.6"/><circle cx="9.5" cy="13" r=".6"/><circle cx="14.5" cy="13" r=".6"/><path d="M6 19h12v1.5a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"/></symbol><symbol id="zip" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v1.5M12 13v1.5M12 16v1"/></symbol><symbol id="box" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></symbol><symbol id="cart" viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></symbol><symbol id="book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 1 2-2h13v3H6a2 2 0 0 1-2-1z"/></symbol><symbol id="share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6" r="2.4"/><circle cx="17" cy="18" r="2.4"/><path d="M8.2 11l6.6-3.8M8.2 13l6.6 3.8"/></symbol><symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></symbol><symbol id="back" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="build" viewBox="0 0 24 24"><path d="M14.5 5.5a4 4 0 0 0 4.8 4.8l-9.3 9.3a2.2 2.2 0 0 1-3.1-3.1l9.3-9.3a4 4 0 0 0-1.7-1.7z"/></symbol><symbol id="code" viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 6l-3 12"/></symbol><symbol id="crop" viewBox="0 0 24 24"><path d="M7 3v14h14M3 7h14v14"/></symbol><symbol id="tune" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol><symbol id="palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.4-2.2-.6-1.2.2-2.3 1.6-2.3H17a4 4 0 0 0 4-4C21 6.8 17 3 12 3z"/><circle cx="8" cy="11" r=".8"/><circle cx="11" cy="7.5" r=".8"/><circle cx="15.5" cy="8.5" r=".8"/></symbol><symbol id="blur" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="1 3"/><circle cx="12" cy="12" r="10" stroke-dasharray="1 4"/></symbol><symbol id="text" viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></symbol><symbol id="brush" viewBox="0 0 24 24"><path d="M4 20c3 0 4-1.5 4-3.5L18 6.5a2 2 0 0 0-3-3L5.5 13C4 14 4 17 4 20z"/></symbol><symbol id="install" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M12 8v6M9.5 11.5L12 14l2.5-2.5"/></symbol><symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></symbol><symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol><symbol id="key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></symbol><symbol id="layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol><symbol id="edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol><symbol id="wifioff" viewBox="0 0 24 24"><path d="M3 3l18 18M2 9a15 15 0 0 1 5-3M22 9a15 15 0 0 0-8-4M5.5 12.5a10 10 0 0 1 3-2M18.5 12.5a10 10 0 0 0-3-2M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19" r=".7"/></symbol><symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol><symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol><symbol id="addimg" viewBox="0 0 24 24"><rect x="3" y="4" width="14" height="14" rx="3"/><path d="M3 15l4-4 4 4M20 3v6M17 6h6" transform="translate(-1 3)"/></symbol><symbol id="imgsearch" viewBox="0 0 24 24"><rect x="3" y="3" width="13" height="13" rx="2.5"/><path d="M3 12l3.5-3.5 4 4"/><circle cx="17" cy="17" r="3"/><path d="M19.2 19.2L22 22"/></symbol><symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5 5l1.8 1.8M17.2 17.2L19 19M19 5l-1.8 1.8M6.8 17.2L5 19"/></symbol></svg></head><body>
+
+<!-- 1 home empty -->
+<div class="s" id="s1"><div class="sb"><span>٩:٤١</span><span>٥٩٪</span></div><div class="shadeT"></div>
+<div class="big"><h1>دبليك</h1><p>حوّل موقعك إلى تطبيق APK قابل للتثبيت</p></div>
+<div class="tiles">
+<div class="tile"><div class="ic" style="background:#3e91ff2e;color:var(--blue)"><svg class="i"><use href="#android"/></svg></div><div><b>إنشاء APK</b><span>من صفحة HTML</span></div></div>
+<div class="tile"><div class="ic" style="background:#3ddc842e;color:var(--green)"><svg class="i"><use href="#zip"/></svg></div><div><b>ZIP / HTML</b><span>موقع كامل داخل ملف ZIP</span></div></div></div>
+<h3 class="sec" style="top:510px">التطبيقات التي أنشأتها</h3>
+<div class="empty" style="top:552px"><div style="font-size:40px"><svg class="i"><use href="#box"/></svg></div><b>لا توجد تطبيقات بعد</b><span>اضغط «إنشاء APK» وسيظهر تطبيقك هنا بعد البناء</span></div>
+<div class="shadeB"></div></div>
+
+<!-- 2 home with items -->
+<div class="s" id="s2"><div class="sb"><span>٩:٤١</span><span>٥٩٪</span></div><div class="shadeT"></div>
+<div class="big"><h1>دبليك</h1><p>حوّل موقعك إلى تطبيق APK قابل للتثبيت</p></div>
+<div class="tiles">
+<div class="tile"><div class="ic" style="background:#3e91ff2e;color:var(--blue)"><svg class="i"><use href="#android"/></svg></div><div><b>إنشاء APK</b><span>من صفحة HTML</span></div></div>
+<div class="tile"><div class="ic" style="background:#3ddc842e;color:var(--green)"><svg class="i"><use href="#zip"/></svg></div><div><b>ZIP / HTML</b><span>موقع كامل داخل ملف ZIP</span></div></div></div>
+<h3 class="sec" style="top:510px">التطبيقات التي أنشأتها</h3>
+<div style="position:absolute;top:552px;right:16px;left:16px">
+<div class="row"><div class="ico" style="background:linear-gradient(135deg,#ffb347,#ff5e62)"><svg class="i"><use href="#cart"/></svg></div><div class="t"><b>متجري</b><small>com.fff.shop · 1.1.0</small></div><i><svg class="i"><use href="#share"/></svg></i><i style="color:var(--red)"><svg class="i"><use href="#trash"/></svg></i></div>
+<div class="row"><div class="ico" style="background:linear-gradient(135deg,#43e97b,#38f9d7)"><svg class="i"><use href="#book"/></svg></div><div class="t"><b>قاموسي</b><small>com.fff.dict · 2.0.1</small></div><i><svg class="i"><use href="#share"/></svg></i><i style="color:var(--red)"><svg class="i"><use href="#trash"/></svg></i></div></div>
+<div class="shadeB"></div></div>
+
+<!-- 3 form -->
+<div class="s" id="s3"><div class="sb"><span>٩:٤١</span><span>٥٩٪</span></div><div class="shadeT"></div>
+<div class="top"><div class="back"><svg class="i"><use href="#back"/></svg></div><h2>إنشاء APK</h2></div>
+<div class="body">
+<div class="fld f"><small>اسم التطبيق</small><div>متجري</div></div>
+<div class="fld"><small>حزمة التطبيق</small><div style="direction:ltr;text-align:right">com.fff.shop</div></div>
+<div class="fld"><small>إصدار التطبيق</small><div>1.1.0</div></div>
+<div class="two"><div class="box"><div class="p" style="background:linear-gradient(135deg,#ffb347,#ff5e62)"><svg class="i"><use href="#cart"/></svg></div><b style="font-size:14.5px;font-weight:600">تعديل الأيقونة</b><small style="color:var(--mut);font-size:12.5px">من المعرض + تعديل</small></div>
+<div class="box"><div style="font-size:40px;color:var(--blue)"><svg class="i"><use href="#code"/></svg></div><div style="font-size:14px;margin:6px 0">صفحة HTML</div><div style="display:flex;gap:6px"><span class="pill a" style="margin:0">ملف</span><span class="pill a" style="margin:0">كتابة</span></div></div></div></div>
+<div class="shadeB"></div><div class="btn"><svg class="i"><use href="#build"/></svg> إنشاء</div></div>
+
+<!-- 4 editor -->
+<div class="s" id="s4"><div class="sb"><span>٩:٤١</span><span>٥٩٪</span></div>
+<div class="top"><div class="back"><svg class="i"><use href="#back"/></svg></div><h2>تعديل الأيقونة</h2><div style="background:var(--blue);padding:10px 22px;border-radius:22px;font-weight:800;font-size:17px">حفظ</div></div>
+<div style="position:absolute;top:112px;left:0;right:0"><div class="prev"><div class="tx"><svg class="i"><use href="#cart"/></svg></div></div></div>
+<div style="position:absolute;top:470px;right:20px;left:20px">
+<div class="sl"><small>السطوع</small><div class="tr"><b style="width:55%"></b><u style="right:55%"></u></div></div>
+<div class="sl"><small>التباين (الوضوح)</small><div class="tr"><b style="width:62%"></b><u style="right:62%"></u></div></div>
+<div class="sl"><small>تشبّع الألوان</small><div class="tr"><b style="width:50%"></b><u style="right:50%"></u></div></div></div>
+<div class="tools"><div class="tl"><div><svg class="i"><use href="#crop"/></svg></div>قص</div><div class="tl on"><div><svg class="i"><use href="#sun"/></svg></div>توضيح</div><div class="tl"><div><svg class="i"><use href="#palette"/></svg></div>تلوين</div><div class="tl"><div><svg class="i"><use href="#blur"/></svg></div>تغويش</div><div class="tl"><div><svg class="i"><use href="#text"/></svg></div>خط</div><div class="tl"><div><svg class="i"><use href="#brush"/></svg></div>رسم</div></div></div>
+
+<!-- 5 console running -->
+<div class="s" id="s5"><div class="sb"><span>٩:٤١</span><span>٥٩٪</span></div><div class="shadeT"></div>
+<div class="top"><h2 style="padding-right:12px">لوحة التحكم</h2></div>
+<div style="position:absolute;top:104px;right:22px;font-size:14px;color:var(--blue)"><span class="dot" style="background:var(--blue)"></span>جارٍ البناء...</div>
+<div class="term"><span class="c">$ dablik build --name "متجري" --package com.fff.shop --version 1.1.0</span><br>[1/7] تهيئة مجلد العمل ... تم<br>[2/7] استخراج قالب التطبيق: 31 KB<br>[3/7] تحميل مكتبة التوقيع apksig وشهادة التوقيع ... تم<br>[4/7] تجهيز ملفات الموقع: 1 ملف، 0 KB<br>[5/7] تعديل AndroidManifest: الاسم «متجري» · الحزمة com.fff.shop · الإصدار 1.1.0 (10100)<br>[6/7] حقن الأيقونة المخصصة ... تم<br><span class="g">_</span></div>
+<div class="shadeB"></div></div>
+
+<!-- 6 console done -->
+<div class="s" id="s6"><div class="sb"><span>٩:٤١</span><span>٥٩٪</span></div><div class="shadeT"></div>
+<div class="top"><div class="back"><svg class="i"><use href="#back"/></svg></div><h2>لوحة التحكم</h2></div>
+<div style="position:absolute;top:104px;right:22px;font-size:14px;color:var(--green)"><span class="dot" style="background:var(--green)"></span>اكتمل البناء</div>
+<div class="term" style="bottom:240px"><span class="c">$ dablik build --name "متجري" --package com.fff.shop --version 1.1.0</span><br>[1/7] تهيئة مجلد العمل ... تم<br>[2/7] استخراج قالب التطبيق: 31 KB<br>[3/7] تحميل مكتبة التوقيع apksig ... تم<br>[4/7] تجهيز ملفات الموقع: 1 ملف<br>[5/7] تعديل AndroidManifest ... تم<br>[6/7] حقن الأيقونة المخصصة ... تم<br>[7/7] التجميع والتوقيع (v1 + v2) ... تم<br>التحقق من الحزمة: ناجح (v1=true, v2=true)<br>الحجم النهائي: 34 KB<br><span class="g">تم إنشاء متجري_1.1.0.apk</span></div>
+<div style="position:absolute;bottom:26px;right:16px;left:16px;display:flex;flex-direction:column;gap:10px;z-index:4"><div class="btn" style="position:static"><svg class="i"><use href="#install"/></svg> تثبيت التطبيق</div><div style="display:flex;gap:10px"><div class="btn g" style="position:static;flex:1"><svg class="i"><use href="#share"/></svg> مشاركة</div><div class="btn g" style="position:static;flex:1"><svg class="i"><use href="#home"/></svg> الرئيسية</div></div></div>
+<div class="shadeB" style="height:60px"></div></div>
+<div class="s" id="s7"><div class="sb"><span>٩:٤١</span><span>٥٩٪</span></div><div class="shadeT"></div>
+<div class="top"><div class="back"><svg class="i"><use href="#back"/></svg></div><h2>عن التطبيق</h2></div>
+<div class="ab" style="position:absolute;top:100px;right:16px;left:16px;bottom:0;overflow:hidden">
+<div style="text-align:center;padding:8px 0 4px"><div style="width:84px;height:84px;border-radius:26px;background:var(--blue);margin:0 auto;display:grid;place-items:center;font-size:46px"><svg class="i"><use href="#box"/></svg></div><div style="font-size:26px;font-weight:800;margin-top:8px">دبليك</div><div style="font-size:13px;color:var(--mut)">الإصدار 1.0.0</div></div>
+<h3>ماذا يفعل</h3><div class="cd"><div class="r"><div class="c" style="background:#3e91ff2a;color:#3e91ff"><svg class="i"><use href="#android"/></svg></div><div><b>يحوّل موقعك إلى تطبيق</b><small>صفحة HTML أو ملف ZIP لموقع كامل يصيران تطبيق أندرويد.</small></div></div><div class="r"><div class="c" style="background:#ff9f1c2a;color:#ff9f1c"><svg class="i"><use href="#imgsearch"/></svg></div><div><b>أيقونة بتصميمك</b><small>اختر صورة وعدّل القص والألوان والنص والرسم والتغويش.</small></div></div><div class="r"><div class="c" style="background:#3ddc842a;color:#3ddc84"><svg class="i"><use href="#box"/></svg></div><div><b>سجل تطبيقاتك</b><small>تثبيت أو مشاركة أو حذف.</small></div></div></div>
+<h3>كيف يعمل</h3><div class="cd"><div class="r"><div class="c" style="background:#3e91ff2a;color:#3e91ff"><svg class="i"><use href="#layers"/></svg></div><div><b>1. قالب جاهز</b><small>قالب WebView يعرض موقعك من الملفات المحلية.</small></div></div><div class="r"><div class="c" style="background:#af52de2a;color:#af52de"><svg class="i"><use href="#edit"/></svg></div><div><b>2. تعديل الملف التعريفي</b><small>الاسم والحزمة ورقم الإصدار.</small></div></div></div>
+<div class="shadeB"></div></div></div></body></html>

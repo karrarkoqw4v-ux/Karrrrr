@@ -1,0 +1,72 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.gms.google-services")
+}
+
+android {
+    namespace = "iq.quiz"
+    compileSdk = 34
+
+    defaultConfig {
+        // applicationId ثابت للأبد — لا تغيّره أبداً، حتى تنصّب كل نسخة جديدة كتحديث فوق القديمة بدون حذف
+        applicationId = "iq.quiz.tawasulkum"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 2
+        versionName = "0.2.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            // مفتاح توقيع ثابت محفوظ بالمشروع: كل بناء جديد يوقّع بنفس المفتاح،
+            // فيصير تحديث حقيقي فوق النسخة المثبتة بدل ما يطلب حذفها أول.
+            // (قبل هذا كان البناء يوقّع بمفتاح debug عشوائي يتجدد بكل تشغيل CI،
+            // فكل تحديث كان يفشل التنصيب بصمت فوق النسخة القديمة.)
+            storeFile = file("release.keystore")
+            storePassword = "quiztawasulkum123"
+            keyAlias = "quiztawasulkum"
+            keyPassword = "quiztawasulkum123"
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+    buildFeatures { compose = true; buildConfig = true }
+}
+
+dependencies {
+    val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
+    implementation(composeBom)
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.activity:activity-compose:1.9.2")
+    implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-ui:1.4.1")
+    val camerax = "1.3.4"
+    implementation("androidx.camera:camera-core:$camerax")
+    implementation("androidx.camera:camera-camera2:$camerax")
+    implementation("androidx.camera:camera-lifecycle:$camerax")
+    implementation("androidx.camera:camera-view:$camerax")
+    // حسابات ومراسلات حقيقية (سيرفر Firebase الحقيقي: مشروع gvzkkf)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    // مكالمات صوت/فيديو حقيقية (WebRTC فعلي، إشارات التفاوض عبر Realtime Database)
+    implementation("io.getstream:stream-webrtc-android:1.1.1")
+}

@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "165127146964",
+    "firebase_url": "https://gvzkkf-default-rtdb.firebaseio.com",
+    "project_id": "gvzkkf",
+    "storage_bucket": "gvzkkf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165127146964:android:07a73fd5c018c4a5e8da41",
+        "android_client_info": {
+          "package_name": "com.wwq2.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDmGpVEYltnsqs0e4K9cbWd_3grJ_qvlI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165127146964:android:adc66e0434266767e8da41",
+        "android_client_info": {
+          "package_name": "iq.quiz.tawasulkum"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDmGpVEYltnsqs0e4K9cbWd_3grJ_qvlI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

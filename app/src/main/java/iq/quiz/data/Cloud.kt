@@ -37,32 +37,36 @@ object Cloud {
     suspend fun usernameTaken(username: String): Boolean =
         db.child("usernames").child(usernameKey(username)).get().await().exists()
 
-    suspend fun signUp(email: String, name: String, username: String, pass: String): Result = try {
-        val u = usernameKey(username)
-        if (usernameTaken(u)) return Result.Fail("اسم المستخدم محجوز، جرّب اسم ثاني")
-        val cred = auth.createUserWithEmailAndPassword(email, pass).await()
-        val authedUid = cred.user?.uid ?: return Result.Fail("تعذر إنشاء الحساب")
-        db.child("users").child(authedUid).setValue(mapOf("name" to name.trim(), "username" to u, "bio" to "", "email" to email)).await()
-        db.child("usernames").child(u).setValue(authedUid).await()
-        Result.Ok
-    } catch (e: Exception) {
-        Result.Fail(friendlyError(e))
+    suspend fun signUp(email: String, name: String, username: String, pass: String): Result {
+        return try {
+            val u = usernameKey(username)
+            if (usernameTaken(u)) return Result.Fail("اسم المستخدم محجوز، جرّب اسم ثاني")
+            val cred = auth.createUserWithEmailAndPassword(email, pass).await()
+            val authedUid = cred.user?.uid ?: return Result.Fail("تعذر إنشاء الحساب")
+            db.child("users").child(authedUid).setValue(mapOf("name" to name.trim(), "username" to u, "bio" to "", "email" to email)).await()
+            db.child("usernames").child(u).setValue(authedUid).await()
+            Result.Ok
+        } catch (e: Exception) {
+            Result.Fail(friendlyError(e))
+        }
     }
 
-    suspend fun signIn(idOrEmail: String, pass: String): Result = try {
-        val input = idOrEmail.trim()
-        val email = if (input.contains("@")) {
-            input
-        } else {
-            val targetUid = db.child("usernames").child(usernameKey(input)).get().await().getValue(String::class.java)
-                ?: return Result.Fail("ما لقينا حساب بهذا الاسم")
-            db.child("users").child(targetUid).child("email").get().await().getValue(String::class.java)
-                ?: return Result.Fail("ما لقينا حساب بهذا الاسم")
+    suspend fun signIn(idOrEmail: String, pass: String): Result {
+        return try {
+            val input = idOrEmail.trim()
+            val email = if (input.contains("@")) {
+                input
+            } else {
+                val targetUid = db.child("usernames").child(usernameKey(input)).get().await().getValue(String::class.java)
+                    ?: return Result.Fail("ما لقينا حساب بهذا الاسم")
+                db.child("users").child(targetUid).child("email").get().await().getValue(String::class.java)
+                    ?: return Result.Fail("ما لقينا حساب بهذا الاسم")
+            }
+            auth.signInWithEmailAndPassword(email, pass).await()
+            Result.Ok
+        } catch (e: Exception) {
+            Result.Fail(friendlyError(e))
         }
-        auth.signInWithEmailAndPassword(email, pass).await()
-        Result.Ok
-    } catch (e: Exception) {
-        Result.Fail(friendlyError(e))
     }
 
     private fun friendlyError(e: Exception): String = when {

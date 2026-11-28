@@ -142,6 +142,7 @@ fun LoginScreen(onDone: () -> Unit, onSignup: () -> Unit, onForgot: () -> Unit) 
     val shake = rememberShake(tick)
     Box(Modifier.fillMaxSize().background(p.bg)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().navigationBarsPadding().imePadding().padding(horizontal = 32.dp, vertical = 28.dp)) {
+            CrashCard()
             Spacer(Modifier.weight(0.6f))
             Entrance(1) {
                 Text(
@@ -264,6 +265,7 @@ fun SignupScreen(onBack: () -> Unit, onDone: () -> Unit) {
     Column(Modifier.fillMaxSize().background(p.bg).imePadding()) {
         TopBack("إنشاء حساب", onBack)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp)) {
+            CrashCard(Modifier.padding(bottom = 16.dp))
             Column(Modifier.offset { IntOffset(shake.value.dp.roundToPx(), 0) }) {
                 Text("حساب جديد", style = MaterialTheme.typography.headlineSmall, color = p.ink)
                 Text("اسم المستخدم، اسمك، بريدك، وكلمة مرور", style = MaterialTheme.typography.bodyMedium, color = p.muted)

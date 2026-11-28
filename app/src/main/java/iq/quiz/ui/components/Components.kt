@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import iq.quiz.data.CrashLog
 import iq.quiz.data.Repo
 import iq.quiz.data.User
 import iq.quiz.ui.theme.*
@@ -300,3 +301,25 @@ fun hashtagText(prefix: String, caption: String, tag: Color): androidx.compose.u
             if (m.groups[1] != null) { pushStyle(androidx.compose.ui.text.SpanStyle(color = tag)); append(m.value); pop() } else append(m.value)
         }
     }
+
+/** صندوق آخر كراش محفوظ: يظهر حتى بدون تسجيل دخول (شاشات الدخول/التسجيل) حتى يوصلنا نص الخطأ الحقيقي دائماً. */
+@Composable
+fun CrashCard(modifier: Modifier = Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var crash by remember { mutableStateOf(CrashLog.read(ctx)) }
+    if (crash == null) return
+    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF3A1414)).padding(16.dp)) {
+        Text("آخر خطأ/كراش محفوظ (اضغط لنسخه وأرسله حتى أصلحه)", color = Color(0xFFFFB4AB), style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            crash.orEmpty(), color = Color(0xFFFFDAD6), style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.fillMaxWidth().clickable {
+                val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("crash", crash))
+                android.widget.Toast.makeText(ctx, "تم نسخ نص الخطأ", android.widget.Toast.LENGTH_SHORT).show()
+            },
+        )
+        Spacer(Modifier.height(10.dp))
+        Text("مسح", color = Color(0xFFFFB4AB), modifier = Modifier.clickable { CrashLog.clear(ctx); crash = null })
+    }
+}

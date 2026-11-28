@@ -37,21 +37,19 @@ object Cloud {
     suspend fun usernameTaken(username: String): Boolean =
         db.child("usernames").child(usernameKey(username)).get().await().exists()
 
-    suspend fun signUp(email: String, name: String, username: String, pass: String): Result {
+    suspend fun signUp(email: String, name: String, username: String, pass: String): Result = try {
         val u = usernameKey(username)
         if (usernameTaken(u)) return Result.Fail("اسم المستخدم محجوز، جرّب اسم ثاني")
-        return try {
-            val cred = auth.createUserWithEmailAndPassword(email, pass).await()
-            val authedUid = cred.user?.uid ?: return Result.Fail("تعذر إنشاء الحساب")
-            db.child("users").child(authedUid).setValue(mapOf("name" to name.trim(), "username" to u, "bio" to "", "email" to email)).await()
-            db.child("usernames").child(u).setValue(authedUid).await()
-            Result.Ok
-        } catch (e: Exception) {
-            Result.Fail(friendlyError(e))
-        }
+        val cred = auth.createUserWithEmailAndPassword(email, pass).await()
+        val authedUid = cred.user?.uid ?: return Result.Fail("تعذر إنشاء الحساب")
+        db.child("users").child(authedUid).setValue(mapOf("name" to name.trim(), "username" to u, "bio" to "", "email" to email)).await()
+        db.child("usernames").child(u).setValue(authedUid).await()
+        Result.Ok
+    } catch (e: Exception) {
+        Result.Fail(friendlyError(e))
     }
 
-    suspend fun signIn(idOrEmail: String, pass: String): Result {
+    suspend fun signIn(idOrEmail: String, pass: String): Result = try {
         val input = idOrEmail.trim()
         val email = if (input.contains("@")) {
             input
@@ -61,12 +59,10 @@ object Cloud {
             db.child("users").child(targetUid).child("email").get().await().getValue(String::class.java)
                 ?: return Result.Fail("ما لقينا حساب بهذا الاسم")
         }
-        return try {
-            auth.signInWithEmailAndPassword(email, pass).await()
-            Result.Ok
-        } catch (e: Exception) {
-            Result.Fail(friendlyError(e))
-        }
+        auth.signInWithEmailAndPassword(email, pass).await()
+        Result.Ok
+    } catch (e: Exception) {
+        Result.Fail(friendlyError(e))
     }
 
     private fun friendlyError(e: Exception): String = when {
@@ -74,6 +70,7 @@ object Cloud {
         e.message?.contains("already in use", true) == true -> "الحساب موجود، سجّل دخول"
         e.message?.contains("password is invalid", true) == true || e.message?.contains("no user record", true) == true -> "البريد أو كلمة المرور غلط"
         e.message?.contains("weak password", true) == true -> "كلمة المرور ضعيفة، اكتب 6 أحرف فأكثر"
+        e.message?.contains("permission denied", true) == true -> "قواعد الحماية بقاعدة البيانات ما منشورة صح بعد (Firestore/Realtime Database Rules)"
         else -> e.localizedMessage ?: "صار خطأ، جرّب مرة ثانية"
     }
 
@@ -83,21 +80,21 @@ object Cloud {
 
     suspend fun updateProfile(name: String, bio: String) {
         val id = uid ?: return
-        db.child("users").child(id).updateChildren(mapOf("name" to name.trim(), "bio" to bio.trim())).await()
+        try { db.child("users").child(id).updateChildren(mapOf("name" to name.trim(), "bio" to bio.trim())).await() } catch (_: Exception) {}
     }
 
-    suspend fun profile(uid: String): Profile? {
+    suspend fun profile(uid: String): Profile? = try {
         val snap = db.child("users").child(uid).get().await()
-        if (!snap.exists()) return null
-        return Profile(uid, snap.child("name").getValue(String::class.java) ?: "", snap.child("username").getValue(String::class.java) ?: "", snap.child("bio").getValue(String::class.java) ?: "")
-    }
+        if (!snap.exists()) null
+        else Profile(uid, snap.child("name").getValue(String::class.java) ?: "", snap.child("username").getValue(String::class.java) ?: "", snap.child("bio").getValue(String::class.java) ?: "")
+    } catch (_: Exception) { null }
 
     /** يدوّر على حساب حقيقي باسم المستخدم، لبدء محادثة معه */
-    suspend fun findByUsername(username: String): Profile? {
+    suspend fun findByUsername(username: String): Profile? = try {
         val u = usernameKey(username)
-        val id = db.child("usernames").child(u).get().await().getValue(String::class.java) ?: return null
-        return profile(id)
-    }
+        val id = db.child("usernames").child(u).get().await().getValue(String::class.java)
+        if (id == null) null else profile(id)
+    } catch (_: Exception) { null }
 
     // ---------- مراسلات حقيقية بين حسابين ----------
     private fun chatId(a: String, b: String) = listOf(a, b).sorted().joinToString("_")
